@@ -19,7 +19,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../lib/api"; // adjust path
 import BannerFormModel from "../components/BannerFormModal";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://api.houseofresha.com";
 
 // simple toast (same as in model)
 const showToast = (message, type = "success") => {
@@ -103,7 +103,7 @@ const fetchBanners = async () => {
     return { success: true, banners: [] };
   } catch (error) {
     console.error("Fetch banners error:", error);
-    return { success: true, banners: [] };
+    return { success: true, banners: data.data };
   }
 };
 const deleteBanner = async (id) => {
