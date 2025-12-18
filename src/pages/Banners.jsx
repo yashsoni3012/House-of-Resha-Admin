@@ -19,7 +19,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../lib/api"; // adjust path
 import BannerFormModel from "../components/BannerFormModal";
 
-
 const API_BASE_URL = "/api";
 
 // simple toast (same as in model)
@@ -66,22 +65,47 @@ const showToast = (message, type = "success") => {
 };
 
 // fetch banners
+// const fetchBanners = async () => {
+//   const res = await fetch(`${API_BASE_URL}/banner`);
+//   if (!res.ok) {
+//     throw new Error(`API Error: ${res.status} ${res.statusText}`);
+//   }
+//   const data = await res.json();
+
+//   if (Array.isArray(data)) return { success: true, banners: data };
+//   if (Array.isArray(data?.data)) return { success: true, banners: data.data };
+//   if (Array.isArray(data?.banners))
+//     return { success: true, banners: data.banners };
+//   if (data?.success && Array.isArray(data.banners)) return data;
+
+//   return { success: true, banners: [] };
+// };
+
 const fetchBanners = async () => {
-  const res = await fetch(`${API_BASE_URL}/banner`);
-  if (!res.ok) {
-    throw new Error(`API Error: ${res.status} ${res.statusText}`);
+  try {
+    console.log("Fetching banners from:", `${API_BASE_URL}/banner`);
+    const res = await fetch(`${API_BASE_URL}/banner`);
+
+    if (!res.ok) {
+      console.error("Banners fetch failed:", res.status, res.statusText);
+      return { success: true, banners: [] };
+    }
+
+    const data = await res.json();
+    console.log("Banners response:", data);
+
+    if (Array.isArray(data)) return { success: true, banners: data };
+    if (Array.isArray(data?.data)) return { success: true, banners: data.data };
+    if (Array.isArray(data?.banners))
+      return { success: true, banners: data.banners };
+    if (data?.success && Array.isArray(data.banners)) return data;
+
+    return { success: true, banners: [] };
+  } catch (error) {
+    console.error("Fetch banners error:", error);
+    return { success: true, banners: [] };
   }
-  const data = await res.json();
-
-  if (Array.isArray(data)) return { success: true, banners: data };
-  if (Array.isArray(data?.data)) return { success: true, banners: data.data };
-  if (Array.isArray(data?.banners))
-    return { success: true, banners: data.banners };
-  if (data?.success && Array.isArray(data.banners)) return data;
-
-  return { success: true, banners: [] };
 };
-
 const deleteBanner = async (id) => {
   const res = await fetch(`${API_BASE_URL}/banner/${id}`, {
     method: "DELETE",
@@ -118,26 +142,25 @@ const Banner = () => {
   });
 
   const deleteMutation = useMutation({
-  mutationFn: deleteBanner,
-  onSuccess: (_, deletedId) => {
-    queryClient.setQueryData(["banners"], (old) => {
-      if (!old) return old;
+    mutationFn: deleteBanner,
+    onSuccess: (_, deletedId) => {
+      queryClient.setQueryData(["banners"], (old) => {
+        if (!old) return old;
 
-      const banners = old.banners || old.data || [];
-      return {
-        ...old,
-        banners: banners.filter((b) => b._id !== deletedId),
-      };
-    });
+        const banners = old.banners || old.data || [];
+        return {
+          ...old,
+          banners: banners.filter((b) => b._id !== deletedId),
+        };
+      });
 
-    setDeleteConfirm(null);
-    showToast("Banner deleted successfully!", "success");
-  },
-  onError: (error) => {
-    showToast(`Failed to delete banner: ${error.message}`, "error");
-  },
-});
-
+      setDeleteConfirm(null);
+      showToast("Banner deleted successfully!", "success");
+    },
+    onError: (error) => {
+      showToast(`Failed to delete banner: ${error.message}`, "error");
+    },
+  });
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -219,7 +242,7 @@ const Banner = () => {
     const createdAt = banner.createdAt ? new Date(banner.createdAt) : null;
 
     return (
-      <div className="group relative bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-purple-300">
+      <div className="group relative bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
         {/* Category Badge */}
         <div className="absolute top-3 right-3 z-20">
           <span className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full shadow-lg capitalize backdrop-blur-sm">
@@ -285,25 +308,19 @@ const Banner = () => {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleEdit(banner)}
-              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all font-semibold shadow-sm hover:shadow-md border border-blue-200"
               title="Edit"
             >
-              <Edit
-                size={16}
-                className="group-hover/btn:rotate-12 transition-transform"
-              />
+              <Edit size={16} className="transition-transform" />
               <span>Edit</span>
             </button>
 
             <button
               onClick={() => setDeleteConfirm(banner)}
-              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-red-50 to-red-100 text-red-600 rounded-xl hover:from-red-100 hover:to-red-200 transition-all shadow-sm hover:shadow-md border border-red-200"
               title="Delete"
             >
-              <Trash2
-                size={16}
-                className="group-hover/btn:rotate-12 transition-transform"
-              />
+              <Trash2 size={16} className="transition-transform" />
               <span>Delete</span>
             </button>
           </div>
@@ -379,7 +396,7 @@ const Banner = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => handleEdit(banner)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all font-semibold shadow-sm hover:shadow-md border border-blue-200"
               >
                 <Edit size={16} />
                 <span className="hidden sm:inline">Edit</span>
@@ -387,7 +404,7 @@ const Banner = () => {
 
               <button
                 onClick={() => setDeleteConfirm(banner)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-50 to-red-100 text-red-600 rounded-xl hover:from-red-100 hover:to-red-200 transition-all shadow-sm hover:shadow-md border border-red-200"
               >
                 <Trash2 size={16} />
                 <span className="hidden sm:inline">Delete</span>

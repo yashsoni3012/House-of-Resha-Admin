@@ -790,7 +790,7 @@ const ProductModal = ({
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="w-full h-64 object-cover border-4 border-white rounded-xl shadow-lg"
+                        className="w-full h-64 object-cover object-top border-4 border-white rounded-xl shadow-lg"
                       />
                       <button
                         type="button"

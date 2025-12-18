@@ -11,7 +11,7 @@ import {
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../lib/api"; // adjust path
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://api.houseofresha.com";
 
 // ============ fetch categories ============
 const fetchCategories = async () => {
