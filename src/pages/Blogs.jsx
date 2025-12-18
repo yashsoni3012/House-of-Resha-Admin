@@ -29,8 +29,8 @@ export default function BlogPostManager() {
     title: "",
     description: "",
     content: [""],
-    coverImage: null,
-    sliderImages: [],
+    cover: null,
+    slider: [],
   });
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
@@ -238,12 +238,12 @@ export default function BlogPostManager() {
     formDataToSend.append("content", JSON.stringify(validContent));
 
     if (formData.coverImage) {
-      formDataToSend.append("coverImage", formData.coverImage);
+      formDataToSend.append("cover", formData.coverImage);
     }
 
     formData.sliderImages.forEach((item) => {
       if (item?.file) {
-        formDataToSend.append("sliderImages", item.file);
+        formDataToSend.append("slider", item.file);
       }
     });
 
