@@ -198,7 +198,7 @@ const Banner = () => {
   };
 
   const BannerCard = ({ banner }) => {
-    const videoUrl = banner.videoUrl || banner.video;
+    const videoUrl = banner.videoUrl || banner.video;    
     const fullVideoUrl = videoUrl
       ? videoUrl.startsWith("http")
         ? videoUrl
