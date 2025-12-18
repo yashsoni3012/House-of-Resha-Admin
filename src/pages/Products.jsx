@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import ProductModal from "../components/ProductModal";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://api.houseofresha.com/";
 
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
