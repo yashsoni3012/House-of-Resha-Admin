@@ -22,6 +22,7 @@ const fetchCategories = async () => {
     );
   }
   const data = await res.json();
+  console.log("data printed",data)
 
   if (Array.isArray(data)) {
     return data.map((item) =>

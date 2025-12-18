@@ -94,10 +94,10 @@ const fetchBanners = async () => {
     const data = await res.json();
     console.log("Banners response:", data);
 
-    if (Array.isArray(data)) return { success: true, banners: data };
+    if (Array.isArray(data.data)) return { success: true, banners: data.data };
     if (Array.isArray(data?.data)) return { success: true, banners: data.data };
     if (Array.isArray(data?.banners))
-      return { success: true, banners: data.banners };
+      return { success: true, banners: data.data };
     if (data?.success && Array.isArray(data.banners)) return data;
 
     return { success: true, banners: [] };
