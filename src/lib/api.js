@@ -119,66 +119,79 @@
 
 
 // lib/api.js
+// import { createCrudApi } from "./crudFactory";
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// const getSchool_id = () => {
+  //   return localStorage.getItem("schoolId");
+  // };
+
+// import { QueryClient } from "@tanstack/react-query";
+
+// export const queryClient = new QueryClient({
+//   defaultOptions: {
+//     queries: {
+//       staleTime: 5 * 60 * 1000, // 5 minutes cache
+//       retry: 1,
+//     },
+//   },
+// });
+
+// src/lib/api.js
 import { QueryClient } from "@tanstack/react-query";
-import { createCrudApi } from "./crudFactory";
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const getSchool_id = () => {
-  return localStorage.getItem("schoolId");
-};
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes cache
+      staleTime: 5 * 60 * 1000,
       retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
-export const api = {
-  // ✅ LOGIN
-  async login(email, password) {
-    const res = await fetch(`${BASE_URL}/Admin_Login_User`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Request failed with ${res.status}`);
-    }
+// export const api = {
+//   // ✅ LOGIN
+//   async login(email, password) {
+//     const res = await fetch(`${BASE_URL}/Admin_Login_User`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ email, password }),
+//     });
 
-    const data = await res.json();
+//     if (!res.ok) {
+//       const err = await res.json().catch(() => ({}));
+//       throw new Error(err.message || `Request failed with ${res.status}`);
+//     }
 
-    const token =
-      ("access" in data && data.access) ||
-      ("access" in data ? data.access : undefined);
+//     const data = await res.json();
 
-    if (!token) throw new Error("No access token returned by server");
+//     const token =
+//       ("access" in data && data.access) ||
+//       ("access" in data ? data.access : undefined);
 
-    let user;
-    if ("status" in data) {
-      if (!data.data?.id || !data.data.email) {
-        throw new Error("Invalid user data");
-      }
-      user = {
-        id: data.data.id,
-        email: data.data.email,
-      };
-    } else {
-      if (!data.data?.id || !data.data.email || !data.data.role) {
-        throw new Error("Invalid user data");
-      }
-      user = {
-        id: data.data.id,
-        email: data.data.email,
-      };
-    }
+//     if (!token) throw new Error("No access token returned by server");
 
-    return { token, user };
-  },
+//     let user;
+//     if ("status" in data) {
+//       if (!data.data?.id || !data.data.email) {
+//         throw new Error("Invalid user data");
+//       }
+//       user = {
+//         id: data.data.id,
+//         email: data.data.email,
+//       };
+//     } else {
+//       if (!data.data?.id || !data.data.email || !data.data.role) {
+//         throw new Error("Invalid user data");
+//       }
+//       user = {
+//         id: data.data.id,
+//         email: data.data.email,
+//       };
+//     }
+
+//     return { token, user };
+//   },
   
-};
+// };

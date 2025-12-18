@@ -5,7 +5,7 @@ const Orders = () => {
     { id: '#1234', customer: 'Priya Sharma', date: '2024-11-28', amount: '₹15,999', status: 'Delivered' },
     { id: '#1235', customer: 'Amit Patel', date: '2024-11-28', amount: '₹8,499', status: 'Processing' },
     { id: '#1236', customer: 'Sneha Reddy', date: '2024-11-27', amount: '₹25,999', status: 'Shipped' },
-    { id: '#1237', customer: 'Rahul Singh', date: '2024-11-27', amount: '₹3,999', status: 'Pending' },
+    { id: '#1237', customer: 'Mahipal Singh', date: '2024-11-27', amount: '₹3,999', status: 'Pending' },
   ];
 
   return (

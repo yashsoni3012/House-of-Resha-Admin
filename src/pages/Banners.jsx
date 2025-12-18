@@ -19,6 +19,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../lib/api"; // adjust path
 import BannerFormModel from "../components/BannerFormModal";
 
+
 const API_BASE_URL = "/api";
 
 // simple toast (same as in model)
@@ -117,16 +118,26 @@ const Banner = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteBanner,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["banners"] });
-      setDeleteConfirm(null);
-      showToast("Banner deleted successfully!", "success");
-    },
-    onError: (error) => {
-      showToast(`Failed to delete banner: ${error.message}`, "error");
-    },
-  });
+  mutationFn: deleteBanner,
+  onSuccess: (_, deletedId) => {
+    queryClient.setQueryData(["banners"], (old) => {
+      if (!old) return old;
+
+      const banners = old.banners || old.data || [];
+      return {
+        ...old,
+        banners: banners.filter((b) => b._id !== deletedId),
+      };
+    });
+
+    setDeleteConfirm(null);
+    showToast("Banner deleted successfully!", "success");
+  },
+  onError: (error) => {
+    showToast(`Failed to delete banner: ${error.message}`, "error");
+  },
+});
+
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -198,7 +209,7 @@ const Banner = () => {
   };
 
   const BannerCard = ({ banner }) => {
-    const videoUrl = banner.videoUrl || banner.video;    
+    const videoUrl = banner.videoUrl || banner.video;
     const fullVideoUrl = videoUrl
       ? videoUrl.startsWith("http")
         ? videoUrl
@@ -639,7 +650,7 @@ const Banner = () => {
           onClose={() => {
             setShowModal(false);
             setEditingBanner(null);
-            queryClient.invalidateQueries({ queryKey: ["banners"] });
+            // queryClient.invalidateQueries({ queryKey: ["banners"] });
           }}
           initialBanner={editingBanner}
         />
