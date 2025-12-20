@@ -18,7 +18,8 @@ import {
   DollarSign,
   Info,
   Target,
-} from "lucide-react";
+} 
+from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import ProductModal from "../components/ProductModal";
@@ -48,8 +49,15 @@ const Products = () => {
       const res = await fetch(`${API_BASE_URL}/clothing`);
       if (!res.ok) throw new Error("Failed to fetch products");
       const json = await res.json();
-      return json.data || [];
+      console.log("CLOTHING API RESPONSE", json); // check shape in console
+      // 1) If response is an array:
+      // return Array.isArray(json) ? json : [];
+      // 2) If it's { data: [...] }:
+      // return json.data || [];
+      // 3) If it's something else, adapt this line only.
+      return json.data || json;
     },
+
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

@@ -62,37 +62,31 @@ const ProductModal = ({
     return [];
   };
 
-  const {
-    data: categories = [],
-    isLoading: isLoadingCategories,
-    error: categoriesError,
-  } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/category`);
-      if (!response.ok) {
-        throw new Error(
-          `Category API Error: ${response.status} ${response.statusText}`
-        );
-      }
+ const {
+  data: categories = [],
+  isLoading: isLoadingCategories,
+  error: categoriesError,
+} = useQuery({
+  queryKey: ["categories"],
+  queryFn: async () => {
+    const res = await fetch(`${API_BASE_URL}/category`);
 
-      const data = await response.json();
+    if (!res.ok) {
+      throw new Error("Failed to fetch categories");
+    }
 
-      if (Array.isArray(data)) return data;
-      if (Array.isArray(data?.data)) return data.data;
-      if (data?.success && Array.isArray(data.data)) return data.data;
+    const result = await res.json();
 
-      return [];
-    },
+    // ✅ FIXED RESPONSE HANDLING
+    if (Array.isArray(result)) return result;
+    if (Array.isArray(result?.data)) return result.data;
 
-    // 🔥 VERY IMPORTANT SETTINGS
-    enabled: true, // ❌ remove isOpen dependency
-    staleTime: Infinity, // never refetch automatically
-    cacheTime: Infinity, // keep cached forever
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: 2,
-  });
+    return [];
+  },
+  staleTime: 1000 * 60 * 10, // 10 minutes
+  refetchOnWindowFocus: false,
+});
+
 
   useEffect(() => {
     if (product && isOpen) {
@@ -401,24 +395,38 @@ const ProductModal = ({
         try {
           responseData = rawText ? JSON.parse(rawText) : null;
         } catch (parseError) {
-          throw new Error(`Invalid JSON response: ${rawText.substring(0, 100)}`);
+          throw new Error(
+            `Invalid JSON response: ${rawText.substring(0, 100)}`
+          );
         }
       } else {
         responseData = rawText;
       }
 
       if (!response.ok) {
-        const snippet = typeof rawText === "string" ? rawText.substring(0, 200) : "";
-        if (!contentType.includes("application/json") && snippet.trim().startsWith("<!DOCTYPE")) {
-          throw new Error(`Request failed (${response.status}). Server returned HTML instead of JSON.`);
+        const snippet =
+          typeof rawText === "string" ? rawText.substring(0, 200) : "";
+        if (
+          !contentType.includes("application/json") &&
+          snippet.trim().startsWith("<!DOCTYPE")
+        ) {
+          throw new Error(
+            `Request failed (${response.status}). Server returned HTML instead of JSON.`
+          );
         }
         throw new Error(
-          (responseData && typeof responseData === "object" && (responseData.message || responseData.error)) ||
+          (responseData &&
+            typeof responseData === "object" &&
+            (responseData.message || responseData.error)) ||
             `Request failed with status ${response.status}`
         );
       }
 
-      if (contentType.includes("application/json") && responseData && responseData.errors) {
+      if (
+        contentType.includes("application/json") &&
+        responseData &&
+        responseData.errors
+      ) {
         console.error("API error response:", responseData);
       }
 

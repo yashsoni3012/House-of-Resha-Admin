@@ -217,80 +217,79 @@ export default function BlogPostManager() {
   //   }
   // };
 
-
   const handleSubmit = async () => {
-  if (!formData.title.trim()) {
-    setError("Title is required");
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setResponse(null);
-
-  try {
-    const formDataToSend = new FormData();
-
-    formDataToSend.append("title", formData.title);
-    formDataToSend.append("description", formData.description);
-
-    const validContent = formData.content.filter((c) => c.trim());
-    formDataToSend.append("content", JSON.stringify(validContent));
-
-    if (formData.coverImage) {
-      formDataToSend.append("cover", formData.coverImage);
+    if (!formData.title.trim()) {
+      setError("Title is required");
+      return;
     }
 
-    formData.sliderImages.forEach((item) => {
-      if (item?.file) {
-        formDataToSend.append("slider", item.file);
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+
+    try {
+      const formDataToSend = new FormData();
+
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+
+      const validContent = formData.content.filter((c) => c.trim());
+      formDataToSend.append("content", JSON.stringify(validContent));
+
+      if (formData.coverImage) {
+        formDataToSend.append("cover", formData.coverImage);
       }
-    });
 
-    // 🔥 PRINT FORM DATA BEFORE POSTING
-    console.log("----- FORM DATA -----");
-    for (let [key, value] of formDataToSend.entries()) {
-      if (value instanceof File) {
-        console.log(key, {
-          name: value.name,
-          size: value.size,
-          type: value.type,
-        });
-      } else {
-        console.log(key, value);
+      formData.sliderImages.forEach((item) => {
+        if (item?.file) {
+          formDataToSend.append("slider", item.file);
+        }
+      });
+
+      // 🔥 PRINT FORM DATA BEFORE POSTING
+      console.log("----- FORM DATA -----");
+      for (let [key, value] of formDataToSend.entries()) {
+        if (value instanceof File) {
+          console.log(key, {
+            name: value.name,
+            size: value.size,
+            type: value.type,
+          });
+        } else {
+          console.log(key, value);
+        }
       }
+      console.log("----------------------");
+
+      const url =
+        view === "create"
+          ? `${API_BASE_URL}/blogs`
+          : `${API_BASE_URL}/blogs/${selectedBlog._id}`;
+
+      const res = await fetch(url, {
+        method: view === "create" ? "POST" : "PATCH",
+        body: formDataToSend,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Request failed (${res.status})`);
+      }
+
+      setResponse(data);
+      await fetchBlogs();
+
+      setTimeout(() => {
+        setView("list");
+        resetForm();
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    console.log("----------------------");
-
-    const url =
-      view === "create"
-        ? `${API_BASE_URL}/blogs`
-        : `${API_BASE_URL}/blogs/${selectedBlog._id}`;
-
-    const res = await fetch(url, {
-      method: view === "create" ? "POST" : "PATCH",
-      body: formDataToSend,
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || `Request failed (${res.status})`);
-    }
-
-    setResponse(data);
-    await fetchBlogs();
-
-    setTimeout(() => {
-      setView("list");
-      resetForm();
-    }, 1500);
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const confirmDelete = (blog) => {
     setBlogToDelete(blog);
