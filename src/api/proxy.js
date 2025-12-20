@@ -1,38 +1,48 @@
-export async function proxy(req) {
-  const targetBase = "https://api.houseofresha.com";
-  const url = new URL(req.url);
+export default async function handler(req, res) {
+    // Preflight
+    if (req.method === "OPTIONS") {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader(
+            "Access-Control-Allow-Methods",
+            "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        );
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        return res.status(204).end();
+    }
 
-  // expected path: /api/proxy/<anything>
-  const upstreamPath = url.pathname.replace(/^\/api\/proxy/, "");
-  const upstreamUrl = `${targetBase}${upstreamPath}${url.search}`;
+    const targetBase = "https://api.houseofresha.com";
 
-  // Copy headers but remove host-related ones
-  const headers = new Headers(req.headers);
-  headers.delete("host");
+    // req.url example: /api/proxy/clothing/123?x=1
+    const upstreamPath = req.url.replace(/^\/api\/proxy/, "");
+    const upstreamUrl = `${targetBase}${upstreamPath}`;
 
-  // IMPORTANT: do not forward origin; Vercel should be the origin to upstream
-  headers.delete("origin");
-  headers.delete("referer");
+    const headers = { ...req.headers };
+    delete headers.host;
+    delete headers.origin;
+    delete headers.referer;
 
-  const init = {
-    method: req.method,
-    headers,
-    body: ["GET", "HEAD"].includes(req.method) ? undefined : await req.arrayBuffer(),
-    redirect: "manual",
-  };
+    const upstreamRes = await fetch(upstreamUrl, {
+        method: req.method,
+        headers,
+        body: ["GET", "HEAD"].includes(req.method) ? undefined : req,
+        redirect: "manual",
+    });
 
-  const res = await fetch(upstreamUrl, init);
+    // Copy upstream headers
+    upstreamRes.headers.forEach((value, key) => {
+        if (key.toLowerCase() === "content-encoding") return;
+        res.setHeader(key, value);
+    });
 
-  // Build response
-  const resHeaders = new Headers(res.headers);
+    // Allow browser to call THIS proxy
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  // Allow browser to call Vercel proxy from your site
-  resHeaders.set("Access-Control-Allow-Origin", "*");
-  resHeaders.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  resHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  return new Response(res.body, {
-    status: res.status,
-    headers: resHeaders,
-  });
+    res.status(upstreamRes.status);
+    const buf = Buffer.from(await upstreamRes.arrayBuffer());
+    res.send(buf);
 }
