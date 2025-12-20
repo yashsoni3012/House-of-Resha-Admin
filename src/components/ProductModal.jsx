@@ -59,12 +59,12 @@ const ProductModal = ({
     queryFn: async () => {
       try {
         console.log("Fetching categories from:", `${API_BASE_URL}/category`);
-        
+
         const res = await fetch(`${API_BASE_URL}/category`, {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
         });
 
@@ -77,7 +77,8 @@ const ProductModal = ({
             if (errorData) {
               try {
                 const parsedError = JSON.parse(errorData);
-                errorMessage = parsedError.message || parsedError.error || errorMessage;
+                errorMessage =
+                  parsedError.message || parsedError.error || errorMessage;
               } catch {
                 errorMessage = errorData.substring(0, 100);
               }
@@ -88,11 +89,11 @@ const ProductModal = ({
           throw new Error(errorMessage);
         }
 
-        const contentType = res.headers.get('content-type');
+        const contentType = res.headers.get("content-type");
         console.log("Content-Type:", contentType);
 
         // Handle different response types
-        if (contentType && contentType.includes('application/json')) {
+        if (contentType && contentType.includes("application/json")) {
           const result = await res.json();
           console.log("Categories API Response:", result);
 
@@ -105,7 +106,11 @@ const ProductModal = ({
             return result.data.data;
           } else if (result && result.success && Array.isArray(result.data)) {
             return result.data;
-          } else if (result && result.categories && Array.isArray(result.categories)) {
+          } else if (
+            result &&
+            result.categories &&
+            Array.isArray(result.categories)
+          ) {
             return result.categories;
           } else {
             console.warn("Unexpected response structure:", result);
@@ -114,7 +119,10 @@ const ProductModal = ({
         } else {
           // Handle non-JSON response
           const textResponse = await res.text();
-          console.warn("Non-JSON response received:", textResponse.substring(0, 200));
+          console.warn(
+            "Non-JSON response received:",
+            textResponse.substring(0, 200)
+          );
           throw new Error("Server returned non-JSON response");
         }
       } catch (error) {
@@ -169,7 +177,7 @@ const ProductModal = ({
       }
       setServerError("");
       setNewSize(""); // Reset newSize input
-      
+
       // Refetch categories when opening modal with a product
       refetchCategories();
     } else if (isOpen) {
@@ -348,10 +356,13 @@ const ProductModal = ({
     setServerError("");
 
     try {
-      const fd = new FormData();
+      let url = `${API_BASE_URL}/clothing`;
+      let method = "POST";
+      let body;
 
-      // For new products, include all fields
+      // For new products, use FormData
       if (!product) {
+        const fd = new FormData();
         fd.append("name", formData.name.trim());
         fd.append("description", formData.description.trim());
         fd.append("price", String(Number(formData.price)));
@@ -364,80 +375,81 @@ const ProductModal = ({
         if (imageFile) {
           fd.append("image", imageFile);
         }
+
+        body = fd;
       } else {
-        const currentCategoryId = product.categoryId?._id || product.categoryId;
-        const newPrice = Number(formData.price);
+  const currentCategoryId = product.categoryId?._id || product.categoryId;
+  const newPrice = Number(formData.price);
 
-        const didChange =
-          hasChanged(formData.name.trim(), product.name || "") ||
-          hasChanged(formData.description.trim(), product.description || "") ||
-          newPrice !== Number(product.price) ||
-          hasChanged(formData.categoryId, currentCategoryId || "") ||
-          hasChanged(formData.sizes, product.sizes || []) ||
-          hasChanged(formData.details, product.details || []) ||
-          hasChanged(formData.commitment, product.commitment || []) ||
-          !!imageFile;
+  const didChange =
+    hasChanged(formData.name.trim(), product.name || "") ||
+    hasChanged(formData.description.trim(), product.description || "") ||
+    newPrice !== Number(product.price) ||
+    hasChanged(formData.categoryId, currentCategoryId || "") ||
+    hasChanged(formData.sizes, product.sizes || []) ||
+    hasChanged(formData.details, product.details || []) ||
+    hasChanged(formData.commitment, product.commitment || []) ||
+    !!imageFile;
 
-        if (!didChange) {
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "info",
-            title: "No Changes",
-            text: "No changes were made to the product.",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            background: "#3B82F6",
-            color: "white",
-            customClass: {
-              popup: "swal2-toast",
-              title: "text-white",
-            },
-          });
-          setIsSubmitting(false);
-          onClose();
-          return;
-        }
+  if (!didChange) {
+    setIsSubmitting(false);
+    onClose();
+    return;
+  }
 
-        fd.append("name", formData.name.trim());
-        fd.append("description", formData.description.trim());
-        fd.append("price", String(newPrice));
-        fd.append("categoryId", formData.categoryId);
-        fd.append("sizes", JSON.stringify(formData.sizes));
-        fd.append("details", JSON.stringify(formData.details));
-        fd.append("commitment", JSON.stringify(formData.commitment));
+  url = `${API_BASE_URL}/clothing/${product._id}`;
+  method = "PATCH";
 
-        if (imageFile) {
-          fd.append("image", imageFile);
-        }
-      }
+  // ✅ IMAGE UPDATED → FormData
+  if (imageFile) {
+    const fd = new FormData();
+    fd.append("name", formData.name.trim());
+    fd.append("description", formData.description.trim());
+    fd.append("price", String(newPrice));
+    fd.append("categoryId", formData.categoryId);
+    fd.append("sizes", JSON.stringify(formData.sizes));
+    fd.append("details", JSON.stringify(formData.details));
+    fd.append("commitment", JSON.stringify(formData.commitment));
+    fd.append("image", imageFile);
 
-      let url = `${API_BASE_URL}/clothing`;
-      let method = "POST";
+    body = fd;
+  }
+  // ✅ NO IMAGE → JSON (THIS AVOIDS CORS ISSUE)
+  else {
+    body = JSON.stringify({
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      price: newPrice,
+      categoryId: formData.categoryId,
+      sizes: formData.sizes,
+      details: formData.details,
+      commitment: formData.commitment,
+    });
 
-      if (product && product._id) {
-        console.log("updated");
-        url = `${API_BASE_URL}/clothing/${product._id}`;
-        method = "PATCH";
-      }
+    headers["Content-Type"] = "application/json";
+  }
+}
+
 
       console.log("📤 Sending data to:", url, "Method:", method);
-      console.log("FormData entries:");
-      for (let [key, value] of fd.entries()) {
-        console.log(
-          `${key}:`,
-          value instanceof File ? `File: ${value.name}` : value
-        );
+      console.log("Body type:", body instanceof FormData ? "FormData" : "JSON");
+
+      const headers = {};
+
+      // Set appropriate headers based on body type
+      if (body instanceof FormData) {
+        // FormData automatically sets Content-Type with boundary
+        // Don't set Content-Type for FormData
+      } else {
+        headers["Content-Type"] = "application/json";
       }
 
       const response = await fetch(url, {
         method,
-        body: fd,
+        body,
       });
 
       console.log("Response status:", response.status, response.statusText);
-      console.log(response);
 
       const contentType = response.headers.get("content-type") || "";
       const rawText = await response.text();

@@ -201,7 +201,7 @@ const Dashboard = () => {
                   <Icon className={stat.iconColor} size={24} />
                 </div>
                 <div
-                  className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                  className={`${
                     stat.trend === "up"
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"

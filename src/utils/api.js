@@ -1,7 +1,8 @@
+// src/utils/api.js
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://api.houseofresha.com/',
+  baseURL: 'https://api.houseofresha.com/',
 });
 
 // Add token to requests

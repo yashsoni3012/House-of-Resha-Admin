@@ -25,13 +25,17 @@ export default function BlogPostManager() {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
+
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    content: [""],
-    cover: null,
-    slider: [],
-  });
+  title: "",
+  description: "",
+  content: [""],
+  coverImage: null,              // NEW upload
+  sliderImages: [],              // NEW uploads
+  existingCoverImage: null,      // PREVIEW
+  existingSliderImages: [],      // PREVIEW
+});
+
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [response, setResponse] = useState(null);
@@ -155,68 +159,6 @@ export default function BlogPostManager() {
     setFormData((prev) => ({ ...prev, sliderImages: newSliderImages }));
   };
 
-  // const handleSubmit = async () => {
-  //   if (!formData.title.trim()) {
-  //     setError("Title is required");
-  //     return;
-  //   }
-
-  //   setLoading(true);
-  //   setError(null);
-  //   setResponse(null);
-
-  //   try {
-  //     const formDataToSend = new FormData();
-
-  //     formDataToSend.append("title", formData.title);
-  //     formDataToSend.append("description", formData.description);
-
-  //     const validContent = formData.content.filter((c) => c.trim());
-  //     formDataToSend.append("content", JSON.stringify(validContent));
-
-  //     if (formData.coverImage) {
-  //       formDataToSend.append("coverImage", formData.coverImage);
-  //     }
-
-  //     formData.sliderImages.forEach((item) => {
-  //       if (item && item.file) {
-  //         formDataToSend.append("sliderImages", item.file);
-  //       }
-  //     });
-
-  //     const url =
-  //       view === "create"
-  //         ? `${API_BASE_URL}/blogs`
-  //         : `${API_BASE_URL}/blogs/${selectedBlog._id}`;
-
-  //     const options = {
-  //       method: view === "create" ? "POST" : "PATCH",
-  //       body: formDataToSend,
-  //     };
-
-  //     const res = await fetch(url, options);
-  //     const data = await res.json();
-
-  //     if (!res.ok) {
-  //       throw new Error(
-  //         data.message || `Request failed with status ${res.status}`
-  //       );
-  //     }
-
-  //     setResponse(data);
-  //     await fetchBlogs();
-
-  //     setTimeout(() => {
-  //       setView("list");
-  //       resetForm();
-  //     }, 1500);
-  //   } catch (err) {
-  //     setError(err.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
       setError("Title is required");
@@ -246,7 +188,7 @@ export default function BlogPostManager() {
         }
       });
 
-      // 🔥 PRINT FORM DATA BEFORE POSTING
+      // Debug: Log form data
       console.log("----- FORM DATA -----");
       for (let [key, value] of formDataToSend.entries()) {
         if (value instanceof File) {
@@ -261,21 +203,43 @@ export default function BlogPostManager() {
       }
       console.log("----------------------");
 
-      const url =
-        view === "create"
-          ? `${API_BASE_URL}/blogs`
-          : `${API_BASE_URL}/blogs/${selectedBlog._id}`;
+      // FIXED: Use POST for both create and update to avoid CORS issues
+      const url = `${API_BASE_URL}/blogs`;
+      const method = "POST";
 
-      const res = await fetch(url, {
-        method: view === "create" ? "POST" : "PATCH",
-        body: formDataToSend,
+      // For updates, add the blog ID as a parameter
+      if (view === "edit" && selectedBlog) {
+        formDataToSend.append("_id", selectedBlog._id);
+        // You might need to adjust this based on your backend API
+        // Some backends use POST /blogs/:id for updates
+        // Or POST /blogs/update for updates
+      }
+
+      console.log("Making request:", {
+        url,
+        method,
+        view,
+        selectedBlogId: selectedBlog?._id,
       });
 
-      const data = await res.json();
+      const res = await fetch(url, {
+        method: method,
+        body: formDataToSend,
+        // Don't set Content-Type header when sending FormData
+        // The browser will set it automatically with the correct boundary
+      });
 
+      // Enhanced error handling
       if (!res.ok) {
-        throw new Error(data.message || `Request failed (${res.status})`);
+        const errorText = await res.text();
+        console.error(`Server Error (${res.status}):`, errorText);
+        throw new Error(
+          `Request failed (${res.status}): ${errorText || res.statusText}`
+        );
       }
+
+      const data = await res.json();
+      console.log("Success response:", data);
 
       setResponse(data);
       await fetchBlogs();
@@ -285,6 +249,92 @@ export default function BlogPostManager() {
         resetForm();
       }, 1500);
     } catch (err) {
+      console.error("Submit error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Alternative: If your backend supports POST for updates at a different endpoint
+  const handleSubmitAlternative = async () => {
+    if (!formData.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+
+    try {
+      const formDataToSend = new FormData();
+
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+
+      const validContent = formData.content.filter((c) => c.trim());
+      formDataToSend.append("content", JSON.stringify(validContent));
+
+      if (formData.coverImage) {
+        formDataToSend.append("cover", formData.coverImage);
+      }
+
+      formData.sliderImages.forEach((item) => {
+        if (item?.file) {
+          formDataToSend.append("slider", item.file);
+        }
+      });
+
+      // Choose the correct endpoint based on view
+      let url, method;
+
+      if (view === "create") {
+        url = `${API_BASE_URL}/blogs`;
+        method = "POST";
+      } else {
+        // Try different update endpoints - choose one based on your backend
+        // Option 1: POST to update endpoint
+        url = `${API_BASE_URL}/blogs/update/${selectedBlog._id}`;
+        method = "POST";
+
+        // Option 2: POST with _id in body (if your backend supports it)
+        // url = `${API_BASE_URL}/blogs/update`;
+        // method = "POST";
+        // formDataToSend.append("_id", selectedBlog._id);
+
+        // Option 3: PUT instead of PATCH (if PUT is allowed)
+        // url = `${API_BASE_URL}/blogs/${selectedBlog._id}`;
+        // method = "PUT";
+      }
+
+      console.log("Making request:", { url, method });
+
+      const res = await fetch(url, {
+        method: method,
+        body: formDataToSend,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Server Error (${res.status}):`, errorText);
+        throw new Error(
+          `Request failed (${res.status}): ${errorText || res.statusText}`
+        );
+      }
+
+      const data = await res.json();
+      console.log("Success response:", data);
+
+      setResponse(data);
+      await fetchBlogs();
+
+      setTimeout(() => {
+        setView("list");
+        resetForm();
+      }, 1500);
+    } catch (err) {
+      console.error("Submit error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -323,16 +373,24 @@ export default function BlogPostManager() {
   };
 
   const handleEdit = (blog) => {
-    setSelectedBlog(blog);
-    setFormData({
-      title: blog.title,
-      description: blog.description,
-      content: blog.content || [""],
-      coverImage: null,
-      sliderImages: [],
-    });
-    setView("edit");
-  };
+  setSelectedBlog(blog);
+
+  setFormData({
+    title: blog.title,
+    description: blog.description,
+    content: blog.content || [""],
+
+    coverImage: null,
+    sliderImages: [],
+
+    // ✅ THIS IS WHAT YOU WERE MISSING
+    existingCoverImage: blog.coverImage || null,
+    existingSliderImages: blog.sliderImages || [],
+  });
+
+  setView("edit");
+};
+
 
   const handleView = (blog) => {
     setSelectedBlog(blog);
@@ -355,7 +413,9 @@ export default function BlogPostManager() {
 
   const getImageUrl = (path) => {
     if (!path) return "";
-    return path.startsWith("http") ? path : `${API_BASE_URL}/${path}`;
+    // Remove leading slash if present to avoid double slashes
+    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+    return path.startsWith("http") ? path : `${API_BASE_URL}/${cleanPath}`;
   };
 
   const formatDate = (dateString) => {

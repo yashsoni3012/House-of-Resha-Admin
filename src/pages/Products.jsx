@@ -18,8 +18,7 @@ import {
   DollarSign,
   Info,
   Target,
-} 
-from "lucide-react";
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import ProductModal from "../components/ProductModal";

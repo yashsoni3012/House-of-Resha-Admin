@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Upload,
   Save,
@@ -7,6 +7,7 @@ import {
   Link as LinkIcon,
   Type,
   Tag,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../lib/api"; // adjust path
@@ -22,7 +23,7 @@ const fetchCategories = async () => {
     );
   }
   const data = await res.json();
-  console.log("data printed",data)
+  console.log("data printed", data);
 
   if (Array.isArray(data)) {
     return data.map((item) =>
@@ -52,6 +53,18 @@ const createBanner = async (bannerData) => {
   formData.append("buttonText", bannerData.buttonText.trim());
   formData.append("buttonLink", bannerData.buttonLink.trim());
   formData.append("category", bannerData.category);
+
+  // Handle image
+  if (bannerData.imageFile) formData.append("image", bannerData.imageFile);
+  else if (bannerData.imageUrl)
+    formData.append("imageUrl", bannerData.imageUrl);
+
+  // Handle cover image
+  if (bannerData.coverImageFile)
+    formData.append("coverImage", bannerData.coverImageFile);
+  else if (bannerData.coverImageUrl)
+    formData.append("coverImageUrl", bannerData.coverImageUrl);
+
   if (bannerData.videoFile) formData.append("video", bannerData.videoFile);
 
   const res = await fetch(`${API_BASE_URL}/banner`, {
@@ -75,6 +88,20 @@ const updateBanner = async (bannerData) => {
   formData.append("buttonText", bannerData.buttonText.trim());
   formData.append("buttonLink", bannerData.buttonLink.trim());
   formData.append("category", bannerData.category);
+
+  // Handle image
+  if (bannerData.imageFile) formData.append("image", bannerData.imageFile);
+  else if (bannerData.imageUrl && !bannerData.imageFile) {
+    formData.append("imageUrl", bannerData.imageUrl);
+  }
+
+  // Handle cover image
+  if (bannerData.coverImageFile)
+    formData.append("coverImage", bannerData.coverImageFile);
+  else if (bannerData.coverImageUrl && !bannerData.coverImageFile) {
+    formData.append("coverImageUrl", bannerData.coverImageUrl);
+  }
+
   if (bannerData.videoFile) formData.append("video", bannerData.videoFile);
 
   const res = await fetch(`${API_BASE_URL}/banner/${bannerData._id}`, {
@@ -137,6 +164,8 @@ const showToast = (message, type = "success") => {
 // ============ BannerModel (Form only) ============
 const BannerFormModel = ({ open, onClose, initialBanner }) => {
   const [videoPreview, setVideoPreview] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [coverImagePreview, setCoverImagePreview] = useState("");
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     title: "",
@@ -144,6 +173,10 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
     buttonText: "Shop Now",
     buttonLink: "",
     videoFile: null,
+    imageFile: null,
+    imageUrl: "",
+    coverImageFile: null,
+    coverImageUrl: "",
   });
 
   // categories query
@@ -225,6 +258,11 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
   // load initialBanner into form
   useEffect(() => {
     if (initialBanner) {
+      // Construct full URLs for existing images
+      const getFullUrl = (url) => {
+        return url?.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+      };
+
       setFormData({
         title: initialBanner.title || "",
         category:
@@ -233,27 +271,47 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
         buttonText: initialBanner.buttonText || "Shop Now",
         buttonLink: initialBanner.buttonLink || "",
         videoFile: null,
+        imageFile: null,
+        imageUrl: initialBanner.imageUrl || initialBanner.image || "",
+        coverImageFile: null,
+        coverImageUrl:
+          initialBanner.coverImageUrl || initialBanner.coverImage || "",
       });
+
+      // Set previews for existing media
+      if (initialBanner.imageUrl || initialBanner.image) {
+        setImagePreview(
+          getFullUrl(initialBanner.imageUrl || initialBanner.image)
+        );
+      }
+      if (initialBanner.coverImageUrl || initialBanner.coverImage) {
+        setCoverImagePreview(
+          getFullUrl(initialBanner.coverImageUrl || initialBanner.coverImage)
+        );
+      }
+
       const videoUrl = initialBanner.videoUrl || initialBanner.video;
       if (videoUrl) {
-        const full = videoUrl.startsWith("http")
-          ? videoUrl
-          : `${API_BASE_URL}${videoUrl}`;
-        setVideoPreview(full);
-      } else {
-        setVideoPreview("");
+        const fullVideoUrl = getFullUrl(videoUrl);
+        setVideoPreview(fullVideoUrl);
       }
     } else {
-      setFormData((p) => ({
+      setFormData({
         title: "",
         category: categories.length > 0 ? categories[0].value : "",
         buttonText: "Shop Now",
         buttonLink: "",
         videoFile: null,
-      }));
+        imageFile: null,
+        imageUrl: "",
+        coverImageFile: null,
+        coverImageUrl: "",
+      });
       setVideoPreview("");
+      setImagePreview("");
+      setCoverImagePreview("");
     }
-  }, [initialBanner, categories, open]);
+  }, [initialBanner, categories]);
 
   // default category if empty
   useEffect(() => {
@@ -270,6 +328,73 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
     }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
+
+  // Image upload handlers
+  const handleImageUpload = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setErrors((p) => ({
+          ...p,
+          image: "Please select a valid image file",
+        }));
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors((p) => ({
+          ...p,
+          image: "Image size should be less than 10MB",
+        }));
+        return;
+      }
+
+      const preview = URL.createObjectURL(file);
+      setImagePreview(preview);
+      setFormData((p) => ({
+        ...p,
+        imageFile: file,
+        imageUrl: "", // Clear existing URL when new file selected
+      }));
+      if (errors.image) setErrors((prev) => ({ ...prev, image: "" }));
+      showToast("Image uploaded successfully!", "success");
+    },
+    [errors]
+  );
+
+  const handleCoverImageUpload = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setErrors((p) => ({
+          ...p,
+          coverImage: "Please select a valid image file",
+        }));
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors((p) => ({
+          ...p,
+          coverImage: "Image size should be less than 10MB",
+        }));
+        return;
+      }
+
+      const preview = URL.createObjectURL(file);
+      setCoverImagePreview(preview);
+      setFormData((p) => ({
+        ...p,
+        coverImageFile: file,
+        coverImageUrl: "", // Clear existing URL when new file selected
+      }));
+      if (errors.coverImage) setErrors((prev) => ({ ...prev, coverImage: "" }));
+      showToast("Cover image uploaded successfully!", "success");
+    },
+    [errors]
+  );
 
   const handleVideoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -342,25 +467,30 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
     }
   };
 
-  useEffect(
-    () => () => {
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-    },
-    [videoPreview]
-  );
+  // Cleanup object URLs
+  useEffect(() => {
+    return () => {
+      if (videoPreview && videoPreview.startsWith("blob:"))
+        URL.revokeObjectURL(videoPreview);
+      if (imagePreview && imagePreview.startsWith("blob:"))
+        URL.revokeObjectURL(imagePreview);
+      if (coverImagePreview && coverImagePreview.startsWith("blob:"))
+        URL.revokeObjectURL(coverImagePreview);
+    };
+  }, [videoPreview, imagePreview, coverImagePreview]);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 via-purple-900/20 to-black/80 backdrop-blur-lg z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-5xl my-4 sm:my-8 shadow-2xl transform transition-all animate-in">
+      <div className="bg-white rounded-3xl w-full max-w-6xl my-4 sm:my-8 shadow-2xl transform transition-all animate-in">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 rounded-t-3xl p-4 sm:p-6 md:p-8">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-t-3xl"></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 sm:p-3 rounded-xl backdrop-blur-md">
-                <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
@@ -368,8 +498,8 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                 </h2>
                 <p className="text-purple-100 text-xs sm:text-sm mt-1">
                   {initialBanner
-                    ? "Update your banner details"
-                    : "Add a stunning banner to your collection"}
+                    ? "Update your banner with images and media"
+                    : "Create stunning banner with images"}
                 </p>
               </div>
             </div>
@@ -382,15 +512,59 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 md:p-8 max-h-[calc(100vh-120px)] sm:max-h-[calc(90vh-100px)] overflow-y-auto">
+        <div className="p-4 sm:p-6 md:p-8 max-h-[calc(100vh-140px)] overflow-y-auto">
+          {/* Image Previews */}
+          {(imagePreview || coverImagePreview) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {imagePreview && (
+                <div className="animate-in">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="bg-gradient-to-r from-blue-100 to-indigo-100 p-2 rounded-lg">
+                      <ImageIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">
+                      Main Image
+                    </h3>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-blue-100">
+                    <img
+                      src={imagePreview}
+                      alt="Main image preview"
+                      className="w-full h-64 object-cover rounded-2xl"
+                    />
+                  </div>
+                </div>
+              )}
+              {coverImagePreview && (
+                <div className="animate-in">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-2 rounded-lg">
+                      <ImageIcon className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">
+                      Cover Image
+                    </h3>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-purple-100">
+                    <img
+                      src={coverImagePreview}
+                      alt="Cover image preview"
+                      className="w-full h-64 object-cover rounded-2xl"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Video Preview */}
           {videoPreview && (
-            <div className="mb-6 sm:mb-8 animate-in">
-              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <div className="mb-6 animate-in">
+              <div className="flex items-center gap-2 mb-3">
                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-2 rounded-lg">
-                  <Video className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                  <Video className="w-4 h-4 text-purple-600" />
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                <h3 className="text-base font-bold text-gray-900">
                   Video Preview
                 </h3>
               </div>
@@ -405,13 +579,13 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-              {/* Left Column */}
-              <div className="space-y-4 sm:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Form Fields */}
+              <div className="space-y-6">
                 {/* Title */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 sm:mb-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
                     <Type className="w-4 h-4 text-purple-600" />
                     Title <span className="text-red-500">*</span>
                   </label>
@@ -421,7 +595,7 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 sm:py-4 border-2 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
+                      className={`w-full px-4 py-4 border-2 rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
                         errors.title
                           ? "border-red-400 bg-red-50"
                           : "border-gray-200 focus:border-purple-500 bg-gray-50"
@@ -429,12 +603,12 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                       placeholder="Enter banner title..."
                       maxLength={100}
                     />
-                    <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
                       {formData.title.length}/100
                     </div>
                   </div>
                   {errors.title && (
-                    <p className="text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                       {errors.title}
                     </p>
@@ -443,46 +617,29 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
 
                 {/* Category */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 sm:mb-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
                     <Tag className="w-4 h-4 text-purple-600" />
                     Category <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 sm:py-4 border-2 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 appearance-none ${
-                        errors.category
-                          ? "border-red-400 bg-red-50"
-                          : "border-gray-200 focus:border-purple-500 bg-gray-50"
-                      }`}
-                    >
-                      <option value="">Select category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg
-                        className="w-4 h-4 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-4 border-2 rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 appearance-none ${
+                      errors.category
+                        ? "border-red-400 bg-red-50"
+                        : "border-gray-200 focus:border-purple-500 bg-gray-50"
+                    }`}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
                   {errors.category && (
-                    <p className="text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                       {errors.category}
                     </p>
@@ -491,30 +648,25 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
 
                 {/* Button Text */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 sm:mb-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
                     <Type className="w-4 h-4 text-purple-600" />
                     Button Text <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="buttonText"
-                      value={formData.buttonText}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 sm:py-4 border-2 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
-                        errors.buttonText
-                          ? "border-red-400 bg-red-50"
-                          : "border-gray-200 focus:border-purple-500 bg-gray-50"
-                      }`}
-                      placeholder="Shop Now"
-                      maxLength={30}
-                    />
-                    <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                      {formData.buttonText.length}/30
-                    </div>
-                  </div>
+                  <input
+                    type="text"
+                    name="buttonText"
+                    value={formData.buttonText}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-4 border-2 rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
+                      errors.buttonText
+                        ? "border-red-400 bg-red-50"
+                        : "border-gray-200 focus:border-purple-500 bg-gray-50"
+                    }`}
+                    placeholder="Shop Now"
+                    maxLength={30}
+                  />
                   {errors.buttonText && (
-                    <p className="text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                       {errors.buttonText}
                     </p>
@@ -522,11 +674,11 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                 </div>
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-4 sm:space-y-6">
+              {/* Right Column - Links & Uploads */}
+              <div className="space-y-6">
                 {/* Button Link */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 sm:mb-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
                     <LinkIcon className="w-4 h-4 text-purple-600" />
                     Button Link <span className="text-red-500">*</span>
                   </label>
@@ -535,7 +687,7 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                     name="buttonLink"
                     value={formData.buttonLink}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 sm:py-4 border-2 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
+                    className={`w-full px-4 py-4 border-2 rounded-2xl focus:ring-4 focus:ring-purple-200 outline-none transition-all duration-300 ${
                       errors.buttonLink
                         ? "border-red-400 bg-red-50"
                         : "border-gray-200 focus:border-purple-500 bg-gray-50"
@@ -543,20 +695,98 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                     placeholder="https://example.com"
                   />
                   {errors.buttonLink && (
-                    <p className="text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                       {errors.buttonLink}
                     </p>
                   )}
                 </div>
 
-                {/* Upload Video */}
+                {/* Main Image Upload */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 sm:mb-3">
-                    <Video className="w-4 h-4 text-purple-600" />
-                    Upload Video
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                    <ImageIcon className="w-4 h-4 text-blue-600" />
+                    Main Image
                   </label>
-                  <div className="relative border-2 border-dashed border-gray-300 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center hover:border-purple-400 hover:bg-purple-50/50 transition-all duration-300 cursor-pointer group bg-gradient-to-br from-gray-50 to-purple-50/30">
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 cursor-pointer bg-gradient-to-br from-gray-50 to-blue-50/30">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="imageUpload"
+                    />
+                    <label
+                      htmlFor="imageUpload"
+                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                    >
+                      <div className="bg-gradient-to-br from-blue-500 to-indigo-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <ImageIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="text-base font-bold text-gray-700 mb-1">
+                        {imagePreview ? "Replace image" : "Upload main image"}
+                      </p>
+                      <p className="text-sm text-gray-500">JPG, PNG, WebP</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Maximum file size: 10MB
+                      </p>
+                    </label>
+                  </div>
+                  {errors.image && (
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                      <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                      {errors.image}
+                    </p>
+                  )}
+                </div>
+
+                {/* Cover Image Upload */}
+                <div className="group">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                    Cover Image
+                  </label>
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-purple-400 hover:bg-purple-50/50 transition-all duration-300 cursor-pointer bg-gradient-to-br from-gray-50 to-purple-50/30">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverImageUpload}
+                      className="hidden"
+                      id="coverImageUpload"
+                    />
+                    <label
+                      htmlFor="coverImageUpload"
+                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                    >
+                      <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <ImageIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="text-base font-bold text-gray-700 mb-1">
+                        {coverImagePreview
+                          ? "Replace cover image"
+                          : "Upload cover image"}
+                      </p>
+                      <p className="text-sm text-gray-500">JPG, PNG, WebP</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Maximum file size: 10MB
+                      </p>
+                    </label>
+                  </div>
+                  {errors.coverImage && (
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                      <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                      {errors.coverImage}
+                    </p>
+                  )}
+                </div>
+
+                {/* Video Upload */}
+                <div className="group">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                    <Video className="w-4 h-4 text-purple-600" />
+                    Upload Video (Optional)
+                  </label>
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-purple-400 hover:bg-purple-50/50 transition-all duration-300 cursor-pointer bg-gradient-to-br from-gray-50 to-purple-50/30">
                     <input
                       type="file"
                       accept="video/*"
@@ -564,57 +794,56 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                       className="hidden"
                       id="videoUpload"
                     />
-                    <label htmlFor="videoUpload" className="cursor-pointer">
-                      <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 sm:p-4 rounded-xl sm:rounded-2xl inline-block mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    <label
+                      htmlFor="videoUpload"
+                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                    >
+                      <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <Upload className="w-8 h-8 text-white" />
                       </div>
-                      <p className="text-sm sm:text-base text-gray-700 font-bold mb-1">
-                        Click to upload video
+                      <p className="text-base font-bold text-gray-700 mb-1">
+                        {videoPreview ? "Replace video" : "Upload video"}
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500">
-                        MP4, WebM, OGG, MOV, AVI
-                      </p>
+                      <p className="text-sm text-gray-500">MP4, WebM, OGG</p>
                       <p className="text-xs text-gray-400 mt-1">
                         Maximum file size: 50MB
                       </p>
                     </label>
                   </div>
                   {errors.video && (
-                    <p className="text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                       {errors.video}
                     </p>
                   )}
                 </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={
-                    createMutation.isLoading || updateMutation.isLoading
-                  }
-                  className="w-full py-3 sm:py-4 md:py-5 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-xl sm:rounded-2xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base hover:scale-[1.02] active:scale-[0.98] bg-size-200 bg-pos-0 hover:bg-pos-100"
-                  style={{
-                    backgroundSize: "200% 100%",
-                  }}
-                >
-                  {createMutation.isLoading || updateMutation.isLoading ? (
-                    <>
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>
-                        {initialBanner ? "Updating..." : "Creating..."}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>
-                        {initialBanner ? "Update Banner" : "Create Banner"}
-                      </span>
-                    </>
-                  )}
-                </button>
               </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={createMutation.isLoading || updateMutation.isLoading}
+                className="w-full py-5 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base hover:scale-[1.02] active:scale-[0.98] bg-size-200 bg-pos-0 hover:bg-pos-100"
+                style={{
+                  backgroundSize: "200% 100%",
+                }}
+              >
+                {createMutation.isLoading || updateMutation.isLoading ? (
+                  <>
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{initialBanner ? "Updating..." : "Creating..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    <span>
+                      {initialBanner ? "Update Banner" : "Create Banner"}
+                    </span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>

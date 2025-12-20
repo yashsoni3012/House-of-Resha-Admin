@@ -18,17 +18,17 @@ const Customers = () => {
     },
     {
       id: 3,
-      name: "Sneha Reddy",
+      name: "Sneha Chauhan",
       email: "sneha@example.com",
       orders: 15,
       spent: "₹2,10,000",
     },
     {
       id: 4,
-      name: "Rahul Singh",
-      email: "rahul@example.com",
-      orders: 5,
-      spent: "₹45,000",
+      name: "yash Soni",
+      email: "yash@example.com",
+      orders: 25,
+      spent: "₹450,000",
     },
   ];
 
@@ -60,7 +60,7 @@ const Customers = () => {
               <tr key={customer.id} className="hover:bg-gray-50">
                 <td className="px-4 lg:px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-semibold">
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-semibold capitalize">
                       {customer.name.charAt(0)}
                     </div>
                     <span className="text-sm font-medium text-gray-800">
