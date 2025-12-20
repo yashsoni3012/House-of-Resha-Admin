@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import {
@@ -17,7 +17,12 @@ import {
   Check,
 } from "lucide-react";
 
-const API_BASE_URL = "https://api.houseofresha.com";
+// ✅ Use Vite proxy in development:
+// /api -> https://api.houseofresha.com
+const API_BASE_URL =
+  typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "/api"
+    : "https://api.houseofresha.com";
 
 const ProductModal = ({
   isOpen,
@@ -48,7 +53,6 @@ const ProductModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  // ✅ Fixed categories fetching with better error handling
   const {
     data: categories = [],
     isLoading: isLoadingCategories,
@@ -57,91 +61,48 @@ const ProductModal = ({
   } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      try {
-        console.log("Fetching categories from:", `${API_BASE_URL}/category`);
+      const res = await fetch(`${API_BASE_URL}/category`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
-        const res = await fetch(`${API_BASE_URL}/category`, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
-
-        console.log("Response status:", res.status, res.statusText);
-
-        if (!res.ok) {
-          let errorMessage = `Failed to fetch categories: ${res.status}`;
-          try {
-            const errorData = await res.text();
-            if (errorData) {
-              try {
-                const parsedError = JSON.parse(errorData);
-                errorMessage =
-                  parsedError.message || parsedError.error || errorMessage;
-              } catch {
-                errorMessage = errorData.substring(0, 100);
-              }
-            }
-          } catch {
-            // Ignore if we can't read error body
-          }
-          throw new Error(errorMessage);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        let msg = `Failed to fetch categories: ${res.status}`;
+        try {
+          const parsed = text ? JSON.parse(text) : null;
+          msg = parsed?.message || parsed?.error || msg;
+        } catch {
+          if (text) msg = text.substring(0, 120);
         }
-
-        const contentType = res.headers.get("content-type");
-        console.log("Content-Type:", contentType);
-
-        // Handle different response types
-        if (contentType && contentType.includes("application/json")) {
-          const result = await res.json();
-          console.log("Categories API Response:", result);
-
-          // Handle different response structures
-          if (Array.isArray(result)) {
-            return result;
-          } else if (result && Array.isArray(result.data)) {
-            return result.data;
-          } else if (result && result.data && Array.isArray(result.data.data)) {
-            return result.data.data;
-          } else if (result && result.success && Array.isArray(result.data)) {
-            return result.data;
-          } else if (
-            result &&
-            result.categories &&
-            Array.isArray(result.categories)
-          ) {
-            return result.categories;
-          } else {
-            console.warn("Unexpected response structure:", result);
-            return [];
-          }
-        } else {
-          // Handle non-JSON response
-          const textResponse = await res.text();
-          console.warn(
-            "Non-JSON response received:",
-            textResponse.substring(0, 200)
-          );
-          throw new Error("Server returned non-JSON response");
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        throw error;
+        throw new Error(msg);
       }
-    },
-    enabled: isOpen, // Only fetch when modal is open
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 2, // Retry failed requests twice
-  });
 
-  // Debug: Log categories when they change
-  useEffect(() => {
-    if (categories.length > 0) {
-      console.log("Categories loaded:", categories);
-    }
-  }, [categories]);
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const t = await res.text().catch(() => "");
+        console.warn("Non-JSON categories response:", t.substring(0, 200));
+        throw new Error("Server returned non-JSON response");
+      }
+
+      const result = await res.json();
+
+      if (Array.isArray(result)) return result;
+      if (Array.isArray(result?.data)) return result.data;
+      if (Array.isArray(result?.data?.data)) return result.data.data;
+      if (result?.success && Array.isArray(result.data)) return result.data;
+      if (Array.isArray(result?.categories)) return result.categories;
+
+      return [];
+    },
+    enabled: isOpen,
+    staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
 
   useEffect(() => {
     if (product && isOpen) {
@@ -154,7 +115,7 @@ const ProductModal = ({
         description: product.description || "",
         price: product.price || "",
         categoryId: product.categoryId?._id || product.categoryId || "",
-        sizes: product.sizes || [], // Use empty array if no sizes
+        sizes: product.sizes || [],
         details: product.details?.length
           ? product.details.filter((d) => d && d.trim() !== "")
           : [],
@@ -165,6 +126,7 @@ const ProductModal = ({
       });
 
       setImageFile(null);
+
       if (imgPath) {
         const fullPath = imgPath.startsWith("http")
           ? imgPath
@@ -175,17 +137,16 @@ const ProductModal = ({
         setImagePreview("");
         setOriginalImage("");
       }
-      setServerError("");
-      setNewSize(""); // Reset newSize input
 
-      // Refetch categories when opening modal with a product
+      setServerError("");
+      setNewSize("");
       refetchCategories();
     } else if (isOpen) {
       resetForm();
-      // Refetch categories when opening empty modal
       refetchCategories();
     }
-  }, [product, isOpen, refetchCategories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product, isOpen]);
 
   const resetForm = () => {
     setFormData({
@@ -193,7 +154,7 @@ const ProductModal = ({
       description: "",
       price: "",
       categoryId: "",
-      sizes: [], // Start with empty array
+      sizes: [],
       details: [],
       commitment: [],
       images: [""],
@@ -211,9 +172,7 @@ const ProductModal = ({
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     setServerError("");
   };
 
@@ -262,10 +221,7 @@ const ProductModal = ({
       setServerError(`Size "${s}" already exists`);
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      sizes: [...prev.sizes, s],
-    }));
+    setFormData((prev) => ({ ...prev, sizes: [...prev.sizes, s] }));
     setNewSize("");
     setServerError("");
   };
@@ -278,13 +234,9 @@ const ProductModal = ({
   };
 
   const addDetail = () => {
-    const trimmedDetail = newDetail.trim();
-    if (!trimmedDetail) return;
-
-    setFormData((prev) => ({
-      ...prev,
-      details: [...prev.details, trimmedDetail],
-    }));
+    const trimmed = newDetail.trim();
+    if (!trimmed) return;
+    setFormData((prev) => ({ ...prev, details: [...prev.details, trimmed] }));
     setNewDetail("");
     setServerError("");
   };
@@ -297,12 +249,11 @@ const ProductModal = ({
   };
 
   const addCommitment = () => {
-    const trimmedCommitment = newCommitment.trim();
-    if (!trimmedCommitment) return;
-
+    const trimmed = newCommitment.trim();
+    if (!trimmed) return;
     setFormData((prev) => ({
       ...prev,
-      commitment: [...prev.commitment, trimmedCommitment],
+      commitment: [...prev.commitment, trimmed],
     }));
     setNewCommitment("");
     setServerError("");
@@ -320,16 +271,11 @@ const ProductModal = ({
     if (!formData.name.trim()) newErrors.name = "Product name is required";
     if (!formData.description.trim())
       newErrors.description = "Description is required";
-    if (!formData.price || formData.price <= 0)
+    if (!formData.price || Number(formData.price) <= 0)
       newErrors.price = "Valid price is required";
     if (!formData.categoryId) newErrors.categoryId = "Category is required";
-
-    // Check if at least one size is added
-    if (formData.sizes.length === 0) {
+    if (formData.sizes.length === 0)
       newErrors.sizes = "At least one size is required";
-    }
-
-    // For new products, image is required
     if (!product && !imageFile && !formData.images[0]?.trim())
       newErrors.images = "Image is required";
 
@@ -337,15 +283,11 @@ const ProductModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Helper function to check if values are different
-  const hasChanged = (newValue, originalValue) => {
-    if (Array.isArray(newValue) && Array.isArray(originalValue)) {
-      return (
-        JSON.stringify([...newValue].sort()) !==
-        JSON.stringify([...originalValue].sort())
-      );
+  const hasChanged = (a, b) => {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return JSON.stringify([...a].sort()) !== JSON.stringify([...b].sort());
     }
-    return newValue !== originalValue;
+    return a !== b;
   };
 
   const handleSubmit = async (e) => {
@@ -358,10 +300,13 @@ const ProductModal = ({
     try {
       let url = `${API_BASE_URL}/clothing`;
       let method = "POST";
-      let body;
+      let body = null;
 
-      // For new products, use FormData
+      // ✅ Fix: headers declared before use
+      const headers = {};
+
       if (!product) {
+        // CREATE
         const fd = new FormData();
         fd.append("name", formData.name.trim());
         fd.append("description", formData.description.trim());
@@ -370,97 +315,73 @@ const ProductModal = ({
         fd.append("sizes", JSON.stringify(formData.sizes));
         fd.append("details", JSON.stringify(formData.details));
         fd.append("commitment", JSON.stringify(formData.commitment));
-
-        // Handle image for new product
-        if (imageFile) {
-          fd.append("image", imageFile);
-        }
-
+        if (imageFile) fd.append("image", imageFile);
         body = fd;
       } else {
-  const currentCategoryId = product.categoryId?._id || product.categoryId;
-  const newPrice = Number(formData.price);
+        // UPDATE (your backend expects PATCH)
+        const currentCategoryId = product.categoryId?._id || product.categoryId;
+        const newPrice = Number(formData.price);
 
-  const didChange =
-    hasChanged(formData.name.trim(), product.name || "") ||
-    hasChanged(formData.description.trim(), product.description || "") ||
-    newPrice !== Number(product.price) ||
-    hasChanged(formData.categoryId, currentCategoryId || "") ||
-    hasChanged(formData.sizes, product.sizes || []) ||
-    hasChanged(formData.details, product.details || []) ||
-    hasChanged(formData.commitment, product.commitment || []) ||
-    !!imageFile;
+        const didChange =
+          hasChanged(formData.name.trim(), product.name || "") ||
+          hasChanged(formData.description.trim(), product.description || "") ||
+          newPrice !== Number(product.price) ||
+          hasChanged(formData.categoryId, currentCategoryId || "") ||
+          hasChanged(formData.sizes, product.sizes || []) ||
+          hasChanged(formData.details, product.details || []) ||
+          hasChanged(formData.commitment, product.commitment || []) ||
+          !!imageFile;
 
-  if (!didChange) {
-    setIsSubmitting(false);
-    onClose();
-    return;
-  }
+        if (!didChange) {
+          setIsSubmitting(false);
+          onClose();
+          return;
+        }
 
-  url = `${API_BASE_URL}/clothing/${product._id}`;
-  method = "PATCH";
+        url = `${API_BASE_URL}/clothing/${product._id}`;
+        method = "PATCH"; // ✅ back to PATCH
 
-  // ✅ IMAGE UPDATED → FormData
-  if (imageFile) {
-    const fd = new FormData();
-    fd.append("name", formData.name.trim());
-    fd.append("description", formData.description.trim());
-    fd.append("price", String(newPrice));
-    fd.append("categoryId", formData.categoryId);
-    fd.append("sizes", JSON.stringify(formData.sizes));
-    fd.append("details", JSON.stringify(formData.details));
-    fd.append("commitment", JSON.stringify(formData.commitment));
-    fd.append("image", imageFile);
-
-    body = fd;
-  }
-  // ✅ NO IMAGE → JSON (THIS AVOIDS CORS ISSUE)
-  else {
-    body = JSON.stringify({
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      price: newPrice,
-      categoryId: formData.categoryId,
-      sizes: formData.sizes,
-      details: formData.details,
-      commitment: formData.commitment,
-    });
-
-    headers["Content-Type"] = "application/json";
-  }
-}
-
-
-      console.log("📤 Sending data to:", url, "Method:", method);
-      console.log("Body type:", body instanceof FormData ? "FormData" : "JSON");
-
-      const headers = {};
-
-      // Set appropriate headers based on body type
-      if (body instanceof FormData) {
-        // FormData automatically sets Content-Type with boundary
-        // Don't set Content-Type for FormData
-      } else {
-        headers["Content-Type"] = "application/json";
+        if (imageFile) {
+          const fd = new FormData();
+          fd.append("name", formData.name.trim());
+          fd.append("description", formData.description.trim());
+          fd.append("price", String(newPrice));
+          fd.append("categoryId", formData.categoryId);
+          fd.append("sizes", JSON.stringify(formData.sizes));
+          fd.append("details", JSON.stringify(formData.details));
+          fd.append("commitment", JSON.stringify(formData.commitment));
+          fd.append("image", imageFile);
+          body = fd;
+        } else {
+          body = JSON.stringify({
+            name: formData.name.trim(),
+            description: formData.description.trim(),
+            price: newPrice,
+            categoryId: formData.categoryId,
+            sizes: formData.sizes,
+            details: formData.details,
+            commitment: formData.commitment,
+          });
+          headers["Content-Type"] = "application/json";
+        }
       }
 
       const response = await fetch(url, {
         method,
+        headers: body instanceof FormData ? {} : headers,
         body,
       });
 
-      console.log("Response status:", response.status, response.statusText);
-
       const contentType = response.headers.get("content-type") || "";
       const rawText = await response.text();
-      let responseData = null;
 
+      let responseData = null;
       if (contentType.includes("application/json")) {
         try {
           responseData = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
+        } catch {
           throw new Error(
-            `Invalid JSON response: ${rawText.substring(0, 100)}`
+            `Invalid JSON response: ${rawText.substring(0, 120)}`
           );
         }
       } else {
@@ -486,15 +407,6 @@ const ProductModal = ({
         );
       }
 
-      if (
-        contentType.includes("application/json") &&
-        responseData &&
-        responseData.errors
-      ) {
-        console.error("API error response:", responseData);
-      }
-
-      // Show success toast notification on the right side
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -508,18 +420,11 @@ const ProductModal = ({
         timerProgressBar: true,
         background: "#10B981",
         color: "white",
-        customClass: {
-          popup: "swal2-toast",
-          title: "text-white",
-        },
+        customClass: { popup: "swal2-toast", title: "text-white" },
       });
 
-      if (onSubmit) {
-        await onSubmit(responseData);
-      }
-      if (refetchProducts) {
-        await refetchProducts();
-      }
+      if (onSubmit) await onSubmit(responseData);
+      if (refetchProducts) await refetchProducts();
 
       resetForm();
       onClose();
@@ -527,27 +432,18 @@ const ProductModal = ({
       console.error("Submit error:", err);
 
       let errorMessage =
-        err.message || "Failed to submit product. Please try again.";
+        err?.message || "Failed to submit product. Please try again.";
 
-      if (
-        err.message.includes("HTML instead of JSON") ||
-        err.message.includes("Invalid JSON response")
-      ) {
+      // If PATCH is still blocked by CORS, fetch throws TypeError: Failed to fetch
+      // and browser console shows the CORS preflight error.
+      if (errorMessage.includes("Failed to fetch")) {
         errorMessage =
-          "Server returned an unexpected response. Please try again.";
-      } else if (
-        err.message.includes("NetworkError") ||
-        err.message.includes("Failed to fetch")
-      ) {
-        errorMessage =
-          "Network error. Please check your connection and try again.";
-      } else if (err.message.includes("CORS")) {
-        errorMessage = "CORS error. Please contact support.";
+          "Request blocked. If you are using PATCH, your API must allow PATCH in CORS (Access-Control-Allow-Methods). " +
+          "Fix server CORS or use the Vite proxy correctly.";
       }
 
       setServerError(errorMessage);
 
-      // Also show error toast
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -559,10 +455,7 @@ const ProductModal = ({
         timerProgressBar: true,
         background: "#EF4444",
         color: "white",
-        customClass: {
-          popup: "swal2-toast",
-          title: "text-white",
-        },
+        customClass: { popup: "swal2-toast", title: "text-white" },
       });
     } finally {
       setIsSubmitting(false);
@@ -571,7 +464,6 @@ const ProductModal = ({
 
   if (!isOpen) return null;
 
-  // Category dropdown component
   const renderCategoryDropdown = () => {
     if (isLoadingCategories) {
       return (
@@ -634,7 +526,6 @@ const ProductModal = ({
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 animate-fadeIn">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-slideUp">
-        {/* Header */}
         <div className="relative bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -667,7 +558,6 @@ const ProductModal = ({
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400"></div>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 space-y-6">
             {serverError && (
@@ -681,9 +571,7 @@ const ProductModal = ({
               </div>
             )}
 
-            {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
               <div className="space-y-6">
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 sm:p-5 border border-purple-100">
                   <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -693,7 +581,6 @@ const ProductModal = ({
                     Basic Information
                   </h3>
 
-                  {/* Name */}
                   <div className="mb-4">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Product Name *
@@ -718,7 +605,6 @@ const ProductModal = ({
                     )}
                   </div>
 
-                  {/* Description */}
                   <div className="mb-4">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Description *
@@ -743,9 +629,7 @@ const ProductModal = ({
                     )}
                   </div>
 
-                  {/* Price & Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Price */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
                         <DollarSign size={14} className="text-purple-600" />
@@ -773,7 +657,6 @@ const ProductModal = ({
                       )}
                     </div>
 
-                    {/* Category - Updated */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Category *
@@ -789,7 +672,6 @@ const ProductModal = ({
                   </div>
                 </div>
 
-                {/* Sizes */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-5 border border-blue-100">
                   <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -848,9 +730,7 @@ const ProductModal = ({
                 </div>
               </div>
 
-              {/* Right Column */}
               <div className="space-y-6">
-                {/* Image Upload */}
                 <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl p-4 sm:p-5 border border-pink-100">
                   <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                     <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
@@ -858,6 +738,7 @@ const ProductModal = ({
                     </div>
                     Product Image {!product ? "*" : ""}
                   </h3>
+
                   <p className="text-xs text-gray-600 mb-3">
                     Upload a high-quality image (JPG, PNG, WebP • Max 5MB)
                     {product && (
@@ -908,6 +789,7 @@ const ProductModal = ({
                       />
                     </label>
                   )}
+
                   {errors.images && (
                     <p className="text-red-600 text-xs mt-2 flex items-center gap-1">
                       <AlertCircle size={12} />
@@ -918,7 +800,6 @@ const ProductModal = ({
               </div>
             </div>
 
-            {/* Details */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 sm:p-5 border border-green-100">
               <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -973,7 +854,6 @@ const ProductModal = ({
               </div>
             </div>
 
-            {/* Commitments */}
             <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 sm:p-5 border border-orange-100">
               <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
@@ -1029,7 +909,6 @@ const ProductModal = ({
             </div>
           </div>
 
-          {/* Footer Actions */}
           <div className="sticky bottom-0 bg-gradient-to-t from-gray-50 to-white border-t-2 border-gray-200 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <button
@@ -1063,34 +942,12 @@ const ProductModal = ({
       </div>
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          75% { transform: translateX(4px); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
-        }
-        .animate-shake {
-          animation: shake 0.3s ease-out;
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
+        .animate-shake { animation: shake 0.3s ease-out; }
       `}</style>
     </div>
   );
