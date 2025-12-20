@@ -17,7 +17,7 @@ import {
   Check,
 } from "lucide-react";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "https://api.houseofresha.com";
 
 const ProductModal = ({
   isOpen,
@@ -48,45 +48,92 @@ const ProductModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  const fetchCategories = async () => {
-    const res = await fetch(`${API_BASE_URL}/category`);
-    if (!res.ok) {
-      throw new Error("Failed to fetch categories");
+  // ✅ Fixed categories fetching with better error handling
+  const {
+    data: categories = [],
+    isLoading: isLoadingCategories,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      try {
+        console.log("Fetching categories from:", `${API_BASE_URL}/category`);
+        
+        const res = await fetch(`${API_BASE_URL}/category`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log("Response status:", res.status, res.statusText);
+
+        if (!res.ok) {
+          let errorMessage = `Failed to fetch categories: ${res.status}`;
+          try {
+            const errorData = await res.text();
+            if (errorData) {
+              try {
+                const parsedError = JSON.parse(errorData);
+                errorMessage = parsedError.message || parsedError.error || errorMessage;
+              } catch {
+                errorMessage = errorData.substring(0, 100);
+              }
+            }
+          } catch {
+            // Ignore if we can't read error body
+          }
+          throw new Error(errorMessage);
+        }
+
+        const contentType = res.headers.get('content-type');
+        console.log("Content-Type:", contentType);
+
+        // Handle different response types
+        if (contentType && contentType.includes('application/json')) {
+          const result = await res.json();
+          console.log("Categories API Response:", result);
+
+          // Handle different response structures
+          if (Array.isArray(result)) {
+            return result;
+          } else if (result && Array.isArray(result.data)) {
+            return result.data;
+          } else if (result && result.data && Array.isArray(result.data.data)) {
+            return result.data.data;
+          } else if (result && result.success && Array.isArray(result.data)) {
+            return result.data;
+          } else if (result && result.categories && Array.isArray(result.categories)) {
+            return result.categories;
+          } else {
+            console.warn("Unexpected response structure:", result);
+            return [];
+          }
+        } else {
+          // Handle non-JSON response
+          const textResponse = await res.text();
+          console.warn("Non-JSON response received:", textResponse.substring(0, 200));
+          throw new Error("Server returned non-JSON response");
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        throw error;
+      }
+    },
+    enabled: isOpen, // Only fetch when modal is open
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2, // Retry failed requests twice
+  });
+
+  // Debug: Log categories when they change
+  useEffect(() => {
+    if (categories.length > 0) {
+      console.log("Categories loaded:", categories);
     }
-
-    const data = await res.json();
-
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
-
-    return [];
-  };
-
- const {
-  data: categories = [],
-  isLoading: isLoadingCategories,
-  error: categoriesError,
-} = useQuery({
-  queryKey: ["categories"],
-  queryFn: async () => {
-    const res = await fetch(`${API_BASE_URL}/category`);
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch categories");
-    }
-
-    const result = await res.json();
-
-    // ✅ FIXED RESPONSE HANDLING
-    if (Array.isArray(result)) return result;
-    if (Array.isArray(result?.data)) return result.data;
-
-    return [];
-  },
-  staleTime: 1000 * 60 * 10, // 10 minutes
-  refetchOnWindowFocus: false,
-});
-
+  }, [categories]);
 
   useEffect(() => {
     if (product && isOpen) {
@@ -122,10 +169,15 @@ const ProductModal = ({
       }
       setServerError("");
       setNewSize(""); // Reset newSize input
+      
+      // Refetch categories when opening modal with a product
+      refetchCategories();
     } else if (isOpen) {
       resetForm();
+      // Refetch categories when opening empty modal
+      refetchCategories();
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, refetchCategories]);
 
   const resetForm = () => {
     setFormData({
@@ -507,6 +559,66 @@ const ProductModal = ({
 
   if (!isOpen) return null;
 
+  // Category dropdown component
+  const renderCategoryDropdown = () => {
+    if (isLoadingCategories) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
+          <RefreshCw className="animate-spin text-purple-600" size={16} />
+          <span className="text-sm text-gray-600">Loading categories...</span>
+        </div>
+      );
+    }
+
+    if (categoriesError) {
+      return (
+        <div className="p-3 border-2 border-red-200 rounded-xl bg-red-50">
+          <p className="text-red-700 text-sm flex items-center gap-2">
+            <AlertCircle size={14} />
+            Error loading categories: {categoriesError.message}
+          </p>
+          <button
+            onClick={() => refetchCategories()}
+            className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return (
+        <div className="p-3 border-2 border-yellow-200 rounded-xl bg-yellow-50">
+          <p className="text-yellow-700 text-sm">
+            No categories found. Please add categories first.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <select
+        name="categoryId"
+        value={formData.categoryId || ""}
+        onChange={handleInputChange}
+        disabled={isLoadingCategories || categories.length === 0}
+        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
+          errors.categoryId
+            ? "border-red-400 bg-red-50"
+            : "border-gray-200 focus:border-purple-400"
+        }`}
+      >
+        <option value="">Select a category</option>
+        {categories.map((cat) => (
+          <option key={cat._id} value={cat._id}>
+            {cat.name || "Unnamed Category"}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 animate-fadeIn">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-slideUp">
@@ -649,66 +761,16 @@ const ProductModal = ({
                       )}
                     </div>
 
-                    {/* Category */}
+                    {/* Category - Updated */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Category *
                       </label>
-                      {isLoadingCategories ? (
-                        <div className="flex items-center gap-2 px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                          <RefreshCw
-                            className="animate-spin text-purple-600"
-                            size={16}
-                          />
-                          <span className="text-sm text-gray-600">
-                            Loading...
-                          </span>
-                        </div>
-                      ) : categories.length > 0 ? (
-                        <select
-                          name="categoryId"
-                          value={formData.categoryId || ""}
-                          onChange={handleInputChange}
-                          disabled={
-                            isLoadingCategories || categories.length === 0
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                            errors.categoryId
-                              ? "border-red-400 bg-red-50"
-                              : "border-gray-200 focus:border-purple-400"
-                          }`}
-                        >
-                          <option value="">
-                            {isLoadingCategories
-                              ? "Loading categories..."
-                              : categories.length === 0
-                              ? "No categories available"
-                              : "Select category"}
-                          </option>
-
-                          {categories.map((cat) => (
-                            <option key={cat._id} value={cat._id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="p-2 border border-yellow-300 rounded-lg bg-yellow-50">
-                          <p className="text-sm text-yellow-700">
-                            No categories found.
-                          </p>
-                        </div>
-                      )}
+                      {renderCategoryDropdown()}
                       {errors.categoryId && (
                         <p className="text-red-600 text-xs mt-2 flex items-center gap-1">
                           <AlertCircle size={12} />
                           {errors.categoryId}
-                        </p>
-                      )}
-                      {categoriesError && (
-                        <p className="text-red-600 text-xs mt-2 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {categoriesError.message}
                         </p>
                       )}
                     </div>
