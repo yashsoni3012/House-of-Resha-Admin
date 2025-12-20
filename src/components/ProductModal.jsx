@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
+import { proxy } from "../api/proxy";
 import {
   X,
   Plus,
