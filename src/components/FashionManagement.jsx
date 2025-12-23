@@ -83,7 +83,7 @@ const FashionManagement = () => {
     } catch (error) {
       console.error("Error fetching products:", error);
       setError("Unable to load products. Showing demo data.");
-      
+
       // Demo data
       const demoData = [
         {
@@ -92,7 +92,8 @@ const FashionManagement = () => {
           category: "Women",
           price: 129,
           description: "Elegant sage green blazer",
-          image: "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=400",
+          image:
+            "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=400",
           sizes: ["S", "M", "L"],
           details: ["Premium fabric", "Professional fit"],
           commitment: ["30 days return"],
@@ -103,7 +104,8 @@ const FashionManagement = () => {
           category: "Women",
           price: 199,
           description: "Bold orange suit",
-          image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400",
+          image:
+            "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400",
           sizes: ["S", "M", "L", "XL"],
           details: ["Bold design", "High quality"],
           commitment: ["Quality guaranteed"],
@@ -114,7 +116,8 @@ const FashionManagement = () => {
           category: "Unisex",
           price: 89,
           description: "Classic white shirt",
-          image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400",
+          image:
+            "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400",
           sizes: ["XS", "S", "M", "L", "XL"],
           details: ["100% Cotton", "Easy iron"],
           commitment: ["Eco-friendly"],
@@ -125,7 +128,8 @@ const FashionManagement = () => {
           category: "Men",
           price: 149,
           description: "Vintage denim jacket",
-          image: "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=400",
+          image:
+            "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=400",
           sizes: ["M", "L", "XL"],
           details: ["Premium denim", "Vintage wash"],
           commitment: ["Sustainable"],
@@ -163,7 +167,7 @@ const FashionManagement = () => {
   const handleLoadMore = () => {
     setLoadMoreLoading(true);
     setTimeout(() => {
-      setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+      setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
       setLoadMoreLoading(false);
     }, 300);
   };
@@ -197,7 +201,9 @@ const FashionManagement = () => {
       );
 
       if (response.ok) {
-        const updatedProducts = products.filter(p => p.id !== productToDelete.id);
+        const updatedProducts = products.filter(
+          (p) => p.id !== productToDelete.id
+        );
         setProducts(updatedProducts);
         setFilteredProducts(updatedProducts);
       }
@@ -214,16 +220,17 @@ const FashionManagement = () => {
   const categories = ["All", "Women", "Men", "Unisex"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 p-4 md:p-8">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto">
-        
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <ShoppingBag className="w-8 h-8 text-pink-600" />
-                <h1 className="text-3xl font-bold text-gray-800">Fashion Collection</h1>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  Fashion Collection
+                </h1>
               </div>
               <p className="text-gray-600">Manage your products with ease</p>
             </div>
@@ -274,7 +281,8 @@ const FashionManagement = () => {
           </div>
 
           <p className="text-gray-600 mt-4 text-sm">
-            Showing {displayedProducts.length} of {filteredProducts.length} products
+            Showing {displayedProducts.length} of {filteredProducts.length}{" "}
+            products
           </p>
         </div>
 
@@ -287,21 +295,29 @@ const FashionManagement = () => {
         ) : displayedProducts.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              No products found
+            </h3>
+            <p className="text-gray-500">
+              Try adjusting your search or filters
+            </p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {displayedProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all">
+                <div
+                  key={product.id}
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all"
+                >
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
                       className="w-full h-full object-cover object-top"
                       onError={(e) => {
-                        e.target.src = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400";
+                        e.target.src =
+                          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400";
                       }}
                     />
                     <div className="absolute top-3 right-3">
@@ -312,11 +328,17 @@ const FashionManagement = () => {
                   </div>
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-gray-800 truncate">{product.name}</h3>
+                      <h3 className="font-bold text-lg text-gray-800 truncate">
+                        {product.name}
+                      </h3>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {product.description}
+                    </p>
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-2xl font-bold text-pink-600">₹{product.price}</p>
+                      <p className="text-2xl font-bold text-pink-600">
+                        ₹{product.price}
+                      </p>
                       {product.sizes.length > 0 && (
                         <div className="text-xs text-gray-500">
                           <Package className="w-4 h-4 inline mr-1" />
@@ -388,10 +410,12 @@ const FashionManagement = () => {
               </div>
               <div>
                 <h3 className="font-bold text-gray-800">Delete Product</h3>
-                <p className="text-sm text-gray-600">This action cannot be undone</p>
+                <p className="text-sm text-gray-600">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -419,12 +443,11 @@ const FashionManagement = () => {
       {showViewModal && selectedProduct && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            
             {/* Modal Header */}
             <div className="sticky top-0 bg-gradient-to-r from-pink-600 to-purple-600 text-white p-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">Product Details</h2>
-                <button 
+                <button
                   onClick={() => setShowViewModal(false)}
                   className="hover:bg-white/20 p-2 rounded-lg"
                 >
@@ -434,7 +457,6 @@ const FashionManagement = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              
               {/* Product Image */}
               <div className="relative">
                 <img
@@ -452,9 +474,13 @@ const FashionManagement = () => {
               {/* Product Info */}
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">{selectedProduct.name}</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    {selectedProduct.name}
+                  </h3>
                   <div className="flex items-center justify-between">
-                    <p className="text-3xl font-bold text-pink-600">₹{selectedProduct.price}</p>
+                    <p className="text-3xl font-bold text-pink-600">
+                      ₹{selectedProduct.price}
+                    </p>
                   </div>
                 </div>
 
@@ -469,7 +495,10 @@ const FashionManagement = () => {
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedProduct.sizes.map((size, idx) => (
-                        <span key={idx} className="bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium">
+                        <span
+                          key={idx}
+                          className="bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium"
+                        >
                           {size}
                         </span>
                       ))}
@@ -521,11 +550,14 @@ const FashionManagement = () => {
                       Added On
                     </h4>
                     <p className="text-gray-600">
-                      {new Date(selectedProduct.createdAt).toLocaleDateString('en-IN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                      {new Date(selectedProduct.createdAt).toLocaleDateString(
+                        "en-IN",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
                     </p>
                   </div>
                 )}

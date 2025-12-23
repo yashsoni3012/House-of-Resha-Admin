@@ -1,20 +1,8 @@
 // AddProducts.jsx - Enhanced Add Product Component
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Save,
-  X,
-  Upload,
-  ArrowLeft,
-  AlertCircle,
-  Package,
-  Tag,
-  FileText,
-  Shield,
-  ImageIcon,
-} from "lucide-react";
+import { Save, X, Upload, ArrowLeft, AlertCircle, Package, Tag, FileText, Shield, ImageIcon } from "lucide-react";
 import { showProductCreated, showError } from "../utils/sweetAlertConfig";
-import axios from "axios";
 
 const AddProducts = () => {
   const { id } = useParams();
@@ -54,7 +42,7 @@ const AddProducts = () => {
   const fetchCategories = async () => {
     try {
       const response = await fetch("https://api.houseofresha.com/category");
-      const result = await response.data;
+      const result = await response.json();
 
       if (result.success && result.data) {
         setCategories(result.data);
@@ -220,12 +208,10 @@ const AddProducts = () => {
       fd.append("commitment", JSON.stringify(formData.commitment || []));
       fd.append("image", selectedFile);
 
-      // const res = await fetch("https://api.houseofresha.com/clothing", {
-      //   method: "POST",
-      //   body: fd,
-      // });
-
-      const res = await axios.post("https://api.houseofresha.com/clothing", fd);
+      const res = await fetch("https://api.houseofresha.com/clothing", {
+        method: "POST",
+        body: fd,
+      });
 
       if (!res.ok) {
         const err = await res.json();
@@ -234,6 +220,7 @@ const AddProducts = () => {
 
       await showProductCreated();
       navigate("/products");
+
     } catch (error) {
       console.error("Error creating product:", error);
       await showError("Error", error.message || "Failed to create product");
@@ -273,7 +260,7 @@ const AddProducts = () => {
               </div>
               Back to Products
             </button>
-
+            
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
                 <Package className="w-6 h-6 text-white" />
@@ -282,7 +269,7 @@ const AddProducts = () => {
                 {id ? "Edit Product" : "Add New Product"}
               </h1>
             </div>
-
+            
             <div className="w-32 hidden md:block"></div>
           </div>
 
@@ -311,7 +298,7 @@ const AddProducts = () => {
                 <Tag className="w-5 h-5 text-blue-600" />
                 Basic Information
               </h3>
-
+              
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Product Name */}
                 <div>
@@ -343,11 +330,7 @@ const AddProducts = () => {
                   >
                     <option value="">Select category</option>
                     {categories.map((cat) => (
-                      <option
-                        key={cat._id}
-                        value={cat._id}
-                        className="capitalize"
-                      >
+                      <option key={cat._id} value={cat._id} className="capitalize">
                         {cat.name}
                       </option>
                     ))}
@@ -357,12 +340,10 @@ const AddProducts = () => {
                 {/* Price */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Price <span className="text-red-500">*</span>
+                    Price (USD) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">
-                      ₹
-                    </span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>
                     <input
                       type="number"
                       name="price"
@@ -466,8 +447,7 @@ const AddProducts = () => {
                 ))}
               </div>
               <p className="text-sm text-gray-600 mt-4 font-medium">
-                Selected:{" "}
-                {formData.sizes.length > 0 ? formData.sizes.join(", ") : "None"}
+                Selected: {formData.sizes.length > 0 ? formData.sizes.join(", ") : "None"}
               </p>
             </div>
 
@@ -567,9 +547,7 @@ const AddProducts = () => {
                     className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border-2 border-rose-100 shadow-sm group hover:border-rose-300 transition-all"
                   >
                     <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-                    <span className="flex-1 text-sm text-gray-700 font-medium">
-                      {item}
-                    </span>
+                    <span className="flex-1 text-sm text-gray-700 font-medium">{item}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveCommitment(idx)}
