@@ -246,9 +246,14 @@ const EditProducts = () => {
         console.log("FormData:", key, value);
       }
 
-      // 🔥 AXIOS PATCH
-      const res = await axios.patch(`/clothing/${id}`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const API_BASE_URL = import.meta.env.DEV
+        ? "/api"
+        : "https://api.houseofresha.com";
+
+      const res = await axios.patch(`${API_BASE_URL}/clothing/${id}`, fd, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       if (!res.data?.success) {
