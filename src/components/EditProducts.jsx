@@ -247,7 +247,7 @@ const EditProducts = () => {
       }
 
       // 🔥 AXIOS PATCH
-      const res = await axios.patch(`/api/clothing/${id}`, fd, {
+      const res = await axios.patch(`/clothing/${id}`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
