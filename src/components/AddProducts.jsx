@@ -340,7 +340,7 @@ const AddProducts = () => {
                 {/* Price */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Price (USD) <span className="text-red-500">*</span>
+                    Price  <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>

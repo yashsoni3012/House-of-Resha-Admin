@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/products", name: "Products", icon: Package },
     { path: "/orders", name: "Orders", icon: ShoppingCart },
     { path: "/customers", name: "Customers", icon: Users },
-    { path: "/mieh-by-resha", name: "Glow Rituals", icon: Sparkles },
+    // { path: "/mieh-by-resha", name: "Glow Rituals", icon: Sparkles },
     { path: "/banners", name: "Banner", icon: Image },
     { path: "/users", name: "Users", icon: Users },
     { path: "/blogs", name: "Blogs", icon: BookOpen },

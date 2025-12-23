@@ -310,7 +310,7 @@ const FashionManagement = () => {
                   key={product.id}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all"
                 >
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-60 overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}

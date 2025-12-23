@@ -82,7 +82,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
-import MIEByResha from "./pages/MIEByResha";
 import UserManagement from "./pages/UserManagement"; // Add this import
 import Banners from "./pages/Banners";
 import Blogs from "./pages/Blogs";
@@ -125,7 +124,6 @@ const App = () => {
               <Route path="products" element={<Products />} />
               <Route path="orders" element={<Orders />} />
               <Route path="customers" element={<Customers />} />
-              <Route path="mieh-by-resha" element={<MIEByResha />} />
               <Route path="banners" element={<Banners />} />
               <Route path="users" element={<UserManagement />} />{" "}
               <Route path="blogs" element={<Blogs />} />
