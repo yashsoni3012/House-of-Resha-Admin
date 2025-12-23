@@ -80,13 +80,15 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import MIEByResha from "./pages/MIEByResha";
 import UserManagement from "./pages/UserManagement"; // Add this import
 import Banners from "./pages/Banners";
 import Blogs from "./pages/Blogs";
+import Products from "./pages/Products";
+import AddProducts from "./components/AddProducts";
+import EditProducts from "./components/EditProducts";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -127,6 +129,9 @@ const App = () => {
               <Route path="banners" element={<Banners />} />
               <Route path="users" element={<UserManagement />} />{" "}
               <Route path="blogs" element={<Blogs />} />
+              <Route path="add-product" element={<AddProducts />} />
+              <Route path="edit-product/:id" element={<EditProducts />} />
+              
 
               {/* Add this route */}
             </Route>
