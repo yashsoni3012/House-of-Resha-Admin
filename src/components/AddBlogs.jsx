@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Add this import
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  X,
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  Type,
+  Save,
+  Trash2,
+  Eye,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 const AddBlogs = () => {
   const API_URL = "https://api.houseofresha.com/blogs";
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
 
   // Initial blog state
   const [blog, setBlog] = useState({
@@ -132,7 +147,7 @@ const AddBlogs = () => {
     formData.append("description", blog.description);
 
     if (blog.coverImage) {
-      formData.append("cover", blog.coverImage); // Changed to match API
+      formData.append("cover", blog.coverImage);
     }
 
     // Prepare content array with text and image references
@@ -178,16 +193,14 @@ const AddBlogs = () => {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, formData);
         showMessage("Blog updated successfully!", "success");
-        // Redirect after 2 seconds for edit
         setTimeout(() => {
-          navigate("/blogs"); // Change this to your blogs page route
+          navigate("/blogs");
         }, 2000);
       } else {
         await axios.post(API_URL, formData);
         showMessage("Blog created successfully!", "success");
-        // Redirect immediately after success for create
         setTimeout(() => {
-          navigate("/blogs"); // Change this to your blogs page route
+          navigate("/blogs");
         }, 1500);
       }
 
@@ -211,7 +224,7 @@ const AddBlogs = () => {
     try {
       await axios.delete(`${API_URL}/${id}`);
       showMessage("Blog deleted successfully!", "success");
-      fetchBlogs(); // Refresh list
+      fetchBlogs();
     } catch (error) {
       console.error("Error:", error);
       showMessage("Delete failed, please try again", "error");
@@ -298,7 +311,7 @@ const AddBlogs = () => {
 
   // Navigate to blogs page
   const navigateToBlogs = () => {
-    navigate("/blogs"); // Change this to your blogs page route
+    navigate("/blogs");
   };
 
   // Fetch blogs on component mount
@@ -307,359 +320,385 @@ const AddBlogs = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {editingId ? "Edit Blog" : "Create New Blog"}
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Add text and optional images for each content section
-            </p>
-          </div>
-          <button
-            onClick={navigateToBlogs}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center space-x-2"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                {editingId ? "✏️ Edit Blog Post" : "📝 Create New Blog"}
+              </h1>
+              <p className="mt-2 text-gray-600 text-sm sm:text-base">
+                Craft compelling stories with rich text and stunning visuals
+              </p>
+            </div>
+            <button
+              onClick={navigateToBlogs}
+              className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 hover:-translate-y-0.5"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              ></path>
-            </svg>
-            <span>View Blogs</span>
-          </button>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm sm:text-base">View Blogs</span>
+            </button>
+          </div>
+
         </div>
 
         {/* Message Alert */}
         {message && (
           <div
-            className={`mb-6 p-4 rounded-md ${
+            className={`mb-6 p-4 rounded-xl shadow-lg border-l-4 animate-slideDown ${
               messageType === "success"
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-red-50 text-red-800 border border-red-200"
+                ? "bg-green-50 border-green-500 text-green-800"
+                : "bg-red-50 border-red-500 text-red-800"
             }`}
           >
-            <div className="flex justify-between items-center">
-              <div>{message}</div>
-              {messageType === "success" && (
-                <div className="text-sm text-green-600">
-                  Redirecting to blogs page...
-                </div>
+            <div className="flex items-start gap-3">
+              {messageType === "success" ? (
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               )}
+              <div className="flex-1">
+                <p className="font-medium">{message}</p>
+                {messageType === "success" && (
+                  <p className="text-sm mt-1 text-green-600 opacity-80">
+                    Redirecting to blogs page...
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setMessage("");
+                  setMessageType("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}
 
-        {/* Blog Form */}
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-          <form onSubmit={handleSubmit} className="p-6">
-            {/* Title */}
-            <div className="mb-6">
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Blog Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={blog.title}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Enter blog title"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="mb-6">
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Description *
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={blog.description}
-                onChange={handleInputChange}
-                required
-                rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Enter blog description"
-              />
-            </div>
-
-            {/* Cover Image */}
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image {!editingId && "*"}
-              </label>
-              <div className="flex items-center space-x-4">
-                <label className="flex flex-col items-center justify-center w-48 h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg
-                      className="w-8 h-8 mb-2 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      ></path>
-                    </svg>
-                    <p className="text-sm text-gray-500">
-                      {!editingId
-                        ? "Upload cover image (Required)"
-                        : "Upload cover image"}
-                    </p>
-                    {!editingId && (
-                      <p className="text-xs text-red-500 mt-1">
-                        Required for new blogs
-                      </p>
-                    )}
+        {/* Main Form Container */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Title Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Type className="w-4 h-4 text-blue-600" />
                   </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleCoverImageChange}
-                  />
-                </label>
-                {imagePreviews.cover && (
-                  <div className="relative">
-                    <img
-                      src={imagePreviews.cover}
-                      alt="Cover preview"
-                      className="w-48 h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={clearCoverImage}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-              {!blog.coverImage && !editingId && (
-                <p className="mt-2 text-sm text-red-600">
-                  Cover image is required for new blogs
-                </p>
-              )}
-            </div>
-
-            {/* Content Sections */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Content Sections *
-                </h3>
-                <span className="text-sm text-gray-500">
-                  Text required, image optional
-                </span>
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Blog Title <span className="text-red-500">*</span>
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  name="title"
+                  value={blog.title}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-gray-50"
+                  placeholder="Enter an engaging blog title..."
+                />
               </div>
 
-              {blog.content.map((section, index) => (
-                <div
-                  key={index}
-                  className="mb-6 p-6 border border-gray-200 rounded-lg bg-gray-50"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium text-gray-700">
-                      Section {index + 1}
-                    </h4>
-                    {blog.content.length > 1 && (
+              {/* Description Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-green-600" />
+                  </div>
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                </div>
+                <textarea
+                  name="description"
+                  value={blog.description}
+                  onChange={handleInputChange}
+                  required
+                  rows="4"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 bg-gray-50 resize-none"
+                  placeholder="Write a compelling description..."
+                />
+              </div>
+
+              {/* Cover Image Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Cover Image{" "}
+                    {!editingId && <span className="text-red-500">*</span>}
+                  </label>
+                </div>
+
+                <div className="space-y-4">
+                  {!imagePreviews.cover ? (
+                    <label className="block">
+                      <div className="flex flex-col items-center justify-center w-full h-48 sm:h-56 border-3 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                          <div className="w-14 h-14 mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Upload className="w-6 h-6 text-blue-500" />
+                          </div>
+                          <p className="mb-2 text-sm font-semibold text-gray-700">
+                            {!editingId
+                              ? "Upload cover image (Required)"
+                              : "Click to upload cover image"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF up to 5MB
+                          </p>
+                          {!editingId && (
+                            <p className="text-xs text-red-500 mt-2 font-medium">
+                              * Required for new blogs
+                            </p>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleCoverImageChange}
+                        />
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="relative group">
+                      <img
+                        src={imagePreviews.cover}
+                        alt="Cover preview"
+                        className="w-full h-48 sm:h-56 object-cover rounded-2xl shadow-lg transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
                       <button
                         type="button"
-                        onClick={() => removeContentBlock(index)}
-                        className="text-sm text-red-600 hover:text-red-800 transition"
+                        onClick={clearCoverImage}
+                        className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
                       >
-                        Remove Section
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {!blog.coverImage && !editingId && (
+                    <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Cover image is required for new blogs</span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Text Content */}
+              {/* Content Sections */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                      <span className="text-indigo-600 font-bold">
+                        {blog.content.length}
+                      </span>
+                    </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Text Content *
-                      </label>
-                      <textarea
-                        value={section.text}
-                        onChange={(e) =>
-                          handleContentTextChange(index, e.target.value)
-                        }
-                        required
-                        rows="6"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        placeholder="Enter paragraph text..."
-                      />
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Content Sections
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Add text and optional images
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+                    Text required • Image optional
+                  </span>
+                </div>
+
+                {blog.content.map((section, index) => (
+                  <div
+                    key={index}
+                    className="bg-gradient-to-br from-gray-50 to-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300"
+                  >
+                    <div className="flex justify-between items-center mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-gray-800">
+                          Section {index + 1}
+                        </h4>
+                      </div>
+                      {blog.content.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeContentBlock(index)}
+                          className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Remove
+                        </button>
+                      )}
                     </div>
 
-                    {/* Image Upload */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Image (Optional)
-                      </label>
-                      <div className="space-y-4">
-                        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <svg
-                              className="w-10 h-10 mb-3 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              ></path>
-                            </svg>
-                            <p className="text-sm text-gray-500">
-                              Click to upload image
-                            </p>
-                          </div>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={(e) =>
-                              handleContentImageChange(index, e.target.files[0])
-                            }
-                          />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Text Content */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Text Content <span className="text-red-500">*</span>
                         </label>
+                        <textarea
+                          value={section.text}
+                          onChange={(e) =>
+                            handleContentTextChange(index, e.target.value)
+                          }
+                          required
+                          rows="8"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white resize-none"
+                          placeholder="Write your content here..."
+                        />
+                        <div className="text-xs text-gray-500">
+                          {section.text.length} characters
+                        </div>
+                      </div>
 
-                        {imagePreviews[`content-${index}`] && (
-                          <div className="relative">
+                      {/* Image Upload */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Image{" "}
+                          <span className="text-gray-500">(Optional)</span>
+                        </label>
+                        {!imagePreviews[`content-${index}`] ? (
+                          <label className="block">
+                            <div className="flex flex-col items-center justify-center w-full h-48 border-3 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <div className="w-12 h-12 mb-3 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                  <Upload className="w-5 h-5 text-gray-500" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-600">
+                                  Upload image
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  PNG, JPG, GIF
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) =>
+                                  handleContentImageChange(
+                                    index,
+                                    e.target.files[0]
+                                  )
+                                }
+                              />
+                            </div>
+                          </label>
+                        ) : (
+                          <div className="relative group h-48">
                             <img
                               src={imagePreviews[`content-${index}`]}
                               alt={`Content ${index + 1} preview`}
-                              className="w-full h-48 object-cover rounded-lg"
+                              className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
                             />
                             <button
                               type="button"
                               onClick={() => clearContentImage(index)}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
+                              className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
                             >
-                              ×
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              <button
-                type="button"
-                onClick={addContentBlock}
-                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:text-gray-800 hover:border-gray-400 transition flex items-center justify-center space-x-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v16m8-8H4"
-                  ></path>
-                </svg>
-                <span>Add Another Section</span>
-              </button>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className={`flex-1 py-3 px-6 rounded-md font-medium transition ${
-                  loading
-                    ? "bg-blue-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } text-white`}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : editingId ? (
-                  "Update Blog"
-                ) : (
-                  "Create Blog"
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={navigateToBlogs}
-                className="py-3 px-6 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition"
-              >
-                View All Blogs
-              </button>
-
-              {editingId && (
                 <button
                   type="button"
-                  onClick={resetForm}
-                  className="py-3 px-6 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition"
+                  onClick={addContentBlock}
+                  className="w-full py-4 border-3 border-dashed border-gray-300 rounded-xl text-gray-600 hover:text-gray-800 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-2 font-medium group"
                 >
-                  Cancel Edit
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  Add Another Section
                 </button>
-              )}
-            </div>
-          </form>
+              </div>
+
+              {/* Form Actions */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg ${
+                      loading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    } text-white`}
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : editingId ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Save className="w-5 h-5" />
+                        Update Blog
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Plus className="w-5 h-5" />
+                        Create Blog
+                      </span>
+                    )}
+                  </button>
+
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
+
       </div>
+
+      {/* Custom Animations */}
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slideDown {
+          animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
