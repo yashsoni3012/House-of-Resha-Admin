@@ -1,4 +1,3 @@
-// Products.jsx - Clean Product Listing Component
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,6 +15,7 @@ import {
   Shield,
   Calendar,
   Package,
+  Tag,
 } from "lucide-react";
 
 const FashionManagement = () => {
@@ -220,31 +220,35 @@ const FashionManagement = () => {
   const categories = ["All", "Women", "Men", "Unisex"];
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white shadow-lg p-6 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <ShoppingBag className="w-8 h-8 text-pink-600" />
-                <h1 className="text-3xl font-bold text-gray-800">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                   Fashion Collection
                 </h1>
               </div>
-              <p className="text-gray-600">Manage your products with ease</p>
+              <p className="text-sm sm:text-base text-gray-600">
+                Manage your products with ease
+              </p>
             </div>
             <button
               onClick={handleAddNewProduct}
-              className="bg-gradient-to-r from-pink-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg"
+              className="w-full md:w-auto bg-gradient-to-r from-pink-600 to-purple-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center justify-center gap-2 hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Add Product
             </button>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <p className="text-sm">{error}</p>
             </div>
@@ -253,25 +257,25 @@ const FashionManagement = () => {
           {/* Search & Filters */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:outline-none"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-pink-500 focus:outline-none transition-colors bg-white/70"
               />
             </div>
-            <div className="flex gap-2 overflow-x-auto">
-              <Filter className="w-5 h-5 text-gray-500 self-center flex-shrink-0" />
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 self-center flex-shrink-0" />
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap text-sm ${
                     selectedCategory === cat
-                      ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md"
+                      : "bg-white/70 text-gray-700 hover:bg-white border border-gray-200"
                   }`}
                 >
                   {cat}
@@ -280,8 +284,12 @@ const FashionManagement = () => {
             </div>
           </div>
 
-          <p className="text-gray-600 mt-4 text-sm">
-            Showing {displayedProducts.length} of {filteredProducts.length}{" "}
+          <p className="text-gray-600 mt-4 text-xs sm:text-sm">
+            Showing{" "}
+            <span className="font-semibold text-pink-600">
+              {displayedProducts.length}
+            </span>{" "}
+            of <span className="font-semibold">{filteredProducts.length}</span>{" "}
             products
           </p>
         </div>
@@ -289,11 +297,14 @@ const FashionManagement = () => {
         {/* Products Grid */}
         {loading ? (
           <div className="flex flex-col justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mb-4"></div>
-            <p className="text-gray-600">Loading products...</p>
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-200"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-pink-600 absolute top-0"></div>
+            </div>
+            <p className="text-gray-600 mt-4">Loading products...</p>
           </div>
         ) : displayedProducts.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center">
             <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
               No products found
@@ -304,44 +315,47 @@ const FashionManagement = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {displayedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all"
+                  className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-white/20 flex flex-col h-full"
                 >
-                  <div className="relative h-60 overflow-hidden">
+                  <div className="relative h-56 sm:h-60 overflow-hidden bg-gray-100">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-top transition-transform duration-300 hover:scale-105"
                       onError={(e) => {
                         e.target.src =
                           "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400";
                       }}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     <div className="absolute top-3 right-3">
-                      <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow">
+                      <span className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-gray-700 shadow-lg">
                         {product.category}
                       </span>
                     </div>
                   </div>
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-gray-800 truncate">
-                        {product.name}
-                      </h3>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-base sm:text-lg text-gray-800 line-clamp-1">
+                          {product.name}
+                        </h3>
+                      </div>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
+                        {product.description}
+                      </p>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {product.description}
-                    </p>
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-2xl font-bold text-pink-600">
+                      <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                         ₹{product.price}
                       </p>
                       {product.sizes.length > 0 && (
-                        <div className="text-xs text-gray-500">
-                          <Package className="w-4 h-4 inline mr-1" />
+                        <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                          <Package className="w-3 h-3 inline mr-1" />
                           {product.sizes.slice(0, 2).join(", ")}
                           {product.sizes.length > 2 && "..."}
                         </div>
@@ -350,23 +364,23 @@ const FashionManagement = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleView(product)}
-                        className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 bg-blue-50 text-blue-600 px-2 sm:px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                         View
                       </button>
                       <button
                         onClick={() => handleEdit(product)}
-                        className="flex-1 bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 bg-green-50 text-green-600 px-2 sm:px-3 py-2 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteClick(product)}
-                        className="bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
+                        className="bg-red-50 text-red-600 px-2 sm:px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
@@ -380,7 +394,7 @@ const FashionManagement = () => {
                 <button
                   onClick={handleLoadMore}
                   disabled={loadMoreLoading}
-                  className="bg-gradient-to-r from-pink-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg"
+                  className="bg-gradient-to-r from-pink-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:from-pink-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
                 >
                   {loadMoreLoading ? (
                     <>
@@ -402,14 +416,16 @@ const FashionManagement = () => {
 
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-800">Delete Product</h3>
+                <h3 className="font-bold text-lg text-gray-800">
+                  Delete Product
+                </h3>
                 <p className="text-sm text-gray-600">
                   This action cannot be undone
                 </p>
@@ -419,14 +435,14 @@ const FashionManagement = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2 font-medium"
               >
                 {deleteLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -441,12 +457,14 @@ const FashionManagement = () => {
 
       {/* View Product Modal */}
       {showViewModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-pink-600 to-purple-600 text-white p-6">
+            <div className="sticky top-0 bg-gradient-to-r from-pink-600 to-purple-600 text-white p-4 sm:p-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Product Details</h2>
+                <h2 className="text-lg sm:text-xl font-bold">
+                  Product Details
+                </h2>
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="hover:bg-white/20 p-2 rounded-lg"
@@ -456,13 +474,13 @@ const FashionManagement = () => {
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Product Image */}
-              <div className="relative">
+              <div className="rounded-xl overflow-hidden shadow-lg">
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
-                  className="w-full h-64 object-cover object-top rounded-xl"
+                  className="w-full h-64 sm:h-80 object-cover object-top"
                 />
                 <div className="absolute bottom-4 left-4">
                   <span className="bg-white px-3 py-1 rounded-full text-sm font-medium shadow">
@@ -474,11 +492,11 @@ const FashionManagement = () => {
               {/* Product Info */}
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
                     {selectedProduct.name}
                   </h3>
                   <div className="flex items-center justify-between">
-                    <p className="text-3xl font-bold text-pink-600">
+                    <p className="text-3xl sm:text-4xl font-bold text-pink-600">
                       ₹{selectedProduct.price}
                     </p>
                   </div>
@@ -564,13 +582,13 @@ const FashionManagement = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-6">
+              <div className="flex flex-col sm:flex-row gap-3 pt-6">
                 <button
                   onClick={() => {
                     setShowViewModal(false);
                     handleEdit(selectedProduct);
                   }}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all"
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-medium"
                 >
                   Edit Product
                 </button>
@@ -579,7 +597,7 @@ const FashionManagement = () => {
                     setShowViewModal(false);
                     handleDeleteClick(selectedProduct);
                   }}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-3 rounded-xl hover:from-red-600 hover:to-rose-700 transition-all"
+                  className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-3 rounded-xl hover:from-red-600 hover:to-rose-700 transition-all font-medium"
                 >
                   Delete
                 </button>

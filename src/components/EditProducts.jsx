@@ -198,93 +198,81 @@ const EditProducts = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
 
-    // Show success
+  // Validation
+  if (!formData.name.trim()) {
+    setError("Product name is required");
+    return;
+  }
+  if (!formData.price || isNaN(Number(formData.price))) {
+    setError("Valid price is required");
+    return;
+  }
+  if (!formData.categoryId) {
+    setError("Category is required");
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const fd = new FormData();
+    fd.append("name", formData.name.trim());
+    fd.append("categoryId", formData.categoryId);
+    fd.append("description", formData.description || "");
+    fd.append("price", String(Math.round(Number(formData.price)) * 100));
+
+    formData.sizes.forEach((s) => fd.append("sizes[]", s));
+    formData.details.forEach((d) => fd.append("details[]", d));
+    formData.commitment.forEach((c) => fd.append("commitment[]", c));
+
+    if (selectedFile instanceof File) {
+      fd.append("image", selectedFile);
+    }
+
+    const API_BASE_URL = import.meta.env.DEV
+      ? "/api"
+      : "https://api.houseofresha.com";
+
+    const res = await axios.patch(`${API_BASE_URL}/clothing/${id}`, fd, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Update failed");
+    }
+
+    // Show success immediately
     setSuccess(true);
-    // Show sweetalert notification
-    await showProductUpdated();
-    // Redirect after 1.5 seconds
-    setTimeout(() => {
-      navigate("/products");
-    }, 1500);
+    
+    // Show sweetalert notification WITHOUT waiting for it
+    showProductUpdated();
+    
+    // Redirect immediately without delay
+    navigate("/products");
+    
+  } catch (err) {
+    console.error("PATCH error:", err);
 
-    if (!formData.name.trim()) {
-      setError("Product name is required");
-      return;
+    // Axios error handling
+    if (err.response) {
+      setError(err.response.data?.message || "Product update failed");
+    } else if (err.request) {
+      setError(
+        "Network error or CORS issue. Make sure the server allows PATCH requests from your origin."
+      );
+    } else {
+      setError(err.message || "Product update failed");
     }
-    if (!formData.price || isNaN(Number(formData.price))) {
-      setError("Valid price is required");
-      return;
-    }
-    if (!formData.categoryId) {
-      setError("Category is required");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const fd = new FormData();
-      fd.append("name", formData.name.trim());
-      fd.append("categoryId", formData.categoryId);
-      fd.append("description", formData.description || "");
-      fd.append("price", String(Math.round(Number(formData.price)) * 100));
-
-      formData.sizes.forEach((s) => fd.append("sizes[]", s));
-      formData.details.forEach((d) => fd.append("details[]", d));
-      formData.commitment.forEach((c) => fd.append("commitment[]", c));
-
-      if (selectedFile instanceof File) {
-        fd.append("image", selectedFile);
-      }
-
-      // 🔥 DEBUG: Check FormData content
-      for (let [key, value] of fd.entries()) {
-        console.log("FormData:", key, value);
-      }
-
-      const API_BASE_URL = import.meta.env.DEV
-        ? "/api"
-        : "https://api.houseofresha.com";
-
-      const res = await axios.patch(`${API_BASE_URL}/clothing/${id}`, fd, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (!res.data?.success) {
-        throw new Error(res.data?.message || "Update failed");
-      }
-
-      setSuccess(true);
-
-      setTimeout(() => {
-        navigate("/products");
-      }, 1200);
-    } catch (err) {
-      console.error("PATCH error:", err);
-
-      // Axios error handling
-      if (err.response) {
-        // Server responded with status code outside 2xx
-        setError(err.response.data?.message || "Product update failed");
-      } else if (err.request) {
-        // Request made but no response (Network Error / CORS)
-        setError(
-          "Network error or CORS issue. Make sure the server allows PATCH requests from your origin."
-        );
-      } else {
-        // Something else
-        setError(err.message || "Product update failed");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleBack = () => {
     navigate("/products");

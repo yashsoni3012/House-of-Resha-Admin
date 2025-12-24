@@ -1,724 +1,565 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
-  Plus,
-  Edit,
-  Trash2,
   Video,
-  RefreshCw,
+  Eye,
+  Edit2,
+  Trash2,
   AlertCircle,
+  X,
+  Calendar,
   ExternalLink,
+  Loader2,
+  RefreshCw,
   Search,
   Filter,
-  SlidersHorizontal,
-  Calendar,
-  Tag,
-  Grid,
-  List,
+  Play,
+  MousePointerClick,
+  Plus,
 } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "../lib/api"; // adjust path
-import BannerFormModel from "../components/BannerFormModal";
 
-const API_BASE_URL = "https://api.houseofresha.com";
+const Banners = () => {
+  const navigate = useNavigate();
+  const [banners, setBanners] = useState([]);
+  const [filteredBanners, setFilteredBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bannerToDelete, setBannerToDelete] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedBanner, setSelectedBanner] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [categories, setCategories] = useState(["All"]);
 
-// simple toast (same as in model)
-const showToast = (message, type = "success") => {
-  const toastContainer =
-    document.getElementById("toast-container") ||
-    (() => {
-      const container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "fixed top-4 right-4 z-50 flex flex-col gap-3";
-      document.body.appendChild(container);
-      return container;
-    })();
+  const API_URL = "https://api.houseofresha.com/banner/";
 
-  const toastId = `toast-${Date.now()}`;
-  const toast = document.createElement("div");
-  toast.id = toastId;
-  toast.className = `px-6 py-4 rounded-xl shadow-2xl font-bold text-white animate-slide-in ${
-    type === "success"
-      ? "bg-gradient-to-r from-green-500 to-emerald-600"
-      : "bg-gradient-to-r from-red-500 to-pink-600"
-  }`;
+  useEffect(() => {
+    fetchBanners();
+  }, []);
 
-  toast.innerHTML = `
-    <div class="flex items-center gap-3">
-      ${
-        type === "success"
-          ? '<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>'
-          : '<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>'
+  useEffect(() => {
+    filterBanners();
+  }, [banners, searchQuery, selectedCategory]);
+
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(API_URL);
+
+      if (response.data.success && response.data.data) {
+        const transformedData = response.data.data.map((item) => ({
+          id: item._id,
+          title: item.title || "Untitled Banner",
+          buttonText: item.buttonText || "",
+          buttonLink: item.buttonLink || "",
+          videoUrl: item.videoUrl
+            ? `https://api.houseofresha.com${item.videoUrl}`
+            : "",
+          category: item.category || "uncategorized",
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
+
+        setBanners(transformedData);
+
+        // Extract unique categories
+        const uniqueCategories = [
+          "All",
+          ...new Set(transformedData.map((b) => b.category)),
+        ];
+        setCategories(uniqueCategories);
+      } else {
+        throw new Error("Invalid response format");
       }
-      <span>${message}</span>
-    </div>
-  `;
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      setError(
+        error.response?.data?.message ||
+          "Failed to load banners. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  toastContainer.appendChild(toast);
+  const filterBanners = () => {
+    let filtered = banners;
 
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateX(100%)";
-    setTimeout(() => {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 300);
-  }, 4000);
-};
-
-// fetch banners
-// const fetchBanners = async () => {
-//   const res = await fetch(`${API_BASE_URL}/banner`);
-//   if (!res.ok) {
-//     throw new Error(`API Error: ${res.status} ${res.statusText}`);
-//   }
-//   const data = await res.json();
-
-//   if (Array.isArray(data)) return { success: true, banners: data };
-//   if (Array.isArray(data?.data)) return { success: true, banners: data.data };
-//   if (Array.isArray(data?.banners))
-//     return { success: true, banners: data.banners };
-//   if (data?.success && Array.isArray(data.banners)) return data;
-
-//   return { success: true, banners: [] };
-// };
-
-const fetchBanners = async () => {
-  try {
-    console.log("Fetching banners from:", `${API_BASE_URL}/banner`);
-    const res = await fetch(`${API_BASE_URL}/banner`);
-
-    if (!res.ok) {
-      console.error("Banners fetch failed:", res.status, res.statusText);
-      return { success: true, banners: [] };
+    // Filter by category
+    if (selectedCategory !== "All") {
+      filtered = filtered.filter(
+        (b) => b.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
     }
 
-    const data = await res.json();
-    console.log("Banners response:", data);
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (b) =>
+          b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.buttonText?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
 
-    if (Array.isArray(data.data)) return { success: true, banners: data.data };
-    if (Array.isArray(data?.data)) return { success: true, banners: data.data };
-    if (Array.isArray(data?.banners))
-      return { success: true, banners: data.data };
-    if (data?.success && Array.isArray(data.banners)) return data;
+    setFilteredBanners(filtered);
+  };
 
-    return { success: true, banners: [] };
-  } catch (error) {
-    console.error("Fetch banners error:", error);
-    return { success: true, banners: data.data };
-  }
-};
-const deleteBanner = async (id) => {
-  const res = await fetch(`${API_BASE_URL}/banner/${id}`, {
-    method: "DELETE",
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      data.message || data.error || `HTTP ${res.status}: Failed to delete`
-    );
-  }
-  return data;
-};
-
-const Banner = () => {
-  const [sortOrder, setSortOrder] = useState("date");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingBanner, setEditingBanner] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
-
-  const {
-    data: apiResponse = { success: false, banners: [] },
-    isLoading: bannersLoading,
-    error: bannersError,
-    refetch: refetchBanners,
-  } = useQuery({
-    queryKey: ["banners"],
-    queryFn: fetchBanners,
-    retry: 2,
-    refetchOnWindowFocus: false,
-    staleTime: 30000,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteBanner,
-    onSuccess: (_, deletedId) => {
-      queryClient.setQueryData(["banners"], (old) => {
-        if (!old) return old;
-
-        const banners = old.banners || old.data || [];
-        return {
-          ...old,
-          banners: banners.filter((b) => b._id !== deletedId),
-        };
-      });
-
-      setDeleteConfirm(null);
-      showToast("Banner deleted successfully!", "success");
-    },
-    onError: (error) => {
-      showToast(`Failed to delete banner: ${error.message}`, "error");
-    },
-  });
-
-  // Extract unique categories
-  const categories = useMemo(() => {
-    if (!apiResponse) return [];
-    let arr = [];
-    if (Array.isArray(apiResponse)) arr = apiResponse;
-    else if (Array.isArray(apiResponse.banners)) arr = apiResponse.banners;
-    else if (Array.isArray(apiResponse.data)) arr = apiResponse.data;
-
-    const uniqueCategories = [
-      ...new Set(arr.map((b) => b.category).filter(Boolean)),
-    ];
-    return uniqueCategories;
-  }, [apiResponse]);
-
-  // Filter and sort banners
-  const filteredBanners = useMemo(() => {
-    if (!apiResponse) return [];
-    let arr = [];
-    if (Array.isArray(apiResponse)) arr = apiResponse;
-    else if (Array.isArray(apiResponse.banners)) arr = apiResponse.banners;
-    else if (Array.isArray(apiResponse.data)) arr = apiResponse.data;
-    else if (apiResponse.success && apiResponse.banners)
-      arr = apiResponse.banners;
-
-    // Apply search filter
-    let filtered = arr.filter((banner) => {
-      const matchesSearch =
-        banner.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        banner.buttonText?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "all" || banner.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-
-    // Apply sorting
-    return [...filtered].sort((a, b) => {
-      switch (sortOrder) {
-        case "date":
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        case "title":
-          return (a.title || "").localeCompare(b.title || "");
-        case "category":
-          return (a.category || "").localeCompare(b.category || "");
-        case "position":
-        default:
-          return (a.position || 99) - (b.position || 99);
-      }
-    });
-  }, [apiResponse, sortOrder, searchQuery, selectedCategory]);
+  const handleView = (banner) => {
+    setSelectedBanner(banner);
+    setShowViewModal(true);
+  };
 
   const handleEdit = (banner) => {
-    setEditingBanner(banner);
-    setShowModal(true);
+    navigate(`/edit-banner/${banner.id}`);
   };
 
-  const handleAddNew = () => {
-    setEditingBanner(null);
-    setShowModal(true);
+  const handleDeleteClick = (banner) => {
+    setBannerToDelete(banner);
+    setShowDeleteConfirm(true);
   };
 
-  const handleDelete = () => {
-    if (deleteConfirm) deleteMutation.mutate(deleteConfirm._id);
+  const handleDeleteConfirm = async () => {
+    if (!bannerToDelete) return;
+
+    try {
+      setDeleteLoading(bannerToDelete.id);
+      await axios.delete(`${API_URL}${bannerToDelete.id}`);
+
+      const updatedBanners = banners.filter((b) => b.id !== bannerToDelete.id);
+      setBanners(updatedBanners);
+      setShowDeleteConfirm(false);
+      setBannerToDelete(null);
+    } catch (error) {
+      console.error("Error deleting banner:", error);
+      setError(
+        error.response?.data?.message ||
+          "Failed to delete banner. Please try again."
+      );
+    } finally {
+      setDeleteLoading(null);
+    }
   };
 
-  const handleSortChange = (order) => {
-    setSortOrder(order);
-    showToast(`Sorted by ${order}`, "success");
+  const handleRefresh = () => {
+    fetchBanners();
   };
-
-  const BannerCard = ({ banner }) => {
-    const videoUrl = banner.videoUrl || banner.video;
-    const fullVideoUrl = videoUrl
-      ? videoUrl.startsWith("http")
-        ? videoUrl
-        : `${API_BASE_URL}${videoUrl}`
-      : null;
-
-    const createdAt = banner.createdAt ? new Date(banner.createdAt) : null;
-
-    return (
-      <div className="group relative bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-        {/* Category Badge */}
-        <div className="absolute top-3 right-3 z-20">
-          <span className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full shadow-lg capitalize backdrop-blur-sm">
-            {banner.category || "General"}
-          </span>
-        </div>
-
-        {/* Video Preview */}
-        <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-          {fullVideoUrl ? (
-            <>
-              <video
-                src={fullVideoUrl}
-                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                muted
-                loop
-                playsInline
-                preload="metadata"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              <div className="absolute bottom-3 left-3">
-                <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full">
-                  <Video size={14} className="text-white" />
-                  <span className="text-white text-xs font-medium">Video</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-              <Video size={48} className="text-gray-400 mb-3" />
-              <span className="text-sm text-gray-500 font-medium">
-                No video uploaded
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-5">
-          <h3 className="font-bold text-gray-900 text-lg mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
-            {banner.title || "Untitled Banner"}
-          </h3>
-
-          {/* Button Preview */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-sm font-semibold rounded-full shadow-sm">
-              <span className="truncate max-w-[120px]">
-                {banner.buttonText || "Button"}
-              </span>
-              <ExternalLink size={12} className="text-gray-500 flex-shrink-0" />
-            </div>
-          </div>
-
-          {/* Meta Info */}
-          <div className="flex items-center justify-between pt-3 mb-4 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Calendar size={12} />
-              <span>{createdAt ? createdAt.toLocaleDateString() : "N/A"}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleEdit(banner)}
-              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all font-semibold shadow-sm hover:shadow-md border border-blue-200"
-              title="Edit"
-            >
-              <Edit size={16} className="transition-transform" />
-              <span>Edit</span>
-            </button>
-
-            <button
-              onClick={() => setDeleteConfirm(banner)}
-              className="group/btn flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-red-50 to-red-100 text-red-600 rounded-xl hover:from-red-100 hover:to-red-200 transition-all shadow-sm hover:shadow-md border border-red-200"
-              title="Delete"
-            >
-              <Trash2 size={16} className="transition-transform" />
-              <span>Delete</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const BannerListItem = ({ banner }) => {
-    const videoUrl = banner.videoUrl || banner.video;
-    const fullVideoUrl = videoUrl
-      ? videoUrl.startsWith("http")
-        ? videoUrl
-        : `${API_BASE_URL}${videoUrl}`
-      : null;
-
-    const createdAt = banner.createdAt ? new Date(banner.createdAt) : null;
-
-    return (
-      <div className="group bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-purple-300">
-        <div className="flex flex-col sm:flex-row">
-          {/* Video Thumbnail */}
-          <div className="relative w-full sm:w-64 aspect-video sm:aspect-auto bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0">
-            {fullVideoUrl ? (
-              <>
-                <video
-                  src={fullVideoUrl}
-                  className="w-full h-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Video size={40} className="text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
-              <div className="flex-1">
-                <div className="flex items-start gap-3 mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg flex-1 group-hover:text-purple-600 transition-colors">
-                    {banner.title || "Untitled Banner"}
-                  </h3>
-                  <span className="px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full capitalize flex-shrink-0">
-                    {banner.category || "General"}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} />
-                    <span>
-                      {createdAt ? createdAt.toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full">
-                    <span className="font-medium">
-                      {banner.buttonText || "Button"}
-                    </span>
-                    <ExternalLink size={12} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(banner)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all font-semibold shadow-sm hover:shadow-md border border-blue-200"
-              >
-                <Edit size={16} />
-                <span className="hidden sm:inline">Edit</span>
-              </button>
-
-              <button
-                onClick={() => setDeleteConfirm(banner)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-50 to-red-100 text-red-600 rounded-xl hover:from-red-100 hover:to-red-200 transition-all shadow-sm hover:shadow-md border border-red-200"
-              >
-                <Trash2 size={16} />
-                <span className="hidden sm:inline">Delete</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (bannersLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 sm:p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-6" />
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-            Loading Banners...
-          </h2>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Please wait while we fetch your content
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (bannersError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 sm:p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center border border-red-200">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle size={32} className="text-red-600" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-red-800 mb-3">
-              Connection Error
-            </h2>
-            <p className="text-red-600 mb-4 text-sm sm:text-base">
-              {bannersError.message}
-            </p>
-            <button
-              onClick={() => refetchBanners()}
-              className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-xl transition-all flex items-center justify-center gap-2"
-            >
-              <RefreshCw size={18} />
-              Retry Connection
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 border-2 border-purple-100">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Banner Management
-              </h1>
-              <p className="text-gray-600 text-sm sm:text-base flex items-center gap-2">
-                <SlidersHorizontal size={16} className="text-purple-600" />
-                Manage and organize your promotional content
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Video Banners
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-gray-600">
+                Manage your promotional video banners
               </p>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-3 sm:gap-4 bg-gradient-to-r from-purple-50 to-pink-50 px-4 sm:px-6 py-3 rounded-xl border-2 border-purple-200">
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                    {filteredBanners.length}
-                  </div>
-                  <div className="text-xs text-gray-600">Banners</div>
-                </div>
-                <div className="w-px h-8 bg-purple-200"></div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-pink-600">
-                    {categories.length}
-                  </div>
-                  <div className="text-xs text-gray-600">Categories</div>
-                </div>
-              </div>
-
+            <div className="flex gap-3 w-full md:w-auto">
               <button
-                onClick={handleAddNew}
-                className="px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all flex items-center gap-2 text-sm sm:text-base transform hover:scale-105 active:scale-95"
+                onClick={() => navigate("/add-banner")}
+                className="flex-1 md:flex-none bg-gradient-to-r from-green-600 to-emerald-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
               >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Create Banner</span>
-                <span className="sm:hidden">Create</span>
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                Add Banner
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex-1 md:flex-none bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    loading ? "animate-spin" : ""
+                  }`}
+                />
+                Refresh
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-200">
-          <div className="flex flex-col gap-4">
-            {/* Search and View Toggle */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Search by title or button text..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all text-sm sm:text-base"
-                />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm">{error}</p>
               </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all ${
-                    viewMode === "grid"
-                      ? "bg-white text-purple-600 shadow-md font-semibold"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <Grid size={18} />
-                  <span className="hidden sm:inline text-sm">Grid</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all ${
-                    viewMode === "list"
-                      ? "bg-white text-purple-600 shadow-md font-semibold"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <List size={18} />
-                  <span className="hidden sm:inline text-sm">List</span>
-                </button>
-              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          )}
 
-            {/* Filters Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-              {/* Category Filter */}
-              <div className="flex flex-wrap items-center gap-2">
-                <Filter size={16} className="text-gray-600" />
+          {/* Search & Filters */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+              <input
+                type="text"
+                placeholder="Search banners..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors bg-white/70"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 self-center flex-shrink-0" />
+              {categories.map((cat) => (
                 <button
-                  onClick={() => setSelectedCategory("all")}
-                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                    selectedCategory === "all"
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 sm:px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap text-sm capitalize ${
+                    selectedCategory === cat
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                      : "bg-white/70 text-gray-700 hover:bg-white border border-gray-200"
                   }`}
                 >
-                  All Categories
+                  {cat}
                 </button>
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all capitalize ${
-                      selectedCategory === category
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sort Options */}
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal size={16} className="text-gray-600" />
-                <span className="text-xs sm:text-sm font-medium text-gray-700">
-                  Sort:
-                </span>
-                {["date", "title", "category"].map((sortType) => (
-                  <button
-                    key={sortType}
-                    onClick={() => handleSortChange(sortType)}
-                    className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition-all ${
-                      sortOrder === sortType
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {sortType.charAt(0).toUpperCase() + sortType.slice(1)}
-                  </button>
-                ))}
-                <button
-                  onClick={() => refetchBanners()}
-                  className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition ml-2"
-                  title="Refresh"
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
+              ))}
             </div>
           </div>
+
+          <p className="text-gray-600 mt-4 text-xs sm:text-sm">
+            Showing{" "}
+            <span className="font-semibold text-indigo-600">
+              {filteredBanners.length}
+            </span>{" "}
+            of <span className="font-semibold">{banners.length}</span> banners
+          </p>
         </div>
 
-        {/* Results */}
-        {filteredBanners.length > 0 ? (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-                : "flex flex-col gap-4 sm:gap-6"
-            }
-          >
-            {filteredBanners.map((banner) =>
-              viewMode === "grid" ? (
-                <BannerCard key={banner._id} banner={banner} />
-              ) : (
-                <BannerListItem key={banner._id} banner={banner} />
-              )
-            )}
+        {/* Banners Grid */}
+        {loading ? (
+          <div className="flex flex-col justify-center items-center h-64">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600 absolute top-0"></div>
+            </div>
+            <p className="text-gray-600 mt-4">Loading banners...</p>
+          </div>
+        ) : filteredBanners.length === 0 ? (
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center">
+            <Video className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              No banners found
+            </h3>
+            <p className="text-gray-500">
+              {searchQuery || selectedCategory !== "All"
+                ? "Try adjusting your search or filters"
+                : "Add your first banner to get started"}
+            </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-8 sm:p-12 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl mb-6">
-              {searchQuery || selectedCategory !== "all" ? (
-                <Search size={40} className="text-purple-600" />
-              ) : (
-                <Video size={40} className="text-purple-600" />
-              )}
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
-              {searchQuery || selectedCategory !== "all"
-                ? "No Banners Found"
-                : "No Banners Yet"}
-            </h3>
-            <p className="text-gray-600 mb-6 sm:mb-8 max-w-md mx-auto text-sm sm:text-base">
-              {searchQuery || selectedCategory !== "all"
-                ? "Try adjusting your search or filters"
-                : "Create your first promotional banner to get started"}
-            </p>
-            {!(searchQuery || selectedCategory !== "all") && (
-              <button
-                onClick={handleAddNew}
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white rounded-xl font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {filteredBanners.map((banner) => (
+              <div
+                key={banner.id}
+                className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-white/20 flex flex-col h-full"
               >
-                Create Your First Banner
-              </button>
-            )}
+                <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-900">
+                  {banner.videoUrl ? (
+                    <video
+                      src={banner.videoUrl}
+                      className="w-full h-full object-cover"
+                      muted
+                      loop
+                      playsInline
+                      onMouseEnter={(e) => e.target.play()}
+                      onMouseLeave={(e) => {
+                        e.target.pause();
+                        e.target.currentTime = 0;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <Video className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                  <div className="absolute top-3 right-3">
+                    <span className="bg-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg capitalize">
+                      {banner.category}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <Play className="w-4 h-4" />
+                      <span className="text-xs font-medium">
+                        Hover to preview
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 flex flex-col flex-grow">
+                  <div className="flex-grow">
+                    <h3 className="font-bold text-base sm:text-lg text-gray-800 mb-2 line-clamp-1">
+                      {banner.title}
+                    </h3>
+                    {banner.buttonText && (
+                      <div className="flex items-center gap-2 text-xs text-purple-600 mb-2 bg-purple-50 px-2 py-1 rounded-lg">
+                        <MousePointerClick className="w-3 h-3" />
+                        <span className="font-medium">{banner.buttonText}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <button
+                      onClick={() => handleView(banner)}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 sm:px-3 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium shadow-md hover:shadow-lg"
+                    >
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleEdit(banner)}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 sm:px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium shadow-md hover:shadow-lg"
+                    >
+                      <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(banner)}
+                      className="bg-gradient-to-r from-red-500 to-rose-600 text-white px-2 sm:px-3 py-2 rounded-lg hover:from-red-600 hover:to-rose-700 transition-all flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium shadow-md hover:shadow-lg"
+                    >
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <BannerFormModel
-          open={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setEditingBanner(null);
-            // queryClient.invalidateQueries({ queryKey: ["banners"] });
-          }}
-          initialBanner={editingBanner}
-        />
-      )}
-
       {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl transform animate-in">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 transform hover:scale-110 transition-transform">
-                <Trash2 size={32} className="text-red-600" />
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                Delete Banner?
-              </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                This action cannot be undone
-              </p>
+              <div>
+                <h3 className="font-bold text-lg text-gray-800">
+                  Delete Banner
+                </h3>
+                <p className="text-sm text-gray-600">
+                  This action cannot be undone
+                </p>
+              </div>
             </div>
-
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-4 mb-6">
-              <p className="font-semibold text-gray-800 text-sm sm:text-base">
-                "{deleteConfirm.title || "Untitled Banner"}"
-              </p>
-              <p className="text-gray-600 text-xs sm:text-sm mt-1 capitalize">
-                Category: {deleteConfirm.category || "General"}
-              </p>
-            </div>
-
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-gray-800">
+                "{bannerToDelete?.title}"
+              </span>
+              ?
+            </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-bold text-sm sm:text-base transform hover:scale-105 active:scale-95"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
-                onClick={handleDelete}
-                disabled={deleteMutation.isLoading}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl hover:shadow-xl transition font-bold flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base transform hover:scale-105 active:scale-95"
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 flex items-center justify-center gap-2 font-medium disabled:opacity-50"
               >
-                {deleteMutation.isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
+                {deleteLoading ? (
                   <>
-                    <Trash2 size={18} />
-                    Delete
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Deleting...
                   </>
+                ) : (
+                  "Delete"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Banner Modal */}
+      {showViewModal && selectedBanner && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 sm:p-6 z-10">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg sm:text-xl font-bold">Banner Details</h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="hover:bg-white/20 p-2 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-6">
+              {/* Banner Video */}
+              <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-900">
+                {selectedBanner.videoUrl ? (
+                  <video
+                    src={selectedBanner.videoUrl}
+                    className="w-full h-64 sm:h-96 object-cover"
+                    controls
+                    autoPlay
+                    loop
+                  />
+                ) : (
+                  <div className="w-full h-64 sm:h-96 flex items-center justify-center bg-gray-200">
+                    <Video className="w-16 h-16 text-gray-400" />
+                    <p className="text-gray-500 ml-3">No video available</p>
+                  </div>
+                )}
+                <div className="absolute top-4 right-4">
+                  <span className="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg capitalize">
+                    {selectedBanner.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Banner Info */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                    {selectedBanner.title}
+                  </h3>
+                </div>
+
+                {/* Button Info */}
+                {selectedBanner.buttonText && (
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <MousePointerClick className="w-4 h-4" />
+                      Button Text
+                    </h4>
+                    <p className="text-purple-700 font-medium">
+                      {selectedBanner.buttonText}
+                    </p>
+                  </div>
+                )}
+
+                {selectedBanner.buttonLink && (
+                  <div className="bg-indigo-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <ExternalLink className="w-4 h-4" />
+                      Button Link
+                    </h4>
+                    <a
+                      href={selectedBanner.buttonLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-700 break-all underline"
+                    >
+                      {selectedBanner.buttonLink}
+                    </a>
+                  </div>
+                )}
+
+                {/* Video URL */}
+                {selectedBanner.videoUrl && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <Video className="w-4 h-4" />
+                      Video URL
+                    </h4>
+                    <p className="text-gray-600 text-sm break-all">
+                      {selectedBanner.videoUrl}
+                    </p>
+                  </div>
+                )}
+
+                {/* Dates */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+                  {selectedBanner.createdAt && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Created On
+                      </h4>
+                      <p className="text-gray-600 text-sm">
+                        {new Date(selectedBanner.createdAt).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {selectedBanner.updatedAt && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Last Updated
+                      </h4>
+                      <p className="text-gray-600 text-sm">
+                        {new Date(selectedBanner.updatedAt).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    handleEdit(selectedBanner);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-medium flex items-center justify-center gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Banner
+                </button>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    handleDeleteClick(selectedBanner);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-3 rounded-xl hover:from-red-600 hover:to-rose-700 transition-all font-medium flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Banner
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -727,4 +568,4 @@ const Banner = () => {
   );
 };
 
-export default Banner;
+export default Banners;
