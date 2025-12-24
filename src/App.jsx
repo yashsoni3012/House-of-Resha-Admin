@@ -90,6 +90,7 @@ import AddProducts from "./components/AddProducts";
 import EditProducts from "./components/EditProducts";
 import AddBanners from "./components/AddBanners";
 import EditBanner from "./components/EditBanners";
+import AddBlogs from "./components/AddBlogs";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -129,11 +130,14 @@ const App = () => {
               <Route path="banners" element={<Banners />} />
               <Route path="users" element={<UserManagement />} />{" "}
               <Route path="blogs" element={<Blogs />} />
+              {/* products */}
               <Route path="add-product" element={<AddProducts />} />
               <Route path="edit-product/:id" element={<EditProducts />} />
+              {/* banners */}
               <Route path="/add-banner" element={<AddBanners />} />
               <Route path="/edit-banner/:id" element={<EditBanner />} />
-              {/* Add this route */}
+              {/* blogs */}
+              <Route path="/add-blog" element={<AddBlogs />} />
             </Route>
 
             {/* Catch all route - redirect to dashboard */}
