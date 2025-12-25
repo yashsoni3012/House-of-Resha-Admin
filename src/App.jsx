@@ -91,6 +91,7 @@ import EditProducts from "./components/EditProducts";
 import AddBanners from "./components/AddBanners";
 import EditBanner from "./components/EditBanners";
 import AddBlogs from "./components/AddBlogs";
+import EditBlogs from "./components/EditBlogs";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -138,6 +139,7 @@ const App = () => {
               <Route path="/edit-banner/:id" element={<EditBanner />} />
               {/* blogs */}
               <Route path="/add-blog" element={<AddBlogs />} />
+               <Route path="/edit-blog/:id" element={<EditBlogs />} />
             </Route>
 
             {/* Catch all route - redirect to dashboard */}

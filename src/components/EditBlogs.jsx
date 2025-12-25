@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  Plus,
-  X,
-  Upload,
-  Image as ImageIcon,
-  FileText,
-  Type,
   Save,
   Trash2,
-  Eye,
   ArrowLeft,
   CheckCircle,
   AlertCircle,
   Loader2,
+  Type,
+  FileText,
+  ImageIcon,
+  Upload,
+  Plus,
+  X,
 } from "lucide-react";
 
-const AddBlogs = () => {
+const EditBlogs = () => {
   const API_URL = "https://api.houseofresha.com/blogs";
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  // Initial blog state
+  // Blog state
   const [blog, setBlog] = useState({
     title: "",
     description: "",
@@ -32,10 +32,9 @@ const AddBlogs = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // 'success' or 'error'
   const [loading, setLoading] = useState(false);
-  const [blogs, setBlogs] = useState([]);
-  const [editingId, setEditingId] = useState(null);
+  const [fetching, setFetching] = useState(true);
   const [imagePreviews, setImagePreviews] = useState({});
-  const token = localStorage.getItem("token");
+  const [originalBlog, setOriginalBlog] = useState(null);
 
   // Show message function
   const showMessage = (text, type) => {
@@ -45,6 +44,54 @@ const AddBlogs = () => {
       setMessage("");
       setMessageType("");
     }, 5000);
+  };
+
+  // Fetch blog data for editing
+  const fetchBlogData = async () => {
+    try {
+      setFetching(true);
+      const response = await axios.get(`${API_URL}/${id}`);
+      const blogData = response.data.data || response.data;
+
+      // Store original blog data
+      setOriginalBlog(blogData);
+
+      // Set blog data
+      setBlog({
+        title: blogData.title || "",
+        description: blogData.description || "",
+        coverImage: null, // We'll handle image separately
+        content: blogData.content?.map((item) => ({
+          text: item.text || "",
+          img: item.img || null, // KEEP URL
+        })) || [{ text: "", img: null }],
+      });
+
+      // Set image previews exactly like AddBlogs component
+      const previews = {};
+
+      // Set cover image preview
+      if (blogData.coverImage) {
+        previews.cover = blogData.coverImage;
+      }
+
+      // Set content image previews
+      if (blogData.content && Array.isArray(blogData.content)) {
+        blogData.content.forEach((item, index) => {
+          if (item.img) {
+            previews[`content-${index}`] = item.img;
+          }
+        });
+      }
+
+      setImagePreviews(previews);
+    } catch (error) {
+      console.error("Error fetching blog:", error);
+      showMessage("Failed to load blog data", "error");
+      navigate("/blogs");
+    } finally {
+      setFetching(false);
+    }
   };
 
   // Handle text input changes
@@ -140,82 +187,73 @@ const AddBlogs = () => {
   };
 
   // Prepare form data (including file uploads)
-  const prepareFormData = () => {
-    const formData = new FormData();
+const prepareFormData = () => {
+  const formData = new FormData();
 
-    formData.append("title", blog.title);
-    formData.append("description", blog.description);
+  formData.append("title", blog.title);
+  formData.append("description", blog.description);
 
-    if (blog.coverImage) {
-      formData.append("cover", blog.coverImage);
+  // ✅ COVER IMAGE
+  if (blog.coverImage instanceof File) {
+    formData.append("cover", blog.coverImage);
+  }
+
+  // ✅ CONTENT
+  const contentArray = blog.content.map((item, index) => {
+    const obj = {
+      text: item.text,
+    };
+
+    if (item.img instanceof File) {
+      obj.img = `contentImages(${index + 1})`;
+    } else if (typeof item.img === "string") {
+      // ✅ KEEP EXISTING IMAGE URL
+      obj.img = item.img;
+    } else {
+      obj.img = "";
     }
 
-    // Prepare content array with text and image references
-    const contentArray = blog.content.map((item, index) => {
-      const obj = {
-        text: item.text,
-      };
+    return obj;
+  });
 
-      if (item.img) {
-        obj.img = `contentImages(${index + 1})`;
-      }
+  formData.append("content", JSON.stringify(contentArray));
 
-      return obj;
-    });
+  // ✅ APPEND ONLY NEW FILES
+  blog.content.forEach((item, index) => {
+    if (item.img instanceof File) {
+      formData.append(`contentImages(${index + 1})`, item.img);
+    }
+  });
 
-    // Append content as JSON string
-    formData.append("content", JSON.stringify(contentArray));
+  return formData;
+};
 
-    // Append content images separately with correct field names
-    blog.content.forEach((item, index) => {
-      if (item.img) {
-        formData.append(`contentImages(${index + 1})`, item.img);
-      }
-    });
 
-    return formData;
-  };
-
-  // Submit blog (create or update)
+  // Update blog using PUT (or PATCH if your API supports it)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!editingId && !blog.coverImage) {
-      showMessage("Cover image is required", "error");
-      setLoading(false);
-      return;
-    }
-
     try {
       const formData = prepareFormData();
 
-      if (editingId) {
-        await axios.put(`${API_URL}/${editingId}`, formData);
-        showMessage("Blog updated successfully!", "success");
-        setTimeout(() => {
-          navigate("/blogs");
-        }, 2000);
-      } else {
-        await axios.post(API_URL, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+      // Use PUT for full update (or PATCH for partial)
+      await axios.put(`${API_URL}/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-        showMessage("Blog created successfully!", "success");
+      showMessage("Blog updated successfully!", "success");
 
-        setTimeout(() => {
-          navigate("/blogs");
-        }, 1500);
-      }
-
-      resetForm();
-      fetchBlogs();
+      // Redirect after success
+      setTimeout(() => {
+        navigate("/blogs");
+      }, 1500);
     } catch (error) {
-      console.error(error.response?.data || error);
+      console.error("Update error:", error.response?.data || error);
       showMessage(
-        error.response?.data?.message || "Invalid data sent to server",
+        error.response?.data?.message || "Failed to update blog",
         "error"
       );
     } finally {
@@ -223,68 +261,17 @@ const AddBlogs = () => {
     }
   };
 
-  // Delete blog
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
-
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      showMessage("Blog deleted successfully!", "success");
-      fetchBlogs();
-    } catch (error) {
-      console.error("Error:", error);
-      showMessage("Delete failed, please try again", "error");
-    }
-  };
-
-  // Get all blogs
-  const fetchBlogs = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      setBlogs(response.data.data || response.data);
-    } catch (error) {
-      console.error("Error fetching blogs:", error);
-    }
-  };
-
-  // Edit blog
-  const handleEdit = (blogItem) => {
-    setBlog({
-      title: blogItem.title,
-      description: blogItem.description,
+  // Clear cover image
+  const clearCoverImage = () => {
+    setBlog((prev) => ({
+      ...prev,
       coverImage: null,
-      content: blogItem.content.map((item) => ({
-        text: item.text,
-        img: null,
-      })),
+    }));
+    setImagePreviews((prev) => {
+      const newPreviews = { ...prev };
+      delete newPreviews.cover;
+      return newPreviews;
     });
-    setEditingId(blogItem._id);
-
-    // Set image previews
-    const previews = {};
-    if (blogItem.coverImage) {
-      previews.cover = blogItem.coverImage;
-    }
-    blogItem.content.forEach((item, index) => {
-      if (item.img) {
-        previews[`content-${index}`] = item.img;
-      }
-    });
-    setImagePreviews(previews);
-
-    window.scrollTo(0, 0);
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setBlog({
-      title: "",
-      description: "",
-      coverImage: null,
-      content: [{ text: "", img: null }],
-    });
-    setEditingId(null);
-    setImagePreviews({});
   };
 
   // Clear image for specific content block
@@ -304,26 +291,28 @@ const AddBlogs = () => {
     setImagePreviews(newPreviews);
   };
 
-  // Clear cover image
-  const clearCoverImage = () => {
-    setBlog((prev) => ({
-      ...prev,
-      coverImage: null,
-    }));
-    const newPreviews = { ...imagePreviews };
-    delete newPreviews.cover;
-    setImagePreviews(newPreviews);
-  };
-
-  // Navigate to blogs page
+  // Navigate back to blogs
   const navigateToBlogs = () => {
     navigate("/blogs");
   };
 
-  // Fetch blogs on component mount
+  // Fetch blog data on component mount
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    if (id) {
+      fetchBlogData();
+    }
+  }, [id]);
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading blog data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -333,10 +322,10 @@ const AddBlogs = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {editingId ? "✏️ Edit Blog Post" : "📝 Create New Blog"}
+                ✏️ Edit Blog Post
               </h1>
               <p className="mt-2 text-gray-600 text-sm sm:text-base">
-                Craft compelling stories with rich text and stunning visuals
+                Make changes to your blog post
               </p>
             </div>
             <button
@@ -344,7 +333,7 @@ const AddBlogs = () => {
               className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 hover:-translate-y-0.5"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm sm:text-base">View Blogs</span>
+              <span className="text-sm sm:text-base">Back to Blogs</span>
             </button>
           </div>
         </div>
@@ -406,7 +395,7 @@ const AddBlogs = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-gray-50"
-                  placeholder="Enter an engaging blog title..."
+                  placeholder="Enter blog title..."
                 />
               </div>
 
@@ -427,7 +416,7 @@ const AddBlogs = () => {
                   required
                   rows="4"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 bg-gray-50 resize-none"
-                  placeholder="Write a compelling description..."
+                  placeholder="Write description..."
                 />
               </div>
 
@@ -439,41 +428,12 @@ const AddBlogs = () => {
                   </div>
                   <label className="block text-sm font-semibold text-gray-700">
                     Cover Image{" "}
-                    {!editingId && <span className="text-red-500">*</span>}
+                    <span className="text-gray-500">(Optional)</span>
                   </label>
                 </div>
 
                 <div className="space-y-4">
-                  {!imagePreviews.cover ? (
-                    <label className="block">
-                      <div className="flex flex-col items-center justify-center w-full h-48 sm:h-56 border-3 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                          <div className="w-14 h-14 mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Upload className="w-6 h-6 text-blue-500" />
-                          </div>
-                          <p className="mb-2 text-sm font-semibold text-gray-700">
-                            {!editingId
-                              ? "Upload cover image (Required)"
-                              : "Click to upload cover image"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            PNG, JPG, GIF up to 5MB
-                          </p>
-                          {!editingId && (
-                            <p className="text-xs text-red-500 mt-2 font-medium">
-                              * Required for new blogs
-                            </p>
-                          )}
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleCoverImageChange}
-                        />
-                      </div>
-                    </label>
-                  ) : (
+                  {imagePreviews.cover ? (
                     <div className="relative group">
                       <img
                         src={imagePreviews.cover}
@@ -488,11 +448,36 @@ const AddBlogs = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+                  ) : (
+                    <label className="block">
+                      <div className="flex flex-col items-center justify-center w-full h-48 sm:h-56 border-3 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                          <div className="w-14 h-14 mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Upload className="w-6 h-6 text-blue-500" />
+                          </div>
+                          <p className="mb-2 text-sm font-semibold text-gray-700">
+                            Update cover image (Optional)
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF up to 5MB
+                          </p>
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleCoverImageChange}
+                        />
+                      </div>
+                    </label>
                   )}
-                  {!blog.coverImage && !editingId && (
-                    <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                  {!imagePreviews.cover && originalBlog?.coverImage && (
+                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
                       <AlertCircle className="w-4 h-4" />
-                      <span>Cover image is required for new blogs</span>
+                      <span>
+                        Existing cover image will be removed if you don't upload
+                        a new one after clearing
+                      </span>
                     </div>
                   )}
                 </div>
@@ -512,7 +497,7 @@ const AddBlogs = () => {
                         Content Sections
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Add text and optional images
+                        Edit text and images
                       </p>
                     </div>
                   </div>
@@ -563,7 +548,7 @@ const AddBlogs = () => {
                           required
                           rows="8"
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white resize-none"
-                          placeholder="Write your content here..."
+                          placeholder="Edit content..."
                         />
                         <div className="text-xs text-gray-500">
                           {section.text.length} characters
@@ -576,7 +561,22 @@ const AddBlogs = () => {
                           Image{" "}
                           <span className="text-gray-500">(Optional)</span>
                         </label>
-                        {!imagePreviews[`content-${index}`] ? (
+                        {imagePreviews[`content-${index}`] ? (
+                          <div className="relative group h-48">
+                            <img
+                              src={imagePreviews[`content-${index}`]}
+                              alt={`Content ${index + 1} preview`}
+                              className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => clearContentImage(index)}
+                              className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
                           <label className="block">
                             <div className="flex flex-col items-center justify-center w-full h-48 border-3 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
                               <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -603,21 +603,6 @@ const AddBlogs = () => {
                               />
                             </div>
                           </label>
-                        ) : (
-                          <div className="relative group h-48">
-                            <img
-                              src={imagePreviews[`content-${index}`]}
-                              alt={`Content ${index + 1} preview`}
-                              className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => clearContentImage(index)}
-                              className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
                         )}
                       </div>
                     </div>
@@ -632,7 +617,7 @@ const AddBlogs = () => {
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                     <Plus className="w-4 h-4" />
                   </div>
-                  Add Another Section
+                  Add New Section
                 </button>
               </div>
 
@@ -651,17 +636,12 @@ const AddBlogs = () => {
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Processing...
-                      </span>
-                    ) : editingId ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Save className="w-5 h-5" />
-                        Update Blog
+                        Updating...
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
-                        <Plus className="w-5 h-5" />
-                        Create Blog
+                        <Save className="w-5 h-5" />
+                        Update Blog
                       </span>
                     )}
                   </button>
@@ -688,22 +668,9 @@ const AddBlogs = () => {
         .animate-slideDown {
           animation: slideDown 0.3s ease-out;
         }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
-        }
       `}</style>
     </div>
   );
 };
 
-export default AddBlogs;
+export default EditBlogs;
