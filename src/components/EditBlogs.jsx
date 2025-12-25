@@ -1,676 +1,678 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 import {
-  Save,
-  Trash2,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Type,
-  FileText,
-  ImageIcon,
+  Edit,
   Upload,
-  Plus,
   X,
+  AlertCircle,
+  ArrowLeft,
+  Loader2,
+  Save,
+  Image,
+  Type,
+  Plus,
+  Trash2,
+  FileText,
 } from "lucide-react";
 
-const EditBlogs = () => {
-  const API_URL = "https://api.houseofresha.com/blogs";
+const EditBlog = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-
-  // Blog state
-  const [blog, setBlog] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     coverImage: null,
     content: [{ text: "", img: null }],
   });
+  const [existingData, setExistingData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [contentPreviews, setContentPreviews] = useState([]);
+  const [existingContentImages, setExistingContentImages] = useState([]);
 
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // 'success' or 'error'
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [imagePreviews, setImagePreviews] = useState({});
-  const [originalBlog, setOriginalBlog] = useState(null);
+  const API_BASE_URL = "https://api.houseofresha.com";
 
-  // Show message function
-  const showMessage = (text, type) => {
-    setMessage(text);
-    setMessageType(type);
-    setTimeout(() => {
-      setMessage("");
-      setMessageType("");
-    }, 5000);
-  };
+  // Fetch blog details on component mount
+  useEffect(() => {
+    fetchBlogDetails();
+  }, [id]);
 
-  // Fetch blog data for editing
-  const fetchBlogData = async () => {
+  const fetchBlogDetails = async () => {
     try {
-      setFetching(true);
-      const response = await axios.get(`${API_URL}/${id}`);
-      const blogData = response.data.data || response.data;
+      setLoading(true);
+      setError(null);
 
-      // Store original blog data
-      setOriginalBlog(blogData);
+      console.log("Fetching blog with ID:", id);
 
-      // Set blog data
-      setBlog({
-        title: blogData.title || "",
-        description: blogData.description || "",
-        coverImage: null, // We'll handle image separately
-        content: blogData.content?.map((item) => ({
-          text: item.text || "",
-          img: item.img || null, // KEEP URL
-        })) || [{ text: "", img: null }],
-      });
+      // Try to fetch the specific blog
+      const response = await axios.get(`${API_BASE_URL}/blogs`);
 
-      // Set image previews exactly like AddBlogs component
-      const previews = {};
+      if (response.data.success && Array.isArray(response.data.data)) {
+        const allBlogs = response.data.data;
+        const blog = allBlogs.find((b) => b._id === id);
 
-      // Set cover image preview
-      if (blogData.coverImage) {
-        previews.cover = blogData.coverImage;
-      }
+        if (blog) {
+          console.log("Found blog:", blog);
+          setExistingData(blog);
 
-      // Set content image previews
-      if (blogData.content && Array.isArray(blogData.content)) {
-        blogData.content.forEach((item, index) => {
-          if (item.img) {
-            previews[`content-${index}`] = item.img;
+          // Set form data from blog
+          const contentSections =
+            blog.content && blog.content.length > 0
+              ? blog.content.map((item) => ({
+                  text: item.text || "",
+                  img: null, // We'll handle existing images separately
+                }))
+              : [{ text: "", img: null }];
+
+          setFormData({
+            title: blog.title || "",
+            description: blog.description || "",
+            coverImage: null,
+            content: contentSections,
+          });
+
+          // Set cover image preview if exists
+          if (blog.coverImage) {
+            const coverUrl = blog.coverImage.startsWith("http")
+              ? blog.coverImage
+              : `${API_BASE_URL}/${blog.coverImage}`;
+            setCoverPreview(coverUrl);
           }
-        });
+
+          // Store existing content images for reference
+          if (blog.content) {
+            const existingImages = blog.content.map((item) =>
+              item.img && !item.img.includes("contentImages")
+                ? `${API_BASE_URL}/${item.img}`
+                : null
+            );
+            setExistingContentImages(existingImages);
+
+            // Initialize content previews with existing images
+            const previews = blog.content.map((item, index) => {
+              if (item.img && !item.img.includes("contentImages")) {
+                return `${API_BASE_URL}/${item.img}`;
+              }
+              return null;
+            });
+            setContentPreviews(previews);
+          }
+        } else {
+          throw new Error("Blog not found");
+        }
+      } else {
+        throw new Error("Invalid API response format");
       }
-
-      setImagePreviews(previews);
     } catch (error) {
-      console.error("Error fetching blog:", error);
-      showMessage("Failed to load blog data", "error");
-      navigate("/blogs");
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  // Handle text input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setBlog((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // Handle cover image upload
-  const handleCoverImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setBlog((prev) => ({
-        ...prev,
-        coverImage: file,
-      }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviews((prev) => ({
-          ...prev,
-          cover: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle content paragraph text changes
-  const handleContentTextChange = (index, value) => {
-    const updatedContent = [...blog.content];
-    updatedContent[index] = {
-      ...updatedContent[index],
-      text: value,
-    };
-    setBlog((prev) => ({
-      ...prev,
-      content: updatedContent,
-    }));
-  };
-
-  // Handle content image upload
-  const handleContentImageChange = (index, file) => {
-    if (file) {
-      const updatedContent = [...blog.content];
-      updatedContent[index] = {
-        ...updatedContent[index],
-        img: file,
-      };
-      setBlog((prev) => ({
-        ...prev,
-        content: updatedContent,
-      }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviews((prev) => ({
-          ...prev,
-          [`content-${index}`]: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Add new content paragraph
-  const addContentBlock = () => {
-    setBlog((prev) => ({
-      ...prev,
-      content: [...prev.content, { text: "", img: null }],
-    }));
-  };
-
-  // Remove content paragraph
-  const removeContentBlock = (index) => {
-    if (blog.content.length > 1) {
-      const updatedContent = blog.content.filter((_, i) => i !== index);
-      setBlog((prev) => ({
-        ...prev,
-        content: updatedContent,
-      }));
-
-      // Remove preview
-      const newPreviews = { ...imagePreviews };
-      delete newPreviews[`content-${index}`];
-      setImagePreviews(newPreviews);
-    }
-  };
-
-  // Prepare form data (including file uploads)
-const prepareFormData = () => {
-  const formData = new FormData();
-
-  formData.append("title", blog.title);
-  formData.append("description", blog.description);
-
-  // ✅ COVER IMAGE
-  if (blog.coverImage instanceof File) {
-    formData.append("cover", blog.coverImage);
-  }
-
-  // ✅ CONTENT
-  const contentArray = blog.content.map((item, index) => {
-    const obj = {
-      text: item.text,
-    };
-
-    if (item.img instanceof File) {
-      obj.img = `contentImages(${index + 1})`;
-    } else if (typeof item.img === "string") {
-      // ✅ KEEP EXISTING IMAGE URL
-      obj.img = item.img;
-    } else {
-      obj.img = "";
-    }
-
-    return obj;
-  });
-
-  formData.append("content", JSON.stringify(contentArray));
-
-  // ✅ APPEND ONLY NEW FILES
-  blog.content.forEach((item, index) => {
-    if (item.img instanceof File) {
-      formData.append(`contentImages(${index + 1})`, item.img);
-    }
-  });
-
-  return formData;
-};
-
-
-  // Update blog using PUT (or PATCH if your API supports it)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const formData = prepareFormData();
-
-      // Use PUT for full update (or PATCH for partial)
-      await axios.put(`${API_URL}/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      showMessage("Blog updated successfully!", "success");
-
-      // Redirect after success
-      setTimeout(() => {
-        navigate("/blogs");
-      }, 1500);
-    } catch (error) {
-      console.error("Update error:", error.response?.data || error);
-      showMessage(
-        error.response?.data?.message || "Failed to update blog",
-        "error"
+      console.error("Error fetching blog details:", error);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load blog details. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Clear cover image
-  const clearCoverImage = () => {
-    setBlog((prev) => ({
+  // Handle text input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      coverImage: null,
+      [name]: value,
     }));
-    setImagePreviews((prev) => {
-      const newPreviews = { ...prev };
-      delete newPreviews.cover;
-      return newPreviews;
-    });
   };
 
-  // Clear image for specific content block
-  const clearContentImage = (index) => {
-    const updatedContent = [...blog.content];
-    updatedContent[index] = {
-      ...updatedContent[index],
-      img: null,
-    };
-    setBlog((prev) => ({
+  // Handle content text changes
+  const handleContentTextChange = (index, value) => {
+    const updatedContent = [...formData.content];
+    updatedContent[index].text = value;
+    setFormData((prev) => ({
+      ...prev,
+      content: updatedContent,
+    }));
+  };
+
+  // Handle cover image change
+  const handleCoverImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Cover image size should be less than 5MB");
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        coverImage: file,
+      }));
+
+      // Clean up previous preview if it was a blob URL
+      if (coverPreview && coverPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(coverPreview);
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      setCoverPreview(previewUrl);
+      setError(null);
+    }
+  };
+
+  // Handle content image change
+  const handleContentImageChange = (index, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
+        return;
+      }
+
+      if (file.size > 3 * 1024 * 1024) {
+        setError("Content image size should be less than 3MB");
+        return;
+      }
+
+      const updatedContent = [...formData.content];
+      updatedContent[index].img = file;
+      setFormData((prev) => ({
+        ...prev,
+        content: updatedContent,
+      }));
+
+      // Update preview
+      const updatedPreviews = [...contentPreviews];
+      // Clean up previous preview if it was a blob URL
+      if (
+        updatedPreviews[index] &&
+        updatedPreviews[index].startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(updatedPreviews[index]);
+      }
+      updatedPreviews[index] = URL.createObjectURL(file);
+      setContentPreviews(updatedPreviews);
+      setError(null);
+    }
+  };
+
+  // Add new content section
+  const addContentSection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      content: [...prev.content, { text: "", img: null }],
+    }));
+    setContentPreviews([...contentPreviews, null]);
+  };
+
+  // Remove content section
+  const removeContentSection = (index) => {
+    const updatedContent = [...formData.content];
+    updatedContent.splice(index, 1);
+    setFormData((prev) => ({
       ...prev,
       content: updatedContent,
     }));
 
-    const newPreviews = { ...imagePreviews };
-    delete newPreviews[`content-${index}`];
-    setImagePreviews(newPreviews);
-  };
-
-  // Navigate back to blogs
-  const navigateToBlogs = () => {
-    navigate("/blogs");
-  };
-
-  // Fetch blog data on component mount
-  useEffect(() => {
-    if (id) {
-      fetchBlogData();
+    const updatedPreviews = [...contentPreviews];
+    // Clean up blob URL if it exists
+    if (updatedPreviews[index] && updatedPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(updatedPreviews[index]);
     }
-  }, [id]);
+    updatedPreviews.splice(index, 1);
+    setContentPreviews(updatedPreviews);
 
-  if (fetching) {
+    // Also update existing content images array
+    const updatedExisting = [...existingContentImages];
+    updatedExisting.splice(index, 1);
+    setExistingContentImages(updatedExisting);
+  };
+
+  // Remove cover image
+  const handleRemoveCoverImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      coverImage: null,
+    }));
+    // Clean up blob URL if it exists
+    if (coverPreview && coverPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(coverPreview);
+    }
+    // Reset to existing cover image if available
+    if (existingData?.coverImage) {
+      const coverUrl = existingData.coverImage.startsWith("http")
+        ? existingData.coverImage
+        : `${API_BASE_URL}/${existingData.coverImage}`;
+      setCoverPreview(coverUrl);
+    } else {
+      setCoverPreview(null);
+    }
+  };
+
+  // Remove content image
+  const handleRemoveContentImage = (index) => {
+    const updatedContent = [...formData.content];
+    updatedContent[index].img = null;
+    setFormData((prev) => ({
+      ...prev,
+      content: updatedContent,
+    }));
+
+    const updatedPreviews = [...contentPreviews];
+    // Clean up blob URL if it exists
+    if (updatedPreviews[index] && updatedPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(updatedPreviews[index]);
+    }
+    // Reset to existing image if available
+    if (existingContentImages[index]) {
+      updatedPreviews[index] = existingContentImages[index];
+    } else {
+      updatedPreviews[index] = null;
+    }
+    setContentPreviews(updatedPreviews);
+  };
+
+  // Handle form submission using PATCH method
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+
+  try {
+    setUpdateLoading(true);
+
+    const submitData = new FormData();
+
+    submitData.append("title", formData.title);
+    submitData.append("description", formData.description);
+
+    // cover image (KEY MUST BE `cover`)
+    if (formData.coverImage) {
+      submitData.append("cover", formData.coverImage);
+    }
+
+    // Build content JSON
+    const contentPayload = formData.content.map((section) => ({
+      text: section.text,
+      img: "", // backend will attach images by index
+    }));
+
+    submitData.append("content", JSON.stringify(contentPayload));
+
+    // Append ONLY NEW content images
+    formData.content.forEach((section) => {
+      if (section.img instanceof File) {
+        submitData.append("contentImages[]", section.img);
+      }
+    });
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/blogs/${id}`,
+      submitData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    if (response.data.success) {
+      navigate("/blogs");
+    } else {
+      throw new Error(response.data.message || "Update failed");
+    }
+  } catch (error) {
+    console.error("Update error:", error.response?.data || error);
+    setError(error.response?.data?.message || "Failed to update blog");
+  } finally {
+    setUpdateLoading(false);
+  }
+};
+
+
+  // Loading state
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading blog data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 absolute top-0"></div>
+          </div>
+          <p className="text-gray-600 mt-4">Loading blog details...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                ✏️ Edit Blog Post
-              </h1>
-              <p className="mt-2 text-gray-600 text-sm sm:text-base">
-                Make changes to your blog post
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/blogs")}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={updateLoading}
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Edit className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Edit Blog Post
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-gray-600">
+                Update your blog post: {existingData?.title || "Untitled Blog"}
               </p>
             </div>
-            <button
-              onClick={navigateToBlogs}
-              className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 hover:-translate-y-0.5"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm sm:text-base">Back to Blogs</span>
-            </button>
           </div>
         </div>
 
-        {/* Message Alert */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-xl shadow-lg border-l-4 animate-slideDown ${
-              messageType === "success"
-                ? "bg-green-50 border-green-500 text-green-800"
-                : "bg-red-50 border-red-500 text-red-800"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              {messageType === "success" ? (
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              )}
+        {/* Form */}
+        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 border border-white/20">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-medium">{message}</p>
-                {messageType === "success" && (
-                  <p className="text-sm mt-1 text-green-600 opacity-80">
-                    Redirecting to blogs page...
-                  </p>
-                )}
+                <p className="text-sm">{error}</p>
               </div>
               <button
-                onClick={() => {
-                  setMessage("");
-                  setMessageType("");
-                }}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-700"
+                disabled={updateLoading}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Main Form Container */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-          <div className="p-4 sm:p-6 lg:p-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Title Section */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title Field */}
+            <div>
+              <label
+                htmlFor="title"
+                className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2"
+              >
+                <Type className="w-4 h-4" />
+                Blog Title *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter blog title"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                disabled={updateLoading}
+                required
+              />
+            </div>
+
+            {/* Description Field */}
+            <div>
+              <label
+                htmlFor="description"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                <FileText className="w-4 h-4 inline mr-2" />
+                Description *
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Enter blog description"
+                rows="4"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                disabled={updateLoading}
+                required
+              />
+            </div>
+
+            {/* Cover Image Section */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Cover Image
+              </label>
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Type className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Blog Title <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  name="title"
-                  value={blog.title}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-gray-50"
-                  placeholder="Enter blog title..."
-                />
-              </div>
-
-              {/* Description Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-green-600" />
-                  </div>
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Description <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <textarea
-                  name="description"
-                  value={blog.description}
-                  onChange={handleInputChange}
-                  required
-                  rows="4"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 bg-gray-50 resize-none"
-                  placeholder="Write description..."
-                />
-              </div>
-
-              {/* Cover Image Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <ImageIcon className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Cover Image{" "}
-                    <span className="text-gray-500">(Optional)</span>
-                  </label>
-                </div>
-
-                <div className="space-y-4">
-                  {imagePreviews.cover ? (
-                    <div className="relative group">
-                      <img
-                        src={imagePreviews.cover}
-                        alt="Cover preview"
-                        className="w-full h-48 sm:h-56 object-cover rounded-2xl shadow-lg transition-transform duration-500 group-hover:scale-[1.02]"
-                      />
-                      <button
-                        type="button"
-                        onClick={clearCoverImage}
-                        className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="block">
-                      <div className="flex flex-col items-center justify-center w-full h-48 sm:h-56 border-3 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                          <div className="w-14 h-14 mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Upload className="w-6 h-6 text-blue-500" />
-                          </div>
-                          <p className="mb-2 text-sm font-semibold text-gray-700">
-                            Update cover image (Optional)
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            PNG, JPG, GIF up to 5MB
-                          </p>
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleCoverImageChange}
-                        />
-                      </div>
-                    </label>
-                  )}
-                  {!imagePreviews.cover && originalBlog?.coverImage && (
-                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                      <AlertCircle className="w-4 h-4" />
-                      <span>
-                        Existing cover image will be removed if you don't upload
-                        a new one after clearing
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Content Sections */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                      <span className="text-indigo-600 font-bold">
-                        {blog.content.length}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Content Sections
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Edit text and images
-                      </p>
+                {coverPreview ? (
+                  <div className="relative rounded-xl overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                    <img
+                      src={coverPreview}
+                      alt="Cover preview"
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/800x400?text=Cover+Image+Not+Found";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoverImage}
+                      className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                      disabled={updateLoading}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      {formData.coverImage ? "New Image" : "Existing Image"}
                     </div>
                   </div>
-                  <span className="text-xs font-medium px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
-                    Text required • Image optional
-                  </span>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No cover image available
+                  </p>
+                )}
 
-                {blog.content.map((section, index) => (
-                  <div
-                    key={index}
-                    className="bg-gradient-to-br from-gray-50 to-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300"
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverImageChange}
+                    className="hidden"
+                    id="cover-upload"
+                    disabled={updateLoading}
+                  />
+                  <label
+                    htmlFor="cover-upload"
+                    className={`cursor-pointer flex flex-col items-center ${
+                      updateLoading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
-                    <div className="flex justify-between items-center mb-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <h4 className="font-semibold text-gray-800">
-                          Section {index + 1}
-                        </h4>
-                      </div>
-                      {blog.content.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeContentBlock(index)}
-                          className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Remove
-                        </button>
-                      )}
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                      <Image className="w-6 h-6 text-blue-600" />
                     </div>
+                    <p className="text-gray-700 font-medium mb-1 text-sm">
+                      {coverPreview
+                        ? "Click to change cover image"
+                        : "Click to upload cover image"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      JPG, PNG, or WebP (Max 5MB)
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave empty to keep existing image
+                    </p>
+                  </label>
+                </div>
+              </div>
+            </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Text Content */}
-                      <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Text Content <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          value={section.text}
-                          onChange={(e) =>
-                            handleContentTextChange(index, e.target.value)
-                          }
-                          required
-                          rows="8"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white resize-none"
-                          placeholder="Edit content..."
-                        />
-                        <div className="text-xs text-gray-500">
-                          {section.text.length} characters
-                        </div>
-                      </div>
-
-                      {/* Image Upload */}
-                      <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Image{" "}
-                          <span className="text-gray-500">(Optional)</span>
-                        </label>
-                        {imagePreviews[`content-${index}`] ? (
-                          <div className="relative group h-48">
-                            <img
-                              src={imagePreviews[`content-${index}`]}
-                              alt={`Content ${index + 1} preview`}
-                              className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => clearContentImage(index)}
-                              className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <label className="block">
-                            <div className="flex flex-col items-center justify-center w-full h-48 border-3 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <div className="w-12 h-12 mb-3 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                                  <Upload className="w-5 h-5 text-gray-500" />
-                                </div>
-                                <p className="text-sm font-medium text-gray-600">
-                                  Upload image
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  PNG, JPG, GIF
-                                </p>
-                              </div>
-                              <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={(e) =>
-                                  handleContentImageChange(
-                                    index,
-                                    e.target.files[0]
-                                  )
-                                }
-                              />
-                            </div>
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
+            {/* Content Sections */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Content Sections *
+                </label>
                 <button
                   type="button"
-                  onClick={addContentBlock}
-                  className="w-full py-4 border-3 border-dashed border-gray-300 rounded-xl text-gray-600 hover:text-gray-800 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-2 font-medium group"
+                  onClick={addContentSection}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                  disabled={updateLoading}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                    <Plus className="w-4 h-4" />
-                  </div>
-                  Add New Section
+                  <Plus className="w-4 h-4" />
+                  Add Section
                 </button>
               </div>
 
-              {/* Form Actions */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg ${
-                      loading
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    } text-white`}
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Updating...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        <Save className="w-5 h-5" />
-                        Update Blog
-                      </span>
+              {formData.content.map((section, index) => (
+                <div
+                  key={index}
+                  className="mb-6 p-4 border-2 border-gray-200 rounded-xl"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700">
+                      Section {index + 1}
+                    </h3>
+                    {formData.content.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeContentSection(index)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        disabled={updateLoading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     )}
-                  </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Text Input */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Text Content *
+                      </label>
+                      <textarea
+                        value={section.text}
+                        onChange={(e) =>
+                          handleContentTextChange(index, e.target.value)
+                        }
+                        placeholder="Enter text content for this section"
+                        rows="3"
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors text-sm"
+                        disabled={updateLoading}
+                        required
+                      />
+                    </div>
+
+                    {/* Image Upload */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Section Image (Optional)
+                      </label>
+                      <div className="space-y-2">
+                        {contentPreviews[index] ? (
+                          <div className="relative rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
+                            <img
+                              src={contentPreviews[index]}
+                              alt={`Section ${index + 1} preview`}
+                              className="w-full h-40 object-cover"
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://via.placeholder.com/400x200?text=Image+Not+Found";
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveContentImage(index)}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-md transition-colors"
+                              disabled={updateLoading}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                            <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                              {formData.content[index]?.img instanceof File
+                                ? "New"
+                                : "Existing"}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500">
+                            No image for this section
+                          </p>
+                        )}
+
+                        <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleContentImageChange(index, e)}
+                            className="hidden"
+                            id={`content-image-${index}`}
+                            disabled={updateLoading}
+                          />
+                          <label
+                            htmlFor={`content-image-${index}`}
+                            className={`cursor-pointer flex flex-col items-center ${
+                              updateLoading
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          >
+                            <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center mb-2">
+                              <Image className="w-4 h-4 text-blue-500" />
+                            </div>
+                            <p className="text-xs text-gray-700">
+                              {contentPreviews[index]
+                                ? "Change image"
+                                : "Add image"}
+                            </p>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </div>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate("/blogs")}
+                disabled={updateLoading}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={updateLoading}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+              >
+                {updateLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Updating Blog...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Update Blog Post
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      {/* Custom Animations */}
-      <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-slideDown {
-          animation: slideDown 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 };
 
-export default EditBlogs;
+export default EditBlog;
