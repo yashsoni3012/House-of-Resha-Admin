@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import {
   Plus,
   X,
@@ -21,6 +23,109 @@ const AddBlogs = () => {
   const API_URL = "https://api.houseofresha.com/blogs";
   const navigate = useNavigate();
 
+  // Quill modules configuration
+  const modules = {
+  toolbar: [
+    [{ header: [1, 2, 3, 4, 5, 6, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    [{ script: "sub" }, { script: "super" }],
+    [{ indent: "-1" }, { indent: "+1" }],
+    [{ align: [] }],
+    ["blockquote", "code-block"],
+    ["link"],
+    [{ color: [] }, { background: [] }],
+    ["clean"],
+  ],
+};
+
+
+  // Quill formats configuration
+  const formats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",        // ✔ handles ordered + bullet
+  "indent",
+  "script",
+  "align",
+  "blockquote",
+  "code-block",
+  "link",
+  "color",
+  "background",
+];
+
+
+  // Helper function to decode HTML entities
+  const decodeHTML = (html) => {
+    if (!html) return "";
+
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = html;
+    return textarea.value;
+  };
+
+  // Helper function to encode HTML for storage
+  const encodeHTML = (html) => {
+    if (!html) return "";
+
+    return html
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  // Helper function to prepare content for Quill editor
+  const prepareContentForEditor = (content) => {
+    if (!content) return "";
+
+    try {
+      // If content is already decoded/plain HTML, return as is
+      if (content.includes("<") && !content.includes("&lt;")) {
+        return content;
+      }
+
+      // Decode HTML entities
+      return decodeHTML(content);
+    } catch (error) {
+      console.error("Error preparing content for editor:", error);
+      return content;
+    }
+  };
+
+  // Helper function to prepare content for API
+  const prepareContentForAPI = (content) => {
+    if (!content) return "";
+
+    try {
+      // Clean the HTML and encode it
+      let cleanedContent = content;
+
+      // Remove empty paragraphs
+      cleanedContent = cleanedContent.replace(/<p><br><\/p>/g, "");
+      cleanedContent = cleanedContent.replace(/<p>\s*<\/p>/g, "");
+
+      // Trim whitespace
+      cleanedContent = cleanedContent.trim();
+
+      // If empty after cleaning, return empty string
+      if (!cleanedContent || cleanedContent === "<p></p>") {
+        return "";
+      }
+
+      // Encode HTML for safe storage
+      return encodeHTML(cleanedContent);
+    } catch (error) {
+      console.error("Error preparing content for API:", error);
+      return encodeHTML(content);
+    }
+  };
+
   // Initial blog state
   const [blog, setBlog] = useState({
     title: "",
@@ -30,7 +135,7 @@ const AddBlogs = () => {
   });
 
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // 'success' or 'error'
+  const [messageType, setMessageType] = useState("");
   const [loading, setLoading] = useState(false);
   const [blogs, setBlogs] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -65,7 +170,6 @@ const AddBlogs = () => {
         coverImage: file,
       }));
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews((prev) => ({
@@ -77,7 +181,7 @@ const AddBlogs = () => {
     }
   };
 
-  // Handle content paragraph text changes
+  // Handle rich text content changes
   const handleContentTextChange = (index, value) => {
     const updatedContent = [...blog.content];
     updatedContent[index] = {
@@ -103,7 +207,6 @@ const AddBlogs = () => {
         content: updatedContent,
       }));
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews((prev) => ({
@@ -132,54 +235,80 @@ const AddBlogs = () => {
         content: updatedContent,
       }));
 
-      // Remove preview
       const newPreviews = { ...imagePreviews };
       delete newPreviews[`content-${index}`];
       setImagePreviews(newPreviews);
     }
   };
 
-  // Prepare form data (including file uploads)
-  const prepareFormData = () => {
-    const formData = new FormData();
+  // Count characters in HTML text (excluding tags)
+  const countTextCharacters = (html) => {
+    if (!html) return 0;
 
-    formData.append("title", blog.title);
-    formData.append("description", blog.description);
-
-    if (blog.coverImage) {
-      formData.append("cover", blog.coverImage);
+    try {
+      const decoded = decodeHTML(html);
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = decoded;
+      return tempDiv.textContent.length;
+    } catch (error) {
+      return html.replace(/<[^>]*>/g, "").length;
     }
-
-    // Prepare content array with text and image references
-    const contentArray = blog.content.map((item, index) => {
-      const obj = {
-        text: item.text,
-      };
-
-      if (item.img) {
-        obj.img = `contentImages(${index + 1})`;
-      }
-
-      return obj;
-    });
-
-    // Append content as JSON string
-    formData.append("content", JSON.stringify(contentArray));
-
-    // Append content images separately with correct field names
-    blog.content.forEach((item, index) => {
-      if (item.img) {
-        formData.append(`contentImages(${index + 1})`, item.img);
-      }
-    });
-
-    return formData;
   };
 
-  // Submit blog (create or update)
+  // Prepare form data
+const prepareFormData = () => {
+  const formData = new FormData();
+
+  formData.append("title", blog.title);
+  formData.append("description", blog.description);
+
+  if (blog.coverImage) {
+    formData.append("cover", blog.coverImage);
+  }
+
+  const contentArray = blog.content.map((item, index) => {
+    const obj = {
+      text: item.text, // ✅ RAW HTML FROM QUILL
+    };
+
+    if (item.img) {
+      obj.img = `contentImages(${index + 1})`;
+    }
+
+    return obj;
+  });
+
+  formData.append("content", JSON.stringify(contentArray));
+
+  blog.content.forEach((item, index) => {
+    if (item.img) {
+      formData.append(`contentImages(${index + 1})`, item.img);
+    }
+  });
+
+  return formData;
+};
+
+
+  // Submit blog
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // Validate content sections
+    let hasEmptyContent = false;
+    blog.content.forEach((section, index) => {
+      const textLength = countTextCharacters(section.text);
+      if (textLength === 0) {
+        hasEmptyContent = true;
+        showMessage(`Section ${index + 1} text content is required`, "error");
+      }
+    });
+
+    if (hasEmptyContent) {
+      setLoading(false);
+      return;
+    }
 
     if (!editingId && !blog.coverImage) {
       showMessage("Cover image is required", "error");
@@ -189,6 +318,12 @@ const AddBlogs = () => {
 
     try {
       const formData = prepareFormData();
+
+      // Log what we're sending for debugging
+      console.log(
+        "Sending content:",
+        blog.content.map((item) => item.text)
+      );
 
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, formData);
@@ -247,34 +382,21 @@ const AddBlogs = () => {
     }
   };
 
-  // Edit blog
-  const handleEdit = (blogItem) => {
-    setBlog({
-      title: blogItem.title,
-      description: blogItem.description,
-      coverImage: null,
-      content: blogItem.content.map((item) => ({
-        text: item.text,
-        img: null,
-      })),
-    });
-    setEditingId(blogItem._id);
+  // Edit blog - Fixed to properly handle stored HTML
+ const handleEdit = (blogItem) => {
+  setBlog({
+    title: blogItem.title,
+    description: blogItem.description,
+    coverImage: null,
+    content: blogItem.content.map(item => ({
+      text: item.text, // ✅ RAW HTML BACK TO QUILL
+      img: null,
+    })),
+  });
 
-    // Set image previews
-    const previews = {};
-    if (blogItem.coverImage) {
-      previews.cover = blogItem.coverImage;
-    }
-    blogItem.content.forEach((item, index) => {
-      if (item.img) {
-        previews[`content-${index}`] = item.img;
-      }
-    });
-    setImagePreviews(previews);
-
-    window.scrollTo(0, 0);
-  };
-
+  setEditingId(blogItem._id);
+  window.scrollTo(0, 0);
+};
   // Reset form
   const resetForm = () => {
     setBlog({
@@ -512,7 +634,7 @@ const AddBlogs = () => {
                         Content Sections
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Add text and optional images
+                        Add rich text content and optional images
                       </p>
                     </div>
                   </div>
@@ -550,23 +672,34 @@ const AddBlogs = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Text Content */}
+                      {/* Rich Text Editor */}
                       <div className="space-y-3">
                         <label className="block text-sm font-medium text-gray-700">
                           Text Content <span className="text-red-500">*</span>
                         </label>
-                        <textarea
-                          value={section.text}
-                          onChange={(e) =>
-                            handleContentTextChange(index, e.target.value)
-                          }
-                          required
-                          rows="8"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white resize-none"
-                          placeholder="Write your content here..."
-                        />
+                        <div className="border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100 transition-all duration-200 bg-white custom-quill-wrapper">
+                          <ReactQuill
+                            value={section.text}
+                            onChange={(value) =>
+                              handleContentTextChange(index, value)
+                            }
+                            modules={modules}
+                            formats={formats}
+                            placeholder="Write your content here..."
+                            theme="snow"
+                            className="custom-quill-editor"
+                            style={{
+                              height: "260px",
+                              border: "none",
+                              fontSize: "16px",
+                            }}
+                          />
+                        </div>
                         <div className="text-xs text-gray-500">
-                          {section.text.length} characters
+                          {countTextCharacters(section.text)} characters
+                          <span className="ml-2 text-gray-400">
+                            (HTML tags not included)
+                          </span>
                         </div>
                       </div>
 
@@ -672,7 +805,7 @@ const AddBlogs = () => {
         </div>
       </div>
 
-      {/* Custom Animations */}
+      {/* Custom Styles */}
       <style>{`
         @keyframes slideDown {
           from {
@@ -700,6 +833,63 @@ const AddBlogs = () => {
 
         .animate-fadeIn {
           animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Quill Editor Custom Styles */
+        .custom-quill-wrapper .ql-toolbar {
+          border: none !important;
+          border-bottom: 1px solid #e5e7eb !important;
+          background-color: #f9fafb;
+          border-radius: 10px 10px 0 0;
+          padding: 12px;
+        }
+
+        .custom-quill-wrapper .ql-container {
+          border: none !important;
+          border-radius: 0 0 10px 10px;
+          min-height: 200px;
+          font-family: inherit;
+        }
+
+        .custom-quill-wrapper .ql-editor {
+          min-height: 200px;
+          padding: 16px;
+          line-height: 1.6;
+          font-size: 16px;
+        }
+
+        .custom-quill-wrapper .ql-editor.ql-blank::before {
+          color: #9ca3af;
+          font-style: normal;
+          left: 16px;
+        }
+
+        .custom-quill-wrapper .ql-toolbar button {
+          border-radius: 6px;
+          padding: 4px 8px;
+          margin: 2px;
+        }
+
+        .custom-quill-wrapper .ql-toolbar button:hover {
+          background-color: #e5e7eb;
+        }
+
+        .custom-quill-wrapper .ql-toolbar button.ql-active {
+          background-color: #3b82f6;
+          color: white;
+        }
+
+        .custom-quill-wrapper .ql-picker {
+          border-radius: 6px;
+        }
+
+        .custom-quill-wrapper .ql-picker-label {
+          padding: 4px 8px;
+        }
+
+        .custom-quill-wrapper .ql-color-picker .ql-picker-item {
+          border-radius: 4px;
+          margin: 2px;
         }
       `}</style>
     </div>
