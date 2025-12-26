@@ -503,11 +503,11 @@ export default function AddBlogs() {
       return;
     }
 
-    const stripHtml = (html) => {
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      return div.textContent.trim();
-    };
+    // const stripHtml = (html) => {
+    //   const div = document.createElement("div");
+    //   div.innerHTML = html;
+    //   return div.textContent.trim();
+    // };
 
     setLoading(true);
     setMessage({ type: "", text: "" });
@@ -521,17 +521,11 @@ export default function AddBlogs() {
 
       const contentArray = formData.content
         .map((block) => ({
-          text: stripHtml(block.text),
+          text: block.text, // ✅ KEEP HTML
         }))
-        .filter((block) => block.text.length > 0);
-      if (contentArray.length === 0) {
-        setMessage({
-          type: "error",
-          text: "Please add at least one content section with text",
-        });
-        setLoading(false);
-        return;
-      }
+        .filter(
+          (block) => block.text && block.text !== "<p><br></p>" // remove empty quill blocks
+        );
 
       formDataToSend.append("content", JSON.stringify(contentArray));
 
@@ -734,10 +728,15 @@ export default function AddBlogs() {
 
                     <div className="mb-4">
                       <RichTextEditor
-                        value={block.text}
-                        onChange={(value) =>
-                          handleContentChange(index, "text", value)
-                        }
+                        value={block.text || ""} // ✅ always controlled
+                        onChange={(value) => {
+                          // ❌ ignore empty quill output
+                          if (value === "<p><br></p>") {
+                            handleContentChange(index, "text", "");
+                          } else {
+                            handleContentChange(index, "text", value); // ✅ keep HTML styles
+                          }
+                        }}
                         placeholder="Write your content here with rich formatting..."
                         height={300}
                       />

@@ -177,6 +177,26 @@ export default function Blogs() {
     return text.substring(0, maxLength) + "...";
   };
 
+  // Basic sanitizer to prevent script injection when rendering editor HTML.
+  // For stronger sanitization, install and use DOMPurify (`npm i dompurify`) and
+  // replace this function with `DOMPurify.sanitize(html)`.
+  const sanitizeHtml = (html) => {
+    if (!html) return "";
+    try {
+      if (typeof window !== "undefined" && window.DOMPurify) {
+        return window.DOMPurify.sanitize(html);
+      }
+      // Basic sanitization: remove <script> tags and inline event handlers (naive but better than nothing)
+      return html
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+        .replace(/on\w+\s*=\s*"[^"]*"/gi, "")
+        .replace(/on\w+\s*=\s*'[^']*'/gi, "")
+        .replace(/javascript:/gi, "");
+    } catch (e) {
+      return html;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -650,7 +670,12 @@ export default function Blogs() {
                           </h4>
                         </div>
                         {block.text && (
-                          <p className="text-gray-700 mb-4">{block.text}</p>
+                          <div
+                            className="text-gray-700 mb-4"
+                            dangerouslySetInnerHTML={{
+                              __html: sanitizeHtml(block.text),
+                            }}
+                          />
                         )}
                         {block.img && (
                           <div className="mt-3">
