@@ -136,11 +136,11 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-2xl p-6 lg:p-8 text-white shadow-xl">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-2xl p-4 lg:p-6 text-white shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold mb-2">
-              Welcome Back, Admin! 👋
+              Welcome Back, Admin!
             </h1>
             <p className="text-purple-100 text-sm lg:text-base">
               {isLoadingProducts
