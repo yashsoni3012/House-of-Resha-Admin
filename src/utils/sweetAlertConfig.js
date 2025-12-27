@@ -110,6 +110,44 @@ const showProductUpdated = async () => {
     });
 };
 
+// Small toast notification for blog updates (used by blog editor)
+const showBlogUpdated = async () => {
+    return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Blog updated successfully',
+        showConfirmButton: false,
+        timer: 1200,
+        timerProgressBar: true,
+        background: '#10B981',
+        color: 'white',
+        customClass: {
+            popup: 'swal2-toast',
+            title: 'text-white'
+        }
+    });
+};
+
+// Small toast notification for banner updates (used by banner editor)
+const showBannerUpdated = async () => {
+    return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Banner updated successfully',
+        showConfirmButton: false,
+        timer: 1200,
+        timerProgressBar: true,
+        background: '#10B981',
+        color: 'white',
+        customClass: {
+            popup: 'swal2-toast',
+            title: 'text-white'
+        }
+    });
+};
+
 
 const academic_years = [
     { year: '2024-2025' },
@@ -142,5 +180,7 @@ export {
     showConfirm,
     academic_years,
     showProductCreated,
-    showProductUpdated
+    showProductUpdated,
+    showBlogUpdated,
+    showBannerUpdated
 };
