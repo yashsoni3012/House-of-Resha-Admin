@@ -200,11 +200,11 @@ const Sidebar = ({ isOpen, toggle }) => {
   const menuItems = [
     { path: "/dashboard", name: "Dashboard", icon: Home },
     { path: "/products", name: "Products", icon: Package },
+    { path: "/banners", name: "Banner", icon: Image },
+    { path: "/blogs", name: "Blogs", icon: BookOpen },
     { path: "/orders", name: "Orders", icon: ShoppingCart },
     { path: "/customers", name: "Customers", icon: Users },
-    { path: "/banners", name: "Banner", icon: Image },
     { path: "/users", name: "Users", icon: Users },
-    { path: "/blogs", name: "Blogs", icon: BookOpen },
   ];
 
   const handleNavigation = (path) => {
