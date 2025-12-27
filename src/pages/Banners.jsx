@@ -169,7 +169,7 @@ const Banners = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="">
         {/* Header */}
         <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">

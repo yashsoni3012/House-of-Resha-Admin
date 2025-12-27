@@ -28,8 +28,12 @@ export default function Blogs() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [deletingId, setDeletingId] = useState(null);
   const [selectedBlog, setSelectedBlog] = useState(null);
+  const [selectedBlogLoading, setSelectedBlogLoading] = useState(false);
+  const [selectedBlogError, setSelectedBlogError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState(null);
   const navigate = useNavigate();
 
   const API_BASE_URL = "https://api.houseofresha.com";
@@ -96,14 +100,14 @@ export default function Blogs() {
     setFilteredBlogs(result);
   };
 
-  const handleDelete = async (id) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this blog? This action cannot be undone."
-      )
-    )
-      return;
+  // Opens the confirmation modal for deleting a blog
+  const openDeleteModal = (blog) => {
+    setBlogToDelete(blog);
+    setShowDeleteConfirm(true);
+  };
 
+  // Performs the actual delete request
+  const performDelete = async (id) => {
     try {
       setDeletingId(id);
 
@@ -115,11 +119,10 @@ export default function Blogs() {
         throw new Error(`Failed to delete blog: ${response.status}`);
       }
 
-      setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog._id !== id));
+      setBlogs((prevBlogs) => prevBlogs.filter((b) => b._id !== id));
       if (selectedBlog?._id === id) {
         setSelectedBlog(null);
       }
-      // Show success toast
       showToast("Blog deleted successfully!", "success");
     } catch (err) {
       console.error("Delete error:", err);
@@ -127,6 +130,15 @@ export default function Blogs() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  // Called when user confirms deletion in modal
+  const handleDeleteConfirm = async () => {
+    if (!blogToDelete) return;
+    const id = blogToDelete._id || blogToDelete;
+    await performDelete(id);
+    setShowDeleteConfirm(false);
+    setBlogToDelete(null);
   };
 
   const handleAddBlog = () => {
@@ -156,9 +168,31 @@ export default function Blogs() {
     });
   };
 
-  const handleViewBlog = (blog) => {
-    setSelectedBlog(blog);
-    document.body.style.overflow = "hidden";
+  const handleViewBlog = async (blog) => {
+    try {
+      // open modal with minimal info so UI responds quickly
+      setSelectedBlog({ _id: blog._id });
+      setSelectedBlogError(null);
+      setSelectedBlogLoading(true);
+      document.body.style.overflow = "hidden";
+
+      const res = await fetch(`${API_BASE_URL}/blogs/${blog._id}`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch blog: ${res.status}`);
+      }
+      const json = await res.json();
+      if (json.success && json.data) {
+        setSelectedBlog(json.data);
+      } else {
+        throw new Error("Invalid API response format");
+      }
+    } catch (err) {
+      console.error("Error fetching blog details:", err);
+      setSelectedBlogError(err.message || "Error fetching blog details");
+      showToast("Error fetching blog details: " + (err.message || ""), "error");
+    } finally {
+      setSelectedBlogLoading(false);
+    }
   };
 
   const closeModal = () => {
@@ -248,15 +282,16 @@ export default function Blogs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="">
         {/* Filters Card */}
-        <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600/95 via-indigo-600/95 to-purple-600/95 rounded-xl shadow-lg">
+
+        <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex items-center justify-center w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-md">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -270,10 +305,10 @@ export default function Blogs() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Blog Management
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                    Blogs
                   </h1>
-                  <p className="text-sm sm:text-base text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {blogs.length} {blogs.length === 1 ? "blog" : "blogs"} •
                     Manage your content
                   </p>
@@ -281,41 +316,42 @@ export default function Blogs() {
               </div>
               <button
                 onClick={handleAddBlog}
-                className="group flex items-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 border-2 border-white/30 text-white rounded-xl transition-all font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-sm"
               >
-                <Plus className="w-5 h-5" />
-                <span className="text-sm sm:text-base">Add New Blog</span>
+                <Plus className="w-4 h-4" />
+                <span>Add New Blog</span>
               </button>
             </div>
           </div>
-          <div className="p-4 sm:p-6 lg:p-8">
+
+          <div className="px-4 sm:px-6 pb-4 space-y-3">
             {/* Search Bar */}
-            <div className="relative group mb-4">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors" />
               <input
                 type="text"
                 placeholder="Search blogs by title or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-12 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm sm:text-base bg-white shadow-sm"
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm bg-gray-50 hover:bg-white"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
                 >
-                  <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               )}
             </div>
 
-            {/* Additional Filters */}
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1 w-full">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex-1">
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full px-4 sm:px-6 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer font-semibold transition-all text-sm sm:text-base bg-white shadow-sm hover:border-gray-300 appearance-none"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer font-medium transition-all text-sm bg-gray-50 hover:bg-white"
                 >
                   <option value="newest">📅 Newest First</option>
                   <option value="oldest">⏰ Oldest First</option>
@@ -323,28 +359,28 @@ export default function Blogs() {
               </div>
 
               {/* View Toggle */}
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
                 <button
                   onClick={() => setViewStyle("grid")}
-                  className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-all font-semibold ${
+                  className={`px-4 py-2 rounded-md transition-all font-medium ${
                     viewStyle === "grid"
-                      ? "bg-white text-blue-600 shadow-lg scale-105"
+                      ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                   title="Grid View"
                 >
-                  <Grid className="w-5 h-5" />
+                  <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewStyle("list")}
-                  className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-all font-semibold ${
+                  className={`px-4 py-2 rounded-md transition-all font-medium ${
                     viewStyle === "list"
-                      ? "bg-white text-blue-600 shadow-lg scale-105"
+                      ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                   title="List View"
                 >
-                  <List className="w-5 h-5" />
+                  <List className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -489,7 +525,7 @@ export default function Blogs() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(blog._id)}
+                      onClick={() => openDeleteModal(blog)}
                       disabled={deletingId === blog._id}
                       className="px-3 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                       title="Delete"
@@ -545,7 +581,7 @@ export default function Blogs() {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(blog._id)}
+                          onClick={() => openDeleteModal(blog)}
                           disabled={deletingId === blog._id}
                           className="px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 shadow-sm text-sm font-semibold"
                         >
@@ -622,106 +658,166 @@ export default function Blogs() {
 
             {/* Modal Content */}
             <div className="overflow-y-auto flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
-              {/* Cover Image */}
-              {selectedBlog.coverImage && (
-                <div className="mb-8 rounded-2xl overflow-hidden shadow-xl">
-                  <img
-                    src={getImageUrl(selectedBlog.coverImage)}
-                    alt={selectedBlog.title}
-                    className="w-full h-56 sm:h-72 lg:h-96 object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
-                    }}
-                  />
+              {selectedBlogLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader className="w-12 h-12 animate-spin text-gray-600" />
                 </div>
-              )}
-
-              {/* Description */}
-              {selectedBlog.description && (
-                <div className="mb-8 bg-white rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Description
-                  </h3>
-                  <p className="text-gray-700 leading-relaxed">
-                    {selectedBlog.description}
+              ) : selectedBlogError ? (
+                <div className="p-6 bg-red-50 rounded-lg">
+                  <p className="text-red-700 mb-4">
+                    Error: {selectedBlogError}
                   </p>
-                </div>
-              )}
-
-              {/* Content Blocks */}
-              {selectedBlog.content && selectedBlog.content.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Content ({selectedBlog.content.length} blocks)
-                  </h3>
-                  <div className="space-y-4">
-                    {selectedBlog.content.map((block, index) => (
-                      <div
-                        key={index}
-                        className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200"
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <h4 className="text-gray-900 font-medium">
-                            Section {index + 1}
-                          </h4>
-                        </div>
-                        {block.text && (
-                          <div
-                            className="text-gray-700 mb-4"
-                            dangerouslySetInnerHTML={{
-                              __html: sanitizeHtml(block.text),
-                            }}
-                          />
-                        )}
-                        {block.img && (
-                          <div className="mt-3">
-                            <img
-                              src={getImageUrl(block.img)}
-                              alt={`Content image ${index + 1}`}
-                              className="rounded-lg max-h-64 object-cover mx-auto"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleViewBlog({ _id: selectedBlog._id })}
+                      className="px-4 py-2 bg-blue-600 text-white rounded"
+                    >
+                      Retry
+                    </button>
+                    <button
+                      onClick={closeModal}
+                      className="px-4 py-2 bg-gray-300 rounded"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => handleEditBlog(selectedBlog._id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all font-semibold shadow-lg"
-                >
-                  <Edit className="w-5 h-5" />
-                  Edit Blog
-                </button>
-                <button
-                  onClick={() => handleDelete(selectedBlog._id)}
-                  disabled={deletingId === selectedBlog._id}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
-                >
-                  {deletingId === selectedBlog._id ? (
-                    <>
-                      <Loader className="w-5 h-5 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-5 h-5" />
-                      Delete Blog
-                    </>
+              ) : (
+                <>
+                  {/* Cover Image */}
+                  {selectedBlog.coverImage && (
+                    <div className="mb-8 rounded-2xl overflow-hidden shadow-xl">
+                      <img
+                        src={getImageUrl(selectedBlog.coverImage)}
+                        alt={selectedBlog.title}
+                        className="w-full h-56 sm:h-72 lg:h-96 object-cover"
+                        onError={(e) => {
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
+                        }}
+                      />
+                    </div>
                   )}
-                </button>
-              </div>
+
+                  {/* Description */}
+                  {selectedBlog.description && (
+                    <div className="mb-8 bg-white rounded-2xl p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Description
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed">
+                        {selectedBlog.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Content Blocks */}
+                  {selectedBlog.content && selectedBlog.content.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Content ({selectedBlog.content.length} blocks)
+                      </h3>
+                      <div className="space-y-4">
+                        {selectedBlog.content.map((block, index) => (
+                          <div
+                            key={index}
+                            className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200"
+                          >
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                                {index + 1}
+                              </div>
+                              <h4 className="text-gray-900 font-medium">
+                                Section {index + 1}
+                              </h4>
+                            </div>
+                            {block.text && (
+                              <div
+                                className="text-gray-700 mb-4"
+                                dangerouslySetInnerHTML={{
+                                  __html: sanitizeHtml(block.text),
+                                }}
+                              />
+                            )}
+                            {block.img && (
+                              <div className="mt-3">
+                                <img
+                                  src={getImageUrl(block.img)}
+                                  alt={`Content image ${index + 1}`}
+                                  className="rounded-lg max-h-64 object-cover mx-auto"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-6 border-t border-gray-200">
+                    <button
+                      onClick={() => handleEditBlog(selectedBlog._id)}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all font-semibold shadow-lg"
+                    >
+                      <Edit className="w-5 h-5" />
+                      Edit Blog
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(selectedBlog)}
+                      disabled={deletingId === selectedBlog._id}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
+                    >
+                      {deletingId === selectedBlog._id ? (
+                        <>
+                          <Loader className="w-5 h-5 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-5 h-5" />
+                          Delete Blog
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold mb-2">Delete Blog</h3>
+            <p className="text-sm text-gray-700 mb-4">
+              Are you sure you want to delete{" "}
+              <strong>{blogToDelete?.title || "this blog"}</strong>? This action
+              cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setBlogToDelete(null);
+                }}
+                className="px-4 py-2 bg-gray-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deletingId === blogToDelete?._id}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingId === blogToDelete?._id ? "Deleting..." : "Delete"}
+              </button>
             </div>
           </div>
         </div>

@@ -1,51 +1,64 @@
 // GlowRituals.jsx - Skincare Products Component
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, Eye, Edit2, Trash2, X, Save, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Plus,
+  Filter,
+  Eye,
+  Edit2,
+  Trash2,
+  X,
+  Save,
+  Sparkles,
+} from "lucide-react";
 
 const GlowRituals = () => {
   const [products, setProducts] = useState([
-    { 
-      id: 1, 
-      name: 'Vitamin C Serum', 
-      category: 'Serum', 
-      price: 45.99, 
-      description: 'Brightening serum with 20% Vitamin C for radiant skin', 
-      image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400', 
-      rating: 4.8 
+    {
+      id: 1,
+      name: "Vitamin C Serum",
+      category: "Serum",
+      price: 45.99,
+      description: "Brightening serum with 20% Vitamin C for radiant skin",
+      image:
+        "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
+      rating: 4.8,
     },
-    { 
-      id: 2, 
-      name: 'Hydrating Face Mask', 
-      category: 'Mask', 
-      price: 29.99, 
-      description: 'Deep hydration overnight mask with hyaluronic acid', 
-      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400', 
-      rating: 4.6 
+    {
+      id: 2,
+      name: "Hydrating Face Mask",
+      category: "Mask",
+      price: 29.99,
+      description: "Deep hydration overnight mask with hyaluronic acid",
+      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
+      rating: 4.6,
     },
-    { 
-      id: 3, 
-      name: 'Rose Water Toner', 
-      category: 'Toner', 
-      price: 19.99, 
-      description: 'Natural rose water toner for balanced skin', 
-      image: 'https://images.unsplash.com/photo-1571875257727-256c39da42af?w=400', 
-      rating: 4.7 
+    {
+      id: 3,
+      name: "Rose Water Toner",
+      category: "Toner",
+      price: 19.99,
+      description: "Natural rose water toner for balanced skin",
+      image:
+        "https://images.unsplash.com/photo-1571875257727-256c39da42af?w=400",
+      rating: 4.7,
     },
-    { 
-      id: 4, 
-      name: 'Retinol Night Cream', 
-      category: 'Moisturizer', 
-      price: 55.99, 
-      description: 'Anti-aging night cream with retinol and peptides', 
-      image: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=400', 
-      rating: 4.9 
-    }
+    {
+      id: 4,
+      name: "Retinol Night Cream",
+      category: "Moisturizer",
+      price: 55.99,
+      description: "Anti-aging night cream with retinol and peptides",
+      image:
+        "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=400",
+      rating: 4.9,
+    },
   ]);
   const [filteredProducts, setFilteredProducts] = useState(products);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('view');
+  const [modalMode, setModalMode] = useState("view");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editForm, setEditForm] = useState({});
 
@@ -56,15 +69,16 @@ const GlowRituals = () => {
   const filterProducts = () => {
     let filtered = products;
 
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+    if (selectedCategory !== "All") {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.category.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -73,20 +87,20 @@ const GlowRituals = () => {
 
   const handleView = (product) => {
     setSelectedProduct(product);
-    setModalMode('view');
+    setModalMode("view");
     setShowModal(true);
   };
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
     setEditForm({ ...product });
-    setModalMode('edit');
+    setModalMode("edit");
     setShowModal(true);
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      const updatedProducts = products.filter(p => p.id !== id);
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      const updatedProducts = products.filter((p) => p.id !== id);
       setProducts(updatedProducts);
     }
   };
@@ -94,7 +108,7 @@ const GlowRituals = () => {
   const handleSave = () => {
     if (editForm.id) {
       // Update existing product
-      const updatedProducts = products.map(p => 
+      const updatedProducts = products.map((p) =>
         p.id === editForm.id ? editForm : p
       );
       setProducts(updatedProducts);
@@ -102,7 +116,7 @@ const GlowRituals = () => {
       // Add new product
       const newProduct = {
         ...editForm,
-        id: Date.now()
+        id: Date.now(),
       };
       setProducts([...products, newProduct]);
     }
@@ -112,40 +126,47 @@ const GlowRituals = () => {
 
   const handleAdd = () => {
     setEditForm({
-      name: '',
-      category: 'Serum',
+      name: "",
+      category: "Serum",
       price: 0,
-      description: '',
-      image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400',
-      rating: 5
+      description: "",
+      image:
+        "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
+      rating: 5,
     });
-    setModalMode('edit');
+    setModalMode("edit");
     setShowModal(true);
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-purple-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white shadow-lg p-6 md:p-8 mb-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="w-8 h-8 text-purple-600" />
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">MIE by Resha</h1>
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center shadow-md">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  MIE by Resha
+                </h1>
               </div>
-              <p className="text-gray-600">Discover your perfect skincare routine</p>
+              <p className="text-sm text-gray-600">
+                Discover your perfect skincare routine
+              </p>
             </div>
             <button
               onClick={handleAdd}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl"
+              className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-purple-700 text-white px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               <Plus className="w-5 h-5" />
               Add Product
             </button>
           </div>
 
-          {/* Search and Filters */}
+          {/* Search & Filters */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -154,19 +175,19 @@ const GlowRituals = () => {
                 placeholder="Search skincare products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"
               />
             </div>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-2">
               <Filter className="w-5 h-5 text-gray-500 self-center flex-shrink-0" />
-              {['All', 'Serum', 'Mask', 'Toner', 'Moisturizer'].map(cat => (
+              {["All", "Serum", "Mask", "Toner", "Moisturizer"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
+                  className={`px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap text-sm ${
                     selectedCategory === cat
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-md"
+                      : "bg-gray-50 text-gray-700 hover:bg-white border border-gray-200"
                   }`}
                 >
                   {cat}
@@ -175,8 +196,12 @@ const GlowRituals = () => {
             </div>
           </div>
 
-          <p className="text-gray-600 mt-4">
-            Showing {filteredProducts.length} of {products.length} items
+          <p className="text-gray-600 mt-4 text-sm">
+            Showing{" "}
+            <span className="font-semibold text-purple-600">
+              {filteredProducts.length}
+            </span>{" "}
+            of <span className="font-semibold">{products.length}</span> items
           </p>
         </div>
 
@@ -184,14 +209,18 @@ const GlowRituals = () => {
         {filteredProducts.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              No products found
+            </h3>
+            <p className="text-gray-500">
+              Try adjusting your search or filters
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map(product => (
-              <div 
-                key={product.id} 
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1"
               >
                 <div className="relative h-64 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100">
@@ -252,20 +281,24 @@ const GlowRituals = () => {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 flex justify-between items-center">
               <h2 className="text-2xl font-bold">
-                {modalMode === 'view' ? 'Product Details' : modalMode === 'edit' && editForm.id ? 'Edit Product' : 'Add New Product'}
+                {modalMode === "view"
+                  ? "Product Details"
+                  : modalMode === "edit" && editForm.id
+                  ? "Edit Product"
+                  : "Add New Product"}
               </h2>
-              <button 
+              <button
                 onClick={() => {
                   setShowModal(false);
                   setEditForm({});
-                }} 
+                }}
                 className="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">
-              {modalMode === 'view' ? (
+              {modalMode === "view" ? (
                 <div>
                   <img
                     src={selectedProduct?.image}
@@ -274,44 +307,72 @@ const GlowRituals = () => {
                   />
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-semibold text-gray-600">Name</label>
-                      <p className="text-lg text-gray-800">{selectedProduct?.name}</p>
+                      <label className="text-sm font-semibold text-gray-600">
+                        Name
+                      </label>
+                      <p className="text-lg text-gray-800">
+                        {selectedProduct?.name}
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-600">Category</label>
-                      <p className="text-lg text-gray-800">{selectedProduct?.category}</p>
+                      <label className="text-sm font-semibold text-gray-600">
+                        Category
+                      </label>
+                      <p className="text-lg text-gray-800">
+                        {selectedProduct?.category}
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-600">Price</label>
-                      <p className="text-lg text-gray-800">${selectedProduct?.price}</p>
+                      <label className="text-sm font-semibold text-gray-600">
+                        Price
+                      </label>
+                      <p className="text-lg text-gray-800">
+                        ${selectedProduct?.price}
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-600">Rating</label>
-                      <p className="text-lg text-gray-800">⭐ {selectedProduct?.rating}</p>
+                      <label className="text-sm font-semibold text-gray-600">
+                        Rating
+                      </label>
+                      <p className="text-lg text-gray-800">
+                        ⭐ {selectedProduct?.rating}
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-gray-600">Description</label>
-                      <p className="text-lg text-gray-800">{selectedProduct?.description}</p>
+                      <label className="text-sm font-semibold text-gray-600">
+                        Description
+                      </label>
+                      <p className="text-lg text-gray-800">
+                        {selectedProduct?.description}
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Name *
+                    </label>
                     <input
                       type="text"
-                      value={editForm.name || ''}
-                      onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                      value={editForm.name || ""}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, name: e.target.value })
+                      }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                       placeholder="Enter product name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Category *
+                    </label>
                     <select
-                      value={editForm.category || 'Serum'}
-                      onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                      value={editForm.category || "Serum"}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, category: e.target.value })
+                      }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                     >
                       <option>Serum</option>
@@ -321,45 +382,70 @@ const GlowRituals = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Price *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Price *
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       value={editForm.price || 0}
-                      onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value) || 0})}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          price: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                       placeholder="0.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Rating *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Rating *
+                    </label>
                     <input
                       type="number"
                       step="0.1"
                       max="5"
                       min="0"
                       value={editForm.rating || 5}
-                      onChange={(e) => setEditForm({...editForm, rating: parseFloat(e.target.value) || 5})}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          rating: parseFloat(e.target.value) || 5,
+                        })
+                      }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                       placeholder="5.0"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Description
+                    </label>
                     <textarea
-                      value={editForm.description || ''}
-                      onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                      value={editForm.description || ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          description: e.target.value,
+                        })
+                      }
                       rows="4"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                       placeholder="Enter product description"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Image URL
+                    </label>
                     <input
                       type="text"
-                      value={editForm.image || ''}
-                      onChange={(e) => setEditForm({...editForm, image: e.target.value})}
+                      value={editForm.image || ""}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, image: e.target.value })
+                      }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                       placeholder="https://example.com/image.jpg"
                     />
@@ -370,7 +456,7 @@ const GlowRituals = () => {
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Save className="w-5 h-5" />
-                    {editForm.id ? 'Save Changes' : 'Add Product'}
+                    {editForm.id ? "Save Changes" : "Add Product"}
                   </button>
                 </div>
               )}

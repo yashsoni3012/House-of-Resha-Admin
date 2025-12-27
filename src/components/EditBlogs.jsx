@@ -1,601 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
-// import {
-//   Upload,
-//   Edit,
-//   X,
-//   ImageIcon,
-//   FileText,
-//   Save,
-//   ArrowLeft,
-//   Plus,
-//   Trash2,
-//   Loader2,
-//   AlertCircle,
-// } from "lucide-react";
-
-// const EditBlog = () => {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-
-//   const [formData, setFormData] = useState({
-//     title: "",
-//     description: "",
-//     coverImage: null,
-//     content: [{ text: "", img: null }],
-//   });
-
-//   const [coverPreview, setCoverPreview] = useState(null);
-//   const [contentPreviews, setContentPreviews] = useState([null]);
-//   const [loading, setLoading] = useState(false);
-//   const [loadingBlog, setLoadingBlog] = useState(true);
-//   const [message, setMessage] = useState({ type: "", text: "" });
-//   const [existingImages, setExistingImages] = useState({
-//     cover: null,
-//     content: [],
-//   });
-
-//   // Fetch blog data on component mount
-//   useEffect(() => {
-//     fetchBlogData();
-//   }, [id]);
-
-//   const fetchBlogData = async () => {
-//     try {
-//       setLoadingBlog(true);
-//       const response = await fetch(`https://api.houseofresha.com/blogs/${id}`);
-
-//       if (!response.ok) {
-//         throw new Error("Failed to fetch blog data");
-//       }
-
-//       const result = await response.json();
-//       const blog = result.data || result;
-
-//       // Set form data
-//       setFormData({
-//         title: blog.title || "",
-//         description: blog.description || "",
-//         coverImage: null, // Keep as null, we'll handle existing image separately
-//         content:
-//           blog.content && blog.content.length > 0
-//             ? blog.content.map((item) => ({
-//                 text: item.text || "",
-//                 img: null, // Keep as null for new uploads
-//               }))
-//             : [{ text: "", img: null }],
-//       });
-
-//       // Set existing images
-//       if (blog.coverImage) {
-//         const coverUrl = blog.coverImage.startsWith("http")
-//           ? blog.coverImage
-//           : `https://api.houseofresha.com/${blog.coverImage}`;
-//         setCoverPreview(coverUrl);
-//         setExistingImages((prev) => ({ ...prev, cover: blog.coverImage }));
-//       }
-
-//       // Set content image previews
-//       if (blog.content) {
-//         const previews = blog.content.map((item) => {
-//           if (item.img) {
-//             return item.img.startsWith("http")
-//               ? item.img
-//               : `https://api.houseofresha.com/${item.img}`;
-//           }
-//           return null;
-//         });
-//         setContentPreviews(previews);
-
-//         // Store existing content image paths
-//         const existingContentImages = blog.content.map(
-//           (item) => item.img || null
-//         );
-//         setExistingImages((prev) => ({
-//           ...prev,
-//           content: existingContentImages,
-//         }));
-//       }
-//     } catch (error) {
-//       console.error("Error fetching blog:", error);
-//       setMessage({
-//         type: "error",
-//         text: error.message || "Failed to load blog data",
-//       });
-//     } finally {
-//       setLoadingBlog(false);
-//     }
-//   };
-
-//   const handleCoverImageChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       setFormData((prev) => ({ ...prev, coverImage: file }));
-
-//       // Clean up previous preview if it was a blob URL
-//       if (coverPreview && coverPreview.startsWith("blob:")) {
-//         URL.revokeObjectURL(coverPreview);
-//       }
-
-//       const previewUrl = URL.createObjectURL(file);
-//       setCoverPreview(previewUrl);
-//     }
-//   };
-
-//   const handleContentChange = (index, field, value) => {
-//     const newContent = [...formData.content];
-//     newContent[index][field] = value;
-//     setFormData((prev) => ({ ...prev, content: newContent }));
-//   };
-
-//   const handleContentImageChange = (index, file) => {
-//     const newContent = [...formData.content];
-//     newContent[index].img = file;
-//     setFormData((prev) => ({ ...prev, content: newContent }));
-
-//     const newPreviews = [...contentPreviews];
-
-//     // Clean up previous preview if it was a blob URL
-//     if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
-//       URL.revokeObjectURL(newPreviews[index]);
-//     }
-
-//     newPreviews[index] = file ? URL.createObjectURL(file) : null;
-//     setContentPreviews(newPreviews);
-//   };
-
-//   const addContentBlock = () => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       content: [...prev.content, { text: "", img: null }],
-//     }));
-//     setContentPreviews((prev) => [...prev, null]);
-//     setExistingImages((prev) => ({
-//       ...prev,
-//       content: [...prev.content, null],
-//     }));
-//   };
-
-//   const removeContentBlock = (index) => {
-//     const newContent = formData.content.filter((_, i) => i !== index);
-//     const newPreviews = contentPreviews.filter((_, i) => i !== index);
-//     const newExisting = existingImages.content.filter((_, i) => i !== index);
-
-//     // Clean up blob URL if it exists
-//     if (contentPreviews[index] && contentPreviews[index].startsWith("blob:")) {
-//       URL.revokeObjectURL(contentPreviews[index]);
-//     }
-
-//     setFormData((prev) => ({ ...prev, content: newContent }));
-//     setContentPreviews(newPreviews);
-//     setExistingImages((prev) => ({ ...prev, content: newExisting }));
-//   };
-
-//   const handleRemoveCoverImage = () => {
-//     setFormData((prev) => ({ ...prev, coverImage: null }));
-
-//     // Clean up blob URL if it exists
-//     if (coverPreview && coverPreview.startsWith("blob:")) {
-//       URL.revokeObjectURL(coverPreview);
-//     }
-
-//     setCoverPreview(null);
-//     setExistingImages((prev) => ({ ...prev, cover: null }));
-//   };
-
-//   const handleRemoveContentImage = (index) => {
-//     const newContent = [...formData.content];
-//     newContent[index].img = null;
-//     setFormData((prev) => ({ ...prev, content: newContent }));
-
-//     const newPreviews = [...contentPreviews];
-
-//     // Clean up blob URL if it exists
-//     if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
-//       URL.revokeObjectURL(newPreviews[index]);
-//     }
-
-//     newPreviews[index] = null;
-//     setContentPreviews(newPreviews);
-
-//     const newExisting = [...existingImages.content];
-//     newExisting[index] = null;
-//     setExistingImages((prev) => ({ ...prev, content: newExisting }));
-//   };
-
-//   const handleSubmit = async () => {
-//     // Basic validation
-//     if (!formData.title || !formData.description) {
-//       setMessage({ type: "error", text: "Please fill in all required fields" });
-//       return;
-//     }
-
-//     // Check if at least one content section has text
-//     const hasContent = formData.content.some(
-//       (block) => block.text.trim() !== ""
-//     );
-//     if (!hasContent) {
-//       setMessage({
-//         type: "error",
-//         text: "Please add content to at least one section",
-//       });
-//       return;
-//     }
-
-//     setLoading(true);
-//     setMessage({ type: "", text: "" });
-
-//     try {
-//       const fd = new FormData();
-
-//       // Append basic fields
-//       fd.append("title", formData.title);
-//       fd.append("description", formData.description);
-
-//       // Append cover image if exists (new upload)
-//       if (formData.coverImage) {
-//         fd.append("cover", formData.coverImage);
-//       } else if (existingImages.cover) {
-//         // If no new cover image but existing one exists, keep the existing
-//         // We'll send the existing path in the content JSON
-//       }
-
-//       // Prepare content payload
-//       const contentPayload = formData.content.map((block, index) => {
-//         const payload = { text: block.text };
-
-//         // If there's a new image file
-//         if (block.img) {
-//           // We'll upload the new file
-//           fd.append(`contentImages[${index}]`, block.img);
-//           // Set img as empty, backend will assign new path
-//           payload.img = "";
-//         }
-//         // If there's an existing image path and no new upload
-//         else if (existingImages.content[index]) {
-//           payload.img = existingImages.content[index];
-//         }
-//         // If no image at all
-//         else {
-//           payload.img = "";
-//         }
-
-//         return payload;
-//       });
-
-//       // Append content as JSON
-//       fd.append("content", JSON.stringify(contentPayload));
-
-//       console.log("=== DEBUG: FormData being sent ===");
-//       for (let [key, value] of fd.entries()) {
-//         console.log(
-//           `${key}:`,
-//           value instanceof File ? `File: ${value.name}` : value
-//         );
-//       }
-
-//       const response = await fetch(`https://api.houseofresha.com/blogs/${id}`, {
-//         method: "PATCH", // Using PATCH method for update
-//         body: fd, // Let browser set multipart headers
-//       });
-
-//       const result = await response.json();
-
-//       if (!response.ok) {
-//         throw new Error(result.message || "Failed to update blog");
-//       }
-
-//       setMessage({ type: "success", text: "Blog updated successfully!" });
-
-//       // Redirect after success
-//       setTimeout(() => {
-//         navigate("/blogs");
-//       }, 1500);
-//     } catch (err) {
-//       console.error("Update error:", err);
-//       setMessage({
-//         type: "error",
-//         text: err.message || "Failed to update blog. Please try again.",
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const navigateToBlogs = () => {
-//     navigate("/blogs");
-//   };
-
-//   // Loading state
-//   if (loadingBlog) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
-//           <p className="mt-4 text-gray-600">Loading blog data...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-//       <div className="max-w-4xl mx-auto">
-//         {/* Back Button */}
-//         <button
-//           onClick={navigateToBlogs}
-//           className="mb-6 flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium transition group"
-//         >
-//           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-//           Back to Blogs
-//         </button>
-
-//         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-//           {/* Header */}
-//           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
-//             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-//               <Edit className="w-8 h-8" />
-//               Edit Blog Post
-//             </h1>
-//             <p className="text-indigo-100 mt-2">Update your blog post</p>
-//           </div>
-
-//           <div className="p-8 space-y-8">
-//             {/* Message Alert */}
-//             {message.text && (
-//               <div
-//                 className={`p-4 rounded-lg flex items-start gap-2 ${
-//                   message.type === "success"
-//                     ? "bg-green-50 text-green-800 border border-green-200"
-//                     : "bg-red-50 text-red-800 border border-red-200"
-//                 }`}
-//               >
-//                 {message.type === "error" && (
-//                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-//                 )}
-//                 <span>{message.text}</span>
-//                 <button
-//                   onClick={() => setMessage({ type: "", text: "" })}
-//                   className="ml-auto text-gray-400 hover:text-gray-600"
-//                 >
-//                   <X className="w-4 h-4" />
-//                 </button>
-//               </div>
-//             )}
-
-//             {/* Title */}
-//             <div>
-//               <label className="block text-sm font-semibold text-gray-700 mb-2">
-//                 Blog Title *
-//               </label>
-//               <input
-//                 type="text"
-//                 required
-//                 value={formData.title}
-//                 onChange={(e) =>
-//                   setFormData((prev) => ({ ...prev, title: e.target.value }))
-//                 }
-//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-//                 placeholder="Enter an engaging title..."
-//               />
-//             </div>
-
-//             {/* Description */}
-//             <div>
-//               <label className="block text-sm font-semibold text-gray-700 mb-2">
-//                 Description *
-//               </label>
-//               <textarea
-//                 required
-//                 value={formData.description}
-//                 onChange={(e) =>
-//                   setFormData((prev) => ({
-//                     ...prev,
-//                     description: e.target.value,
-//                   }))
-//                 }
-//                 rows={3}
-//                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
-//                 placeholder="Brief description of your blog post..."
-//               />
-//             </div>
-
-//             {/* Cover Image */}
-//             <div>
-//               <label className="block text-sm font-semibold text-gray-700 mb-2">
-//                 Cover Image
-//                 <span className="text-gray-500 text-sm font-normal ml-2">
-//                   (Leave empty to keep existing)
-//                 </span>
-//               </label>
-//               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-indigo-500 transition">
-//                 {coverPreview ? (
-//                   <div className="relative">
-//                     <img
-//                       src={coverPreview}
-//                       alt="Cover preview"
-//                       className="w-full h-64 object-cover rounded-lg"
-//                     />
-//                     <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-//                       {formData.coverImage ? "New Image" : "Existing Image"}
-//                     </div>
-//                     <button
-//                       type="button"
-//                       onClick={handleRemoveCoverImage}
-//                       className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
-//                     >
-//                       <X className="w-4 h-4" />
-//                     </button>
-//                   </div>
-//                 ) : (
-//                   <label className="flex flex-col items-center cursor-pointer">
-//                     <Upload className="w-12 h-12 text-gray-400 mb-2" />
-//                     <span className="text-sm text-gray-600">
-//                       Click to change cover image
-//                     </span>
-//                     <span className="text-xs text-gray-500 mt-1">
-//                       PNG, JPG up to 10MB
-//                     </span>
-//                     <input
-//                       type="file"
-//                       accept="image/*"
-//                       onChange={handleCoverImageChange}
-//                       className="hidden"
-//                     />
-//                   </label>
-//                 )}
-//               </div>
-//             </div>
-
-//             {/* Content Blocks */}
-//             <div>
-//               <div className="flex justify-between items-center mb-4">
-//                 <label className="block text-sm font-semibold text-gray-700">
-//                   Content Sections *
-//                 </label>
-//                 <button
-//                   type="button"
-//                   onClick={addContentBlock}
-//                   className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition font-medium"
-//                   disabled={loading}
-//                 >
-//                   <Plus className="w-4 h-4" />
-//                   Add Section
-//                 </button>
-//               </div>
-
-//               <div className="space-y-6">
-//                 {formData.content.map((block, index) => (
-//                   <div
-//                     key={index}
-//                     className="bg-gray-50 p-6 rounded-lg border border-gray-200"
-//                   >
-//                     <div className="flex justify-between items-center mb-4">
-//                       <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-//                         <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm">
-//                           {index + 1}
-//                         </span>
-//                         Section {index + 1}
-//                       </h3>
-//                       <div className="flex gap-2">
-//                         {formData.content.length > 1 && (
-//                           <button
-//                             type="button"
-//                             onClick={() => removeContentBlock(index)}
-//                             className="text-red-500 hover:text-red-700 transition p-1 hover:bg-red-50 rounded"
-//                             disabled={loading}
-//                           >
-//                             <Trash2 className="w-5 h-5" />
-//                           </button>
-//                         )}
-//                       </div>
-//                     </div>
-
-//                     <textarea
-//                       value={block.text}
-//                       onChange={(e) =>
-//                         handleContentChange(index, "text", e.target.value)
-//                       }
-//                       rows={4}
-//                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none mb-4"
-//                       placeholder="Write your content here..."
-//                       disabled={loading}
-//                     />
-
-//                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-indigo-500 transition">
-//                       {contentPreviews[index] ? (
-//                         <div className="relative">
-//                           <img
-//                             src={contentPreviews[index]}
-//                             alt={`Content ${index}`}
-//                             className="w-full h-48 object-cover rounded-lg"
-//                           />
-//                           <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-//                             {formData.content[index]?.img
-//                               ? "New Image"
-//                               : "Existing Image"}
-//                           </div>
-//                           <button
-//                             type="button"
-//                             onClick={() => handleRemoveContentImage(index)}
-//                             className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
-//                             disabled={loading}
-//                           >
-//                             <X className="w-4 h-4" />
-//                           </button>
-//                         </div>
-//                       ) : (
-//                         <label
-//                           className={`flex flex-col items-center ${
-//                             loading
-//                               ? "opacity-50 cursor-not-allowed"
-//                               : "cursor-pointer"
-//                           }`}
-//                         >
-//                           <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-//                           <span className="text-sm text-gray-600">
-//                             {existingImages.content[index]
-//                               ? "Change image"
-//                               : "Add image (optional)"}
-//                           </span>
-//                           <span className="text-xs text-gray-500 mt-1">
-//                             PNG, JPG up to 10MB
-//                           </span>
-//                           <input
-//                             type="file"
-//                             accept="image/*"
-//                             onChange={(e) =>
-//                               handleContentImageChange(index, e.target.files[0])
-//                             }
-//                             className="hidden"
-//                             disabled={loading}
-//                           />
-//                         </label>
-//                       )}
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-
-//             {/* Submit Button */}
-//             <div className="flex gap-4">
-//               <button
-//                 type="button"
-//                 onClick={navigateToBlogs}
-//                 disabled={loading}
-//                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition disabled:opacity-50"
-//               >
-//                 Cancel
-//               </button>
-//               <button
-//                 type="button"
-//                 onClick={handleSubmit}
-//                 disabled={loading}
-//                 className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-//               >
-//                 {loading ? (
-//                   <>
-//                     <Loader2 className="w-5 h-5 animate-spin" />
-//                     Updating...
-//                   </>
-//                 ) : (
-//                   <>
-//                     <Save className="w-5 h-5" />
-//                     Update Blog Post
-//                   </>
-//                 )}
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default EditBlog;
-
 import React, { useState, lazy, Suspense, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -612,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { showProductUpdated } from "../utils/sweetAlertConfig";
 
 const ReactQuill = lazy(() => import("react-quill-new"));
 
@@ -712,6 +115,24 @@ export default function EditBlog() {
     cover: null,
     content: [],
   });
+  // Keep a copy of original images from server to detect removals
+  const [initialExistingImages, setInitialExistingImages] = useState({
+    cover: null,
+    content: [],
+  });
+  // Track which original content image indices have been removed (by original index)
+  const [removedContentIndicesState, setRemovedContentIndicesState] = useState(
+    []
+  );
+  // Track removed cover explicitly (true if original cover should be deleted)
+  const [removedCover, setRemovedCover] = useState(false);
+  // Show a small confirmation modal before removing the cover image
+  const [showCoverDeleteConfirm, setShowCoverDeleteConfirm] = useState(false);
+  // Show a small confirmation modal before removing a content image
+  const [showContentDeleteConfirm, setShowContentDeleteConfirm] =
+    useState(false);
+  // Index of the content image to delete
+  const [contentImageDeleteIndex, setContentImageDeleteIndex] = useState(null);
 
   const API_BASE_URL = "https://api.houseofresha.com";
 
@@ -732,10 +153,23 @@ export default function EditBlog() {
         title: blog.title || "",
         description: blog.description || "",
         coverImage: null,
+        // Keep original image path & original index so we can map removals/replacements later
         content:
           blog.content && blog.content.length > 0
-            ? blog.content.map((item) => ({ text: item.text || "", img: null }))
-            : [{ text: "", img: null }],
+            ? blog.content.map((item, idx) => ({
+                text: item.text || "",
+                img: null,
+                originalImagePath: item.img || null,
+                originalIndex: idx,
+              }))
+            : [
+                {
+                  text: "",
+                  img: null,
+                  originalImagePath: null,
+                  originalIndex: null,
+                },
+              ],
       });
 
       if (blog.coverImage) {
@@ -755,12 +189,22 @@ export default function EditBlog() {
             : null
         );
         setContentPreviews(previews.length ? previews : [null]);
+        const contentImagePaths = blog.content.map((item) => item.img || null);
         setExistingImages((prev) => ({
           ...prev,
-          content: blog.content.map((item) => item.img || null),
+          content: contentImagePaths,
         }));
+        // Keep initial snapshot so we can detect removals when submitting
+        setInitialExistingImages({
+          cover: blog.coverImage || null,
+          content: contentImagePaths,
+        });
       } else {
         setContentPreviews([null]);
+        setInitialExistingImages({
+          cover: blog.coverImage || null,
+          content: [],
+        });
       }
     } catch (e) {
       console.error(e);
@@ -778,6 +222,12 @@ export default function EditBlog() {
     if (file) {
       setFormData({ ...formData, coverImage: file });
       setCoverPreview(URL.createObjectURL(file));
+      // Clear existing cover path so backend knows it's replaced
+      setExistingImages((prev) => ({ ...prev, cover: null }));
+      // If originally had a cover, mark it for removal
+      if (initialExistingImages && initialExistingImages.cover) {
+        setRemovedCover(true);
+      }
     }
   };
 
@@ -789,27 +239,181 @@ export default function EditBlog() {
 
   const handleContentImageChange = (index, file) => {
     const newContent = [...formData.content];
+
+    // Keep a reference to original image path if present
+    const originalPath = newContent[index]?.originalImagePath || null;
+
+    // Set new file (or clear)
     newContent[index].img = file;
+
+    // If we're replacing/removing, clear the original markers on this block
+    if (originalPath) {
+      newContent[index].originalImagePath = null;
+      newContent[index].originalIndex = null;
+      // mark original for removal using initial snapshot
+      if (
+        initialExistingImages &&
+        Array.isArray(initialExistingImages.content)
+      ) {
+        const idxInInitial =
+          initialExistingImages.content.indexOf(originalPath);
+        if (idxInInitial >= 0) {
+          // Add to removed indices if not already there
+          setRemovedContentIndicesState((prev) => {
+            if (!prev.includes(idxInInitial)) {
+              return [...prev, idxInInitial];
+            }
+            return prev;
+          });
+        }
+      }
+    }
+
     setFormData({ ...formData, content: newContent });
 
     const newPreviews = [...contentPreviews];
-    newPreviews[index] = file ? URL.createObjectURL(file) : null;
+    if (file) {
+      newPreviews[index] = URL.createObjectURL(file);
+    } else {
+      newPreviews[index] = null;
+      // Clear blob URL if exists
+      if (
+        contentPreviews[index] &&
+        contentPreviews[index].startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(contentPreviews[index]);
+      }
+    }
     setContentPreviews(newPreviews);
+
+    // Update existingImages - clear the existing image for this slot
+    const newExisting = [...existingImages.content];
+    while (newExisting.length <= index) newExisting.push(null);
+    newExisting[index] = null;
+    setExistingImages((prev) => ({ ...prev, content: newExisting }));
+  };
+
+  const handleRemoveContentImage = (index) => {
+    const currentPreview = contentPreviews[index];
+
+    // Check if it's a blob URL (newly uploaded) or server URL
+    const isNewImage = currentPreview && currentPreview.startsWith("blob:");
+    const hasExistingImage = existingImages.content[index];
+
+    // Show confirmation only if it's a server image (not a newly uploaded one)
+    if (!isNewImage && hasExistingImage) {
+      setContentImageDeleteIndex(index);
+      setShowContentDeleteConfirm(true);
+    } else {
+      // For new images, just remove immediately
+      removeContentImage(index);
+    }
+  };
+
+  const removeContentImage = (index) => {
+    const newContent = [...formData.content];
+    const originalPath = newContent[index]?.originalImagePath || null;
+
+    // Clear the image file
+    newContent[index].img = null;
+
+    // Mark original image for removal if it exists
+    if (originalPath) {
+      newContent[index].originalImagePath = null;
+      newContent[index].originalIndex = null;
+
+      if (
+        initialExistingImages &&
+        Array.isArray(initialExistingImages.content)
+      ) {
+        const idxInInitial =
+          initialExistingImages.content.indexOf(originalPath);
+        if (idxInInitial >= 0) {
+          setRemovedContentIndicesState((prev) => {
+            if (!prev.includes(idxInInitial)) {
+              return [...prev, idxInInitial];
+            }
+            return prev;
+          });
+        }
+      }
+    }
+
+    setFormData({ ...formData, content: newContent });
+
+    // Clear preview and clean up blob URL
+    const newPreviews = [...contentPreviews];
+    if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(newPreviews[index]);
+    }
+    newPreviews[index] = null;
+    setContentPreviews(newPreviews);
+
+    // Clear existing image for this slot
+    const newExisting = [...existingImages.content];
+    while (newExisting.length <= index) newExisting.push(null);
+    newExisting[index] = null;
+    setExistingImages((prev) => ({ ...prev, content: newExisting }));
+  };
+
+  const confirmRemoveContentImage = () => {
+    const index = contentImageDeleteIndex;
+    if (index == null) return;
+    removeContentImage(index);
+    setShowContentDeleteConfirm(false);
+    setContentImageDeleteIndex(null);
   };
 
   const addContentBlock = () => {
     setFormData({
       ...formData,
-      content: [...formData.content, { text: "", img: null }],
+      content: [
+        ...formData.content,
+        { text: "", img: null, originalImagePath: null, originalIndex: null },
+      ],
     });
     setContentPreviews([...contentPreviews, null]);
+    setExistingImages((prev) => ({
+      ...prev,
+      content: [...(prev.content || []), null],
+    }));
   };
 
   const removeContentBlock = (index) => {
+    // If this block had an original image, mark it for removal using the original path
+    const origPath = formData.content[index]?.originalImagePath || null;
+    if (
+      origPath &&
+      initialExistingImages &&
+      Array.isArray(initialExistingImages.content)
+    ) {
+      const idxInInitial = initialExistingImages.content.indexOf(origPath);
+      if (idxInInitial >= 0) {
+        setRemovedContentIndicesState((prev) => {
+          if (!prev.includes(idxInInitial)) {
+            return [...prev, idxInInitial];
+          }
+          return prev;
+        });
+      }
+    }
+
     const newContent = formData.content.filter((_, i) => i !== index);
     const newPreviews = contentPreviews.filter((_, i) => i !== index);
+
+    // Clean up blob URLs
+    if (contentPreviews[index] && contentPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(contentPreviews[index]);
+    }
+
     setFormData({ ...formData, content: newContent });
     setContentPreviews(newPreviews);
+
+    // Remove corresponding existing image slot
+    const newExisting = Array.isArray(existingImages.content)
+      ? existingImages.content.filter((_, i) => i !== index)
+      : [];
+    setExistingImages((prev) => ({ ...prev, content: newExisting }));
   };
 
   const handleSubmit = async () => {
@@ -833,23 +437,89 @@ export default function EditBlog() {
         fd.append("cover", formData.coverImage);
       }
 
-      // Prepare content payload: include existing image paths or empty string
+      // Prepare content payload
       const contentPayload = formData.content.map((block, index) => {
         const payload = { text: block.text };
 
+        // Preserve mapping to original index if any
+        payload.originalIndex = block.originalIndex ?? null;
+
+        // Determine image handling
         if (block.img) {
-          // New file upload
+          // New file upload (include index so backend can map files correctly)
           fd.append(`contentImages[${index}]`, block.img);
-          payload.img = "";
+          payload.img = ""; // backend will assign new path
+          payload.isNewImage = true;
         } else if (existingImages.content[index]) {
           // Keep existing image path
           payload.img = existingImages.content[index];
         } else {
-          payload.img = "";
+          // No image in this slot. Distinguish between "never had an image" and "original existed but was removed"
+          const origIdx = block.originalIndex;
+          const wasOriginalRemoved =
+            origIdx != null &&
+            (removedContentIndicesState || []).includes(origIdx);
+          // If original image was removed, explicitly send empty string so backend can delete it
+          payload.img = wasOriginalRemoved ? "" : null;
         }
 
         return payload;
       });
+
+      // Debug: log FormData keys for inspection
+      try {
+        console.groupCollapsed("EditBlogs: FormData payload");
+        for (let [k, v] of fd.entries()) {
+          console.log(k, v instanceof File ? `File: ${v.name}` : v);
+        }
+        console.groupEnd();
+      } catch (e) {
+        /* ignore in older browsers */
+      }
+
+      // Also log the content payload sent in JSON (helpful for backend mapping)
+      try {
+        console.log(
+          "EditBlogs: contentPayload:",
+          JSON.stringify(contentPayload, null, 2)
+        );
+      } catch (e) {
+        /* ignore */
+      }
+
+      // Send removed content indices
+      const uniqueRemovedIndices = Array.from(
+        new Set(removedContentIndicesState || [])
+      );
+      if (uniqueRemovedIndices.length) {
+        fd.append(
+          "removedContentIndices",
+          JSON.stringify(uniqueRemovedIndices)
+        );
+
+        // Also send exact original image paths to help server reliably delete files
+        const removedContentImagePaths = uniqueRemovedIndices
+          .map((i) => initialExistingImages?.content?.[i])
+          .filter(Boolean);
+        if (removedContentImagePaths.length) {
+          console.log("Removing content images:", removedContentImagePaths);
+          fd.append(
+            "removedContentImagePaths",
+            JSON.stringify(removedContentImagePaths)
+          );
+        }
+      }
+
+      // If cover existed originally and user removed it or replaced it, mark it for removal
+      if (
+        removedCover ||
+        (initialExistingImages &&
+          initialExistingImages.cover &&
+          !existingImages.cover &&
+          !formData.coverImage)
+      ) {
+        fd.append("removeCover", "1");
+      }
 
       fd.append("content", JSON.stringify(contentPayload));
 
@@ -865,7 +535,13 @@ export default function EditBlog() {
       }
 
       setMessage({ type: "success", text: "Blog updated successfully!" });
-      setTimeout(() => navigate("/blogs"), 1200);
+      // Show top-end toast using sweetAlert config and then navigate back to listing
+      try {
+        await showProductUpdated();
+      } catch (e) {
+        // ignore toast errors
+      }
+      navigate("/blogs");
     } catch (err) {
       console.error("Update error:", err);
       setMessage({
@@ -971,10 +647,7 @@ export default function EditBlog() {
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, coverImage: null });
-                        setCoverPreview(null);
-                      }}
+                      onClick={() => setShowCoverDeleteConfirm(true)}
                       className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
                     >
                       <X className="w-4 h-4" />
@@ -1058,9 +731,7 @@ export default function EditBlog() {
                           />
                           <button
                             type="button"
-                            onClick={() =>
-                              handleContentImageChange(index, null)
-                            }
+                            onClick={() => handleRemoveContentImage(index)}
                             className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
                           >
                             <X className="w-4 h-4" />
@@ -1111,6 +782,86 @@ export default function EditBlog() {
             </button>
           </div>
         </div>
+
+        {/* Cover Image Delete Confirmation Modal */}
+        {showCoverDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold">Remove Cover Image</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to remove the cover image? This will mark
+                the original image for deletion.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCoverDeleteConfirm(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, coverImage: null });
+                    if (coverPreview && coverPreview.startsWith("blob:")) {
+                      URL.revokeObjectURL(coverPreview);
+                    }
+                    setCoverPreview(null);
+                    setExistingImages((prev) => ({ ...prev, cover: null }));
+                    setRemovedCover(true);
+                    setShowCoverDeleteConfirm(false);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content Image Delete Confirmation Modal */}
+        {showContentDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold">Remove Content Image</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to remove this content image? This will
+                mark the original image for deletion.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowContentDeleteConfirm(false);
+                    setContentImageDeleteIndex(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmRemoveContentImage}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
