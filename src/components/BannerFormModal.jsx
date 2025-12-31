@@ -718,7 +718,7 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                     />
                     <label
                       htmlFor="imageUpload"
-                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                      className="cursor-pointer w-full h-full flex flex-col items-center justify-center"
                     >
                       <div className="bg-gradient-to-br from-blue-500 to-indigo-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
                         <ImageIcon className="w-8 h-8 text-white" />
@@ -756,7 +756,7 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                     />
                     <label
                       htmlFor="coverImageUpload"
-                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                      className="cursor-pointer w-full h-full flex flex-col items-center justify-center"
                     >
                       <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
                         <ImageIcon className="w-8 h-8 text-white" />
@@ -796,7 +796,7 @@ const BannerFormModel = ({ open, onClose, initialBanner }) => {
                     />
                     <label
                       htmlFor="videoUpload"
-                      className="cursor-pointer block w-full h-full flex flex-col items-center justify-center"
+                      className="cursor-pointer w-full h-full flex flex-col items-center justify-center"
                     >
                       <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-4 rounded-2xl inline-block mb-4 hover:scale-110 transition-transform duration-300 shadow-lg">
                         <Upload className="w-8 h-8 text-white" />

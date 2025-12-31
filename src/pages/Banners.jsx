@@ -977,7 +977,7 @@ const Banners = () => {
                     {banner.videoUrl ? (
                       <video
                         src={banner.videoUrl}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                         muted
                         loop
                         playsInline
@@ -1151,7 +1151,7 @@ const Banners = () => {
                 {selectedBanner.videoUrl ? (
                   <video
                     src={selectedBanner.videoUrl}
-                    className="w-full h-64 sm:h-96 object-cover"
+                    className="w-full h-64 sm:h-96 object-cover object-top"
                     controls
                     autoPlay
                     loop

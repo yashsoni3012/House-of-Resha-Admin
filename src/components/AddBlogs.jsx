@@ -1063,7 +1063,7 @@ export default function AddBlogs() {
 
         setTimeout(() => {
           navigate("/blogs");
-        }, 2000);
+        });
       } else {
         throw new Error(result.message || "Failed to publish blog");
       }

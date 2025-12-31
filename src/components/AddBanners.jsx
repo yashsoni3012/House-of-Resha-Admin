@@ -566,7 +566,7 @@ const AddBanners = () => {
         // Redirect after a brief delay
         setTimeout(() => {
           navigate("/banners");
-        }, 1500);
+        });
       } else {
         throw new Error(response.data.message || "Failed to add banner");
       }

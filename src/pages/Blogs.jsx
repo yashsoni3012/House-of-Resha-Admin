@@ -1025,6 +1025,8 @@ export default function Blogs() {
     try {
       setSelectedBlogLoading(true);
       setSelectedBlogError(null);
+
+      // Show basic info immediately and prevent body scroll
       setSelectedBlog(blog);
       document.body.style.overflow = "hidden";
 
@@ -1048,6 +1050,21 @@ export default function Blogs() {
         } catch (e) {
           console.error("Failed to load react-quill-new:", e);
         }
+      }
+
+      // Fetch full blog details by id in case the list item does not contain full content or images
+      try {
+        const res = await fetch(`${API_BASE_URL}/blogs/${blog._id}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setSelectedBlog(json.data);
+          }
+        }
+      } catch (fetchErr) {
+        console.error("Failed to fetch blog details:", fetchErr);
+        // Keep the basic blog object shown, but surface an error message so user can retry
+        setSelectedBlogError(fetchErr.message || "Failed to load blog details");
       }
     } catch (err) {
       console.error("Error viewing blog:", err);
@@ -1572,6 +1589,34 @@ export default function Blogs() {
                                         className="text-gray-600 text-sm mb-2"
                                         dangerouslySetInnerHTML={{
                                           __html: sanitizeHtml(block.text),
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Render images for this content block (support string or array) */}
+                                {block.img && (
+                                  <div className="mt-3 flex flex-col gap-3">
+                                    {Array.isArray(block.img) ? (
+                                      block.img.map((imgSrc, imgIdx) => (
+                                        <img
+                                          key={imgIdx}
+                                          src={getImageUrl(imgSrc)}
+                                          alt={`Section ${index + 1} image ${imgIdx + 1}`}
+                                          className="rounded-lg max-h-64 object-cover mx-auto w-full"
+                                          onError={(e) => {
+                                            e.target.style.display = "none";
+                                          }}
+                                        />
+                                      ))
+                                    ) : (
+                                      <img
+                                        src={getImageUrl(block.img)}
+                                        alt={`Section ${index + 1} image`}
+                                        className="rounded-lg max-h-64 object-cover mx-auto w-full"
+                                        onError={(e) => {
+                                          e.target.style.display = "none";
                                         }}
                                       />
                                     )}

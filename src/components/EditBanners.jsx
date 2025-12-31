@@ -393,6 +393,10 @@ const EditBanner = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [existingVideoUrl, setExistingVideoUrl] = useState("");
 
+  // Track original values to determine whether any changes have been made
+  const initialDataRef = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+
   const [formData, setFormData] = useState({
     title: "",
     buttonText: "",
@@ -406,6 +410,19 @@ const EditBanner = () => {
     fetchBannerData();
     fetchCategories();
   }, [id]);
+
+  // Recompute dirty state when fields or selected file change
+  useEffect(() => {
+    const init = initialDataRef.current;
+    if (!init) return;
+    const fieldsChanged =
+      formData.title !== init.title ||
+      formData.buttonText !== init.buttonText ||
+      formData.buttonLink !== init.buttonLink ||
+      formData.category !== init.category;
+    const videoChanged = Boolean(selectedFile);
+    setIsDirty(fieldsChanged || videoChanged);
+  }, [formData, selectedFile]);
 
   const fetchCategories = async () => {
     try {
@@ -479,6 +496,16 @@ const EditBanner = () => {
         setExistingVideoUrl(videoUrl);
         setPreviewVideo(videoUrl);
       }
+
+      // Snapshot initial data so we can detect changes (dirty state)
+      initialDataRef.current = {
+        title: bannerData.title || "",
+        buttonText: bannerData.buttonText || "",
+        buttonLink: bannerData.buttonLink || "",
+        category: bannerData.category || "",
+        videoPath: bannerData.videoUrl || null,
+      };
+      setIsDirty(false);
     } catch (error) {
       console.error("Error fetching banner details:", error);
       setError(
@@ -501,14 +528,17 @@ const EditBanner = () => {
     }
 
     if (file.size > 50 * 1024 * 1024) {
-      setError("File size too large. Maximum size is 50MB.");
+      setError("Video file size should be less than 50MB");
       return;
     }
 
+    // New video file selected - mark as dirty
     setSelectedFile(file);
 
+    // Create preview URL for new video
     const previewUrl = URL.createObjectURL(file);
 
+    // Clean up previous preview if it was a blob URL
     if (
       previewVideo &&
       previewVideo !== existingVideoUrl &&
@@ -519,6 +549,9 @@ const EditBanner = () => {
 
     setPreviewVideo(previewUrl);
     setError(null);
+
+    // Mark the form as changed
+    setIsDirty(true);
   };
 
   const triggerFileInput = () => {
@@ -539,6 +572,17 @@ const EditBanner = () => {
     setPreviewVideo(existingVideoUrl);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+
+    // Recompute dirty state now that selected file was cleared
+    const init = initialDataRef.current;
+    if (init) {
+      const fieldsChanged =
+        formData.title !== init.title ||
+        formData.buttonText !== init.buttonText ||
+        formData.buttonLink !== init.buttonLink ||
+        formData.category !== init.category;
+      setIsDirty(fieldsChanged || false);
     }
   };
 
@@ -740,7 +784,12 @@ const EditBanner = () => {
 
               <button
                 onClick={handleSubmit}
-                disabled={saveLoading || !hasRequiredFields() || deleteLoading}
+                disabled={
+                  saveLoading ||
+                  !hasRequiredFields() ||
+                  deleteLoading ||
+                  !isDirty
+                }
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {saveLoading ? (
@@ -1012,35 +1061,6 @@ const EditBanner = () => {
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Update Notes</h3>
-                  <p className="text-sm text-gray-600">
-                    Notes about what was updated
-                  </p>
-                </div>
-              </div>
-
-              <textarea
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                placeholder="Add notes about what changes were made..."
-                maxLength={300}
-                disabled={saveLoading}
-              />
-
-              <div className="flex justify-between mt-2">
-                <span className="text-xs text-gray-500">
-                  Max 300 characters
-                </span>
-                <span className="text-xs text-gray-500">0/300</span>
-              </div>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -1175,7 +1195,7 @@ const EditBanner = () => {
               </p>
               <button
                 onClick={handleSubmit}
-                disabled={saveLoading || !hasRequiredFields()}
+                disabled={saveLoading || !hasRequiredFields() || !isDirty}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {saveLoading ? (

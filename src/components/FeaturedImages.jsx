@@ -894,7 +894,7 @@ const FeaturedImages = () => {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  Featured Images
+                  MIE by Resha
                 </h1>
                 <p className="text-sm text-gray-600">
                   Manage category images and details

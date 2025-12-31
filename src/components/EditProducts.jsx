@@ -1012,7 +1012,7 @@ const EditProducts = () => {
       // Redirect after a brief delay
       setTimeout(() => {
         navigate("/products");
-      }, 1500);
+      });
     } catch (error) {
       console.error("Update error:", error);
       setError(error.message || "Failed to update product. Please try again.");

@@ -743,7 +743,7 @@ const AddProducts = () => {
         setFormData({
           name: product.name || "",
           categoryId: product.categoryId?._id || "",
-          price: (product.price).toFixed(2) || "",
+          price: product.price.toFixed(2) || "",
           description: product.description || "",
           sizes: product.sizes || [],
           details: product.details || [],
@@ -902,7 +902,7 @@ const AddProducts = () => {
       // Redirect after a brief delay
       setTimeout(() => {
         navigate("/products");
-      }, 1500);
+      });
     } catch (error) {
       console.error("Error creating product:", error);
       showError("Error", error.message || "Failed to create product");
@@ -1125,7 +1125,7 @@ const AddProducts = () => {
                 </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                    $
+                    ₹
                   </span>
                   <input
                     type="number"
