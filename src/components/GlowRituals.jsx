@@ -699,7 +699,7 @@ const GlowRituals = () => {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  Glow Rituals
+                  MIE by Resha
                 </h1>
                 <p className="text-sm text-gray-600">
                   Skincare products and beauty essentials

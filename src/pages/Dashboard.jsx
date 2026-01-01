@@ -1,3 +1,299 @@
+// import React from "react";
+// import { Link } from "react-router-dom";
+// import { useQuery } from "@tanstack/react-query";
+// import {
+//   TrendingUp,
+//   ShoppingCart,
+//   Users,
+//   Package,
+//   IndianRupee,
+//   Calendar,
+//   Activity,
+//   ArrowUp,
+//   ArrowDown,
+//   RefreshCw,
+//   AlertCircle,
+// } from "lucide-react";
+
+// const API_BASE_URL = "https://api.houseofresha.com";
+
+// const Dashboard = () => {
+//   // Fetch real products data
+//   const {
+//     data: products = [],
+//     isLoading: isLoadingProducts,
+//     error: productsError,
+//     refetch: refetchProducts,
+//   } = useQuery({
+//     queryKey: ["dashboard-products"],
+//     queryFn: async () => {
+//       try {
+//         const response = await fetch(`${API_BASE_URL}/clothing`);
+//         if (!response.ok) {
+//           throw new Error(`Failed to fetch products: ${response.status}`);
+//         }
+//         const data = await response.json();
+
+//         // Handle different response structures
+//         if (Array.isArray(data)) return data;
+//         if (data.data && Array.isArray(data.data)) return data.data;
+//         if (data.success && Array.isArray(data.data)) return data.data;
+//         return [];
+//       } catch (error) {
+//         console.error("Error fetching products:", error);
+//         throw error;
+//       }
+//     },
+//     refetchOnWindowFocus: false,
+//   });
+
+//   // Calculate stats from real data
+//   const totalProducts = products.length;
+
+//   const totalRevenue = React.useMemo(() => {
+//     return products.reduce((sum, product) => {
+//       const price = parseFloat(product.price) || 0;
+//       return sum + price * 10; // Assuming 10 units sold per product
+//     }, 0);
+//   }, [products]);
+
+//   const totalOrders = React.useMemo(() => {
+//     return Math.floor(totalProducts * 1.75);
+//   }, [totalProducts]);
+
+//   const totalCustomers = React.useMemo(() => {
+//     return Math.floor(totalProducts * 13.8);
+//   }, [totalProducts]);
+
+//   // Format currency
+//   const formatCurrency = (amount) => {
+//     return new Intl.NumberFormat("en-IN", {
+//       style: "currency",
+//       currency: "INR",
+//       minimumFractionDigits: 0,
+//       maximumFractionDigits: 0,
+//     }).format(amount);
+//   };
+
+//   const stats = [
+//     {
+//       title: "Total Revenue",
+//       value: formatCurrency(totalRevenue),
+//       change: "+12.5%",
+//       trend: "up",
+//       icon: IndianRupee,
+//       gradient: "from-blue-500 to-cyan-500",
+//       bgGradient: "from-blue-50 to-cyan-50",
+//       iconBg: "bg-blue-100",
+//       iconColor: "text-blue-600",
+//     },
+//     {
+//       title: "Total Orders",
+//       value: totalOrders.toLocaleString(),
+//       change: "+8.2%",
+//       trend: "up",
+//       icon: ShoppingCart,
+//       gradient: "from-green-500 to-emerald-500",
+//       bgGradient: "from-green-50 to-emerald-50",
+//       iconBg: "bg-green-100",
+//       iconColor: "text-green-600",
+//     },
+//     {
+//       title: "Total Customers",
+//       value: totalCustomers.toLocaleString(),
+//       change: "+15.3%",
+//       trend: "up",
+//       icon: Users,
+//       gradient: "from-purple-500 to-pink-500",
+//       bgGradient: "from-purple-50 to-pink-50",
+//       iconBg: "bg-purple-100",
+//       iconColor: "text-purple-600",
+//     },
+//     {
+//       title: "Total Products",
+//       value: isLoadingProducts ? "Loading..." : totalProducts.toLocaleString(),
+//       change: isLoadingProducts ? "..." : "+3.1%",
+//       trend: "up",
+//       icon: Package,
+//       gradient: "from-orange-500 to-red-500",
+//       bgGradient: "from-orange-50 to-red-50",
+//       iconBg: "bg-orange-100",
+//       iconColor: "text-orange-600",
+//     },
+//   ];
+
+//   // Get recent products for activity section
+//   const recentProducts = React.useMemo(() => {
+//     return [...products]
+//       .sort(
+//         (a, b) =>
+//           new Date(b.createdAt || b.updatedAt || 0) -
+//           new Date(a.createdAt || a.updatedAt || 0)
+//       )
+//       .slice(0, 4);
+//   }, [products]);
+
+//   return (
+//     <div className="space-y-6">
+//       {/* Welcome Header */}
+//       <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-2xl p-4 lg:p-6 text-white shadow-xl">
+//         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+//           <div>
+//             <h1 className="text-2xl lg:text-3xl font-bold mb-2">
+//               Welcome Back, Admin!
+//             </h1>
+//             <p className="text-purple-100 text-sm lg:text-base">
+//               {isLoadingProducts
+//                 ? "Loading store data..."
+//                 : "Here's what's happening with your store today."}
+//             </p>
+//           </div>
+//           <div className="flex items-center gap-4">
+//             <div className="flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-lg">
+//               <Calendar size={20} />
+//               <span className="font-medium">
+//                 {new Date().toLocaleDateString("en-US", {
+//                   weekday: "long",
+//                   year: "numeric",
+//                   month: "long",
+//                   day: "numeric",
+//                 })}
+//               </span>
+//             </div>
+//             {/* <button
+//               onClick={() => refetchProducts()}
+//               disabled={isLoadingProducts}
+//               className="p-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+//               title="Refresh Data"
+//             >
+//               <RefreshCw size={20} className={isLoadingProducts ? 'animate-spin' : ''} />
+//             </button> */}
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Error Display */}
+//       {productsError && (
+//         <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg p-4">
+//           <p className="text-red-700 text-sm flex items-center gap-2">
+//             <AlertCircle size={18} className="flex-shrink-0" />
+//             <span>
+//               <strong>Error Loading Products:</strong> {productsError.message}
+//             </span>
+//           </p>
+//         </div>
+//       )}
+
+//       {/* Stats Cards */}
+//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+//         {stats.map((stat, idx) => {
+//           const Icon = stat.icon;
+//           const TrendIcon = stat.trend === "up" ? ArrowUp : ArrowDown;
+//           return (
+//             <div
+//               key={idx}
+//               className={`bg-gradient-to-br ${stat.bgGradient} rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
+//             >
+//               <div className="flex items-start justify-between mb-4">
+//                 <div
+//                   className={`${stat.iconBg} p-3 rounded-lg group-hover:scale-110 transition-transform`}
+//                 >
+//                   <Icon className={stat.iconColor} size={24} />
+//                 </div>
+//                 <div
+//                   className={`${
+//                     stat.trend === "up"
+//                       ? "bg-green-100 text-green-700"
+//                       : "bg-red-100 text-red-700"
+//                   }`}
+//                 >
+//                   {/* <TrendIcon size={14} />
+//                   <span className="text-xs font-bold">{stat.change}</span> */}
+//                 </div>
+//               </div>
+//               <p className="text-gray-600 text-sm font-medium mb-1">
+//                 {stat.title}
+//               </p>
+//               <h3 className="text-2xl lg:text-3xl font-bold text-gray-900">
+//                 {stat.value}
+//               </h3>
+//             </div>
+//           );
+//         })}
+//       </div>
+
+//       {/* Recent Activity Section */}
+//       <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-gray-200">
+//         <div className="flex items-center justify-between mb-6">
+//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+//             <Activity className="text-purple-600" size={24} />
+//             Recent Products Added
+//           </h3>
+//           <Link
+//             to="/products"
+//             className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center gap-1"
+//           >
+//             View All Products
+//             <ArrowUp size={16} className="rotate-90" />
+//           </Link>
+//         </div>
+
+//         {isLoadingProducts ? (
+//           <div className="flex items-center justify-center py-12">
+//             <RefreshCw className="animate-spin text-purple-600" size={32} />
+//             <span className="ml-3 text-gray-600">Loading products...</span>
+//           </div>
+//         ) : recentProducts.length === 0 ? (
+//           <div className="text-center py-12">
+//             <Package size={48} className="mx-auto text-gray-400 mb-4" />
+//             <p className="text-gray-500">No products found</p>
+//             <Link
+//               to="/products/add"
+//               className="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium"
+//             >
+//               Add your first product →
+//             </Link>
+//           </div>
+//         ) : (
+//           <div className="space-y-4">
+//             {recentProducts.map((product, index) => (
+//               <div
+//                 key={product._id || index}
+//                 className="flex items-center justify-between p-4 bg-gray-50 hover:bg-purple-50 rounded-xl transition-all border border-gray-200 hover:border-purple-200 group"
+//               >
+//                 <div className="flex items-center gap-4">
+//                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
+//                     {product.name?.charAt(0).toUpperCase() || "P"}
+//                   </div>
+//                   <div>
+//                     <p className="font-semibold text-gray-900">
+//                       {product.name || "Unnamed Product"}
+//                     </p>
+//                     <p className="text-sm text-gray-500">
+//                       {product.categoryId?.name || "No Category"} • ₹
+//                       {parseFloat(product.price || 0).toLocaleString()}
+//                     </p>
+//                   </div>
+//                 </div>
+//                 <div className="text-right">
+//                   <span className="text-lg font-bold text-purple-600">
+//                     ₹{parseFloat(product.price || 0).toLocaleString()}
+//                   </span>
+//                   <p className="text-xs text-gray-500">
+//                     {product.sizes?.length || 0} sizes available
+//                   </p>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Dashboard;
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -47,23 +343,126 @@ const Dashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch real orders data
+  const {
+    data: orders = [],
+    isLoading: isLoadingOrders,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useQuery({
+    queryKey: ["dashboard-orders"],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/orders`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch orders: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Handle different response structures
+        if (Array.isArray(data)) return data;
+        if (data.data && Array.isArray(data.data)) return data.data;
+        if (data.orders && Array.isArray(data.orders)) return data.orders;
+        if (data.success && Array.isArray(data.data)) return data.data;
+        return [];
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+    },
+    refetchOnWindowFocus: false,
+  });
+
   // Calculate stats from real data
   const totalProducts = products.length;
+  const totalOrders = orders.length;
 
+  // Calculate total revenue from real orders
   const totalRevenue = React.useMemo(() => {
-    return products.reduce((sum, product) => {
-      const price = parseFloat(product.price) || 0;
-      return sum + price * 10; // Assuming 10 units sold per product
+    return orders.reduce((sum, order) => {
+      const orderAmount = parseFloat(order.amount) || 0;
+      return sum + orderAmount;
     }, 0);
-  }, [products]);
+  }, [orders]);
 
-  const totalOrders = React.useMemo(() => {
-    return Math.floor(totalProducts * 1.75);
-  }, [totalProducts]);
-
+  // Calculate total customers (unique users from orders)
   const totalCustomers = React.useMemo(() => {
-    return Math.floor(totalProducts * 13.8);
-  }, [totalProducts]);
+    const uniqueCustomerIds = new Set();
+    orders.forEach((order) => {
+      if (order.userId?._id) {
+        uniqueCustomerIds.add(order.userId._id);
+      }
+    });
+    return uniqueCustomerIds.size;
+  }, [orders]);
+
+  // Calculate today's revenue
+  const todayRevenue = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return orders.reduce((sum, order) => {
+      const orderDate = new Date(order.createdAt || order.date);
+      orderDate.setHours(0, 0, 0, 0);
+
+      if (orderDate.getTime() === today.getTime()) {
+        const orderAmount = parseFloat(order.amount) || 0;
+        return sum + orderAmount;
+      }
+      return sum;
+    }, 0);
+  }, [orders]);
+
+  // Calculate today's orders
+  const todayOrders = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return orders.filter((order) => {
+      const orderDate = new Date(order.createdAt || order.date);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    }).length;
+  }, [orders]);
+
+  // Calculate percentage change (dummy data for now)
+  const revenueChange = React.useMemo(() => {
+    if (orders.length === 0) return "+0%";
+    const yesterdayRevenue = totalRevenue * 0.85; // Simulated yesterday's revenue
+    const change = ((totalRevenue - yesterdayRevenue) / yesterdayRevenue) * 100;
+    return change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+  }, [totalRevenue, orders]);
+
+  const ordersChange = React.useMemo(() => {
+    if (orders.length === 0) return "+0%";
+    const yesterdayOrders = Math.floor(totalOrders * 0.8); // Simulated yesterday's orders
+    const change = ((totalOrders - yesterdayOrders) / yesterdayOrders) * 100;
+    return change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+  }, [totalOrders, orders]);
+
+  // Get order status counts
+  const orderStatusCounts = React.useMemo(() => {
+    const counts = {
+      paid: 0,
+      pending: 0,
+      failed: 0,
+      total: 0,
+    };
+
+    orders.forEach((order) => {
+      const status = (order.paymentStatus || order.status || "").toLowerCase();
+      if (status.includes("paid") || status.includes("completed")) {
+        counts.paid++;
+      } else if (status.includes("pending")) {
+        counts.pending++;
+      } else if (status.includes("failed") || status.includes("cancelled")) {
+        counts.failed++;
+      }
+      counts.total++;
+    });
+
+    return counts;
+  }, [orders]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -75,28 +474,42 @@ const Dashboard = () => {
     }).format(amount);
   };
 
+  // Format number with K/M suffix
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + "M";
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "K";
+    }
+    return num.toString();
+  };
+
   const stats = [
     {
       title: "Total Revenue",
       value: formatCurrency(totalRevenue),
-      change: "+12.5%",
-      trend: "up",
+      change: revenueChange,
+      trend: revenueChange.startsWith("+") ? "up" : "down",
       icon: IndianRupee,
       gradient: "from-blue-500 to-cyan-500",
       bgGradient: "from-blue-50 to-cyan-50",
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
+      subValue: `₹${(todayRevenue / 100).toLocaleString()} today`,
     },
     {
       title: "Total Orders",
       value: totalOrders.toLocaleString(),
-      change: "+8.2%",
-      trend: "up",
+      change: ordersChange,
+      trend: ordersChange.startsWith("+") ? "up" : "down",
       icon: ShoppingCart,
       gradient: "from-green-500 to-emerald-500",
       bgGradient: "from-green-50 to-emerald-50",
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
+      subValue: `${todayOrders} today`,
+      details: `${orderStatusCounts.paid} paid • ${orderStatusCounts.pending} pending`,
     },
     {
       title: "Total Customers",
@@ -133,160 +546,365 @@ const Dashboard = () => {
       .slice(0, 4);
   }, [products]);
 
+  // Get recent orders for activity section
+  const recentOrders = React.useMemo(() => {
+    return [...orders]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || 0) -
+          new Date(a.createdAt || a.date || 0)
+      )
+      .slice(0, 5);
+  }, [orders]);
+
+  const isLoading = isLoadingProducts || isLoadingOrders;
+  const hasError = productsError || ordersError;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 ">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-2xl p-4 lg:p-6 text-white shadow-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-xl">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
               Welcome Back, Admin!
             </h1>
-            <p className="text-purple-100 text-sm lg:text-base">
-              {isLoadingProducts
+            <p className="text-purple-100 text-xs sm:text-sm lg:text-base">
+              {isLoading
                 ? "Loading store data..."
-                : "Here's what's happening with your store today."}
+                : `You have ${totalOrders} orders and ₹${(
+                    totalRevenue / 100
+                  ).toLocaleString()} in revenue`}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-lg">
-              <Calendar size={20} />
-              <span className="font-medium">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-lg w-full sm:w-auto">
+              <Calendar size={18} className="flex-shrink-0" />
+              <span className="font-medium text-xs sm:text-sm truncate">
                 {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
+                  weekday: "short",
                   year: "numeric",
-                  month: "long",
+                  month: "short",
                   day: "numeric",
                 })}
               </span>
             </div>
-            {/* <button
-              onClick={() => refetchProducts()}
-              disabled={isLoadingProducts}
+            <button
+              onClick={() => {
+                refetchProducts();
+                refetchOrders();
+              }}
+              disabled={isLoading}
               className="p-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh Data"
             >
-              <RefreshCw size={20} className={isLoadingProducts ? 'animate-spin' : ''} />
-            </button> */}
+              <RefreshCw
+                size={18}
+                sm:size={20}
+                className={isLoading ? "animate-spin" : ""}
+              />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Error Display */}
-      {productsError && (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg p-4">
-          <p className="text-red-700 text-sm flex items-center gap-2">
-            <AlertCircle size={18} className="flex-shrink-0" />
+      {hasError && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg p-3 sm:p-4">
+          <p className="text-red-700 text-xs sm:text-sm flex items-start sm:items-center gap-2">
+            <AlertCircle size={18} className="flex-shrink-0 mt-0.5 sm:mt-0" />
             <span>
-              <strong>Error Loading Products:</strong> {productsError.message}
+              <strong>Error Loading Data:</strong>{" "}
+              {productsError?.message || ordersError?.message}
             </span>
           </p>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           const TrendIcon = stat.trend === "up" ? ArrowUp : ArrowDown;
           return (
             <div
               key={idx}
-              className={`bg-gradient-to-br ${stat.bgGradient} rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
+              className={`bg-gradient-to-br ${stat.bgGradient} rounded-lg sm:rounded-xl p-4 sm:p-5 lg:p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div
-                  className={`${stat.iconBg} p-3 rounded-lg group-hover:scale-110 transition-transform`}
+                  className={`${stat.iconBg} p-2 sm:p-3 rounded-lg group-hover:scale-110 transition-transform`}
                 >
-                  <Icon className={stat.iconColor} size={24} />
+                  <Icon className={stat.iconColor} size={20} />
                 </div>
                 <div
-                  className={`${
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
                     stat.trend === "up"
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {/* <TrendIcon size={14} />
-                  <span className="text-xs font-bold">{stat.change}</span> */}
+                  <TrendIcon size={10} sm:size={12} />
+                  <span className="text-xs">{stat.change}</span>
                 </div>
               </div>
-              <p className="text-gray-600 text-sm font-medium mb-1">
+              <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">
                 {stat.title}
               </p>
-              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">
                 {stat.value}
               </h3>
+              {stat.subValue && (
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">
+                  {stat.subValue}
+                </p>
+              )}
+              {stat.details && (
+                <p className="text-xs text-gray-400">{stat.details}</p>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Recent Activity Section */}
-      <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Activity className="text-purple-600" size={24} />
-            Recent Products Added
-          </h3>
-          <Link
-            to="/products"
-            className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center gap-1"
-          >
-            View All Products
-            <ArrowUp size={16} className="rotate-90" />
-          </Link>
-        </div>
-
-        {isLoadingProducts ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="animate-spin text-purple-600" size={32} />
-            <span className="ml-3 text-gray-600">Loading products...</span>
+      {/* Order Status Summary */}
+      {orderStatusCounts.total > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-green-200">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600">
+                Paid Orders
+              </span>
+              <span className="text-base sm:text-lg font-bold text-green-600">
+                {orderStatusCounts.paid}
+              </span>
+            </div>
+            <div className="w-full bg-green-100 rounded-full h-2">
+              <div
+                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    (orderStatusCounts.paid / orderStatusCounts.total) * 100
+                  }%`,
+                }}
+              />
+            </div>
           </div>
-        ) : recentProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <Package size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500">No products found</p>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-yellow-200">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600">
+                Pending Orders
+              </span>
+              <span className="text-base sm:text-lg font-bold text-yellow-600">
+                {orderStatusCounts.pending}
+              </span>
+            </div>
+            <div className="w-full bg-yellow-100 rounded-full h-2">
+              <div
+                className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    (orderStatusCounts.pending / orderStatusCounts.total) * 100
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-red-200 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600">
+                Failed Orders
+              </span>
+              <span className="text-base sm:text-lg font-bold text-red-600">
+                {orderStatusCounts.failed}
+              </span>
+            </div>
+            <div className="w-full bg-red-100 rounded-full h-2">
+              <div
+                className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    (orderStatusCounts.failed / orderStatusCounts.total) * 100
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Activity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Recent Products */}
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Package className="text-purple-600 flex-shrink-0" size={20} />
+              <span className="truncate">Recent Products</span>
+            </h3>
             <Link
-              to="/products/add"
-              className="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium"
+              to="/products"
+              className="text-purple-600 hover:text-purple-700 font-medium text-xs sm:text-sm flex items-center gap-1 flex-shrink-0"
             >
-              Add your first product →
+              <span className="hidden sm:inline">View All</span>
+              <span className="sm:hidden">All</span>
+              <ArrowUp size={14} className="rotate-90" />
             </Link>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {recentProducts.map((product, index) => (
-              <div
-                key={product._id || index}
-                className="flex items-center justify-between p-4 bg-gray-50 hover:bg-purple-50 rounded-xl transition-all border border-gray-200 hover:border-purple-200 group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-                    {product.name?.charAt(0).toUpperCase() || "P"}
+
+          {isLoadingProducts ? (
+            <div className="flex items-center justify-center py-8 sm:py-12">
+              <RefreshCw
+                className="animate-spin text-purple-600"
+                size={20}
+                sm:size={24}
+              />
+              <span className="ml-3 text-gray-600 text-sm">
+                Loading products...
+              </span>
+            </div>
+          ) : recentProducts.length === 0 ? (
+            <div className="text-center py-6 sm:py-8">
+              <Package
+                size={28}
+                sm:size={32}
+                className="mx-auto text-gray-400 mb-3"
+              />
+              <p className="text-gray-500 text-sm">No products found</p>
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {recentProducts.map((product, index) => (
+                <div
+                  key={product._id || index}
+                  className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 hover:bg-purple-50 rounded-lg transition-all border border-gray-200 hover:border-purple-200 group"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm group-hover:scale-110 transition-transform flex-shrink-0">
+                      {product.name?.charAt(0).toUpperCase() || "P"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+                        {product.name || "Unnamed Product"}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {product.categoryId?.name || "No Category"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {product.name || "Unnamed Product"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {product.categoryId?.name || "No Category"} • ₹
-                      {parseFloat(product.price || 0).toLocaleString()}
-                    </p>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <span className="text-xs sm:text-sm font-bold text-purple-600 whitespace-nowrap">
+                      ₹{parseFloat(product.price || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-lg font-bold text-purple-600">
-                    ₹{parseFloat(product.price || 0).toLocaleString()}
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    {product.sizes?.length || 0} sizes available
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
+              <ShoppingCart
+                className="text-green-600 flex-shrink-0"
+                size={20}
+              />
+              <span className="truncate">Recent Orders</span>
+            </h3>
+            <Link
+              to="/orders"
+              className="text-green-600 hover:text-green-700 font-medium text-xs sm:text-sm flex items-center gap-1 flex-shrink-0"
+            >
+              <span className="hidden sm:inline">View All</span>
+              <span className="sm:hidden">All</span>
+              <ArrowUp size={14} className="rotate-90" />
+            </Link>
           </div>
-        )}
+
+          {isLoadingOrders ? (
+            <div className="flex items-center justify-center py-8 sm:py-12">
+              <RefreshCw
+                className="animate-spin text-green-600"
+                size={20}
+                sm:size={24}
+              />
+              <span className="ml-3 text-gray-600 text-sm">
+                Loading orders...
+              </span>
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <div className="text-center py-6 sm:py-8">
+              <ShoppingCart
+                size={28}
+                sm:size={32}
+                className="mx-auto text-gray-400 mb-3"
+              />
+              <p className="text-gray-500 text-sm">No orders yet</p>
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                New orders will appear here
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {recentOrders.map((order, index) => {
+                const status = (
+                  order.paymentStatus ||
+                  order.status ||
+                  ""
+                ).toLowerCase();
+                const statusColor = status.includes("paid")
+                  ? "bg-green-100 text-green-800"
+                  : status.includes("pending")
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800";
+
+                return (
+                  <div
+                    key={order._id || index}
+                    className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 hover:bg-green-50 rounded-lg transition-all border border-gray-200 hover:border-green-200 group"
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm group-hover:scale-110 transition-transform flex-shrink-0">
+                        {order.address?.firstName?.charAt(0) || "C"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+                          {order.address?.firstName || "Customer"}{" "}
+                          {order.address?.lastName || ""}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span
+                            className={`px-2 py-0.5 text-xs rounded-full ${statusColor}`}
+                          >
+                            {status.toUpperCase()}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {order.items?.length || 0} items
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-2">
+                      <span className="text-xs sm:text-sm font-bold text-green-600 whitespace-nowrap">
+                        ₹
+                        {(parseFloat(order.amount || 0) / 100).toLocaleString()}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1 hidden sm:block">
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString()
+                          : "Recent"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -139,7 +139,7 @@ const App = () => {
               <Route path="/edit-banner/:id" element={<EditBanner />} />
               {/* blogs */}
               <Route path="/add-blog" element={<AddBlogs />} />
-               <Route path="/edit-blog/:id" element={<EditBlogs />} />
+              <Route path="/edit-blog/:id" element={<EditBlogs />} />
             </Route>
 
             {/* Catch all route - redirect to dashboard */}

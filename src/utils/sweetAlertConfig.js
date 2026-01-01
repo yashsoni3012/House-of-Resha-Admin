@@ -110,6 +110,24 @@ const showProductUpdated = async () => {
     });
 };
 
+const showBlogCreated = async () => {
+    return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Blog created successfully',
+        showConfirmButton: false,
+        timer: 1200,
+        timerProgressBar: true,
+        background: '#10B981',
+        color: 'white',
+        customClass: {
+            popup: 'swal2-toast',
+            title: 'text-white'
+        }
+    });
+};
+
 // Small toast notification for blog updates (used by blog editor)
 const showBlogUpdated = async () => {
     return Swal.fire({
@@ -136,6 +154,24 @@ const showBannerUpdated = async () => {
         position: 'top-end',
         icon: 'success',
         title: 'Banner updated successfully',
+        showConfirmButton: false,
+        timer: 1200,
+        timerProgressBar: true,
+        background: '#10B981',
+        color: 'white',
+        customClass: {
+            popup: 'swal2-toast',
+            title: 'text-white'
+        }
+    });
+};
+
+const showBannerCreated = async () => {
+    return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Banner created successfully',
         showConfirmButton: false,
         timer: 1200,
         timerProgressBar: true,
@@ -182,5 +218,7 @@ export {
     showProductCreated,
     showProductUpdated,
     showBlogUpdated,
-    showBannerUpdated
+    showBannerUpdated,
+    showBannerCreated,
+    showBlogCreated
 };

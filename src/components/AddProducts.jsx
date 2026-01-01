@@ -1119,7 +1119,7 @@ const AddProducts = () => {
                   <div>
                     <h3 className="font-bold text-gray-900">Price</h3>
                     <p className="text-sm text-gray-600">
-                      Product price in USD
+                      Product price in INR
                     </p>
                   </div>
                 </div>
@@ -1130,7 +1130,7 @@ const AddProducts = () => {
                   <input
                     type="number"
                     name="price"
-                    step="0.01"
+                    step="1"
                     min="0"
                     value={formData.price}
                     onChange={handleInputChange}
@@ -1171,7 +1171,7 @@ const AddProducts = () => {
                     <img
                       src={previewImage}
                       alt="Product preview"
-                      className="w-full h-64 object-cover rounded-lg"
+                      className="w-full h-64 object-cover object-top rounded-lg"
                     />
                     <button
                       type="button"

@@ -409,6 +409,7 @@ import {
   ExternalLink,
   Loader2,
 } from "lucide-react";
+import { showBannerCreated } from "../utils/sweetAlertConfig"; // Import the sweetalert function
 
 const StatsCard = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
@@ -560,13 +561,14 @@ const AddBanners = () => {
       console.log("Response:", response.data);
 
       if (response.data.success) {
-        // Show success notification
-        alert("Banner created successfully!");
+        // Show SweetAlert notification
+        await showBannerCreated();
+        
+        // Add a small delay for the notification to be seen
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Redirect after a brief delay
-        setTimeout(() => {
-          navigate("/banners");
-        });
+        // Redirect to banners list
+        navigate("/banners");
       } else {
         throw new Error(response.data.message || "Failed to add banner");
       }
@@ -794,7 +796,7 @@ const AddBanners = () => {
               </div>
             </div>
 
-            {/* Video Upload - FIXED SECTION */}
+            {/* Video Upload */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center">

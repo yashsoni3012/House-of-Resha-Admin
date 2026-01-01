@@ -244,7 +244,7 @@ const Sidebar = ({ isOpen, toggle }) => {
             {/* Close button for mobile */}
             <button
               onClick={toggle}
-              className="absolute top-5 right-5 lg:hidden text-gray-600 hover:text-gray-700 transition-colors p-1.5 hover:bg-gray-100 rounded-lg"
+              className="absolute top-5 right-5 lg:hidden text-gray-600 hover:text-gray-700 transition-colors p-1 hover:bg-gray-100 rounded-lg"
             >
               <X size={20} />
             </button>
