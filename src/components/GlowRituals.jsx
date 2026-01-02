@@ -759,144 +759,155 @@ const GlowRituals = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
-            <div className="flex-1 min-w-0">
-              <div className="relative">
-                <Search
-                  onClick={() => searchInputRef.current?.focus()}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 cursor-pointer"
-                />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search by name, category, or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-16 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-base sm:text-md bg-white shadow-sm"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 shadow-sm">
+  <div className="flex flex-col gap-3 sm:gap-4">
+    {/* Search Bar - Full Width on Mobile */}
+    <div className="w-full">
+      <div className="relative">
+        <Search
+          onClick={() => searchInputRef.current?.focus()}
+          className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 cursor-pointer"
+        />
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search by name, category..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 sm:pl-12 lg:pl-14 pr-10 sm:pr-12 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base bg-white shadow-sm"
+        />
+        {searchQuery && (
+          <button
+            onClick={clearSearch}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+            aria-label="Clear search"
+          >
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        )}
+      </div>
+    </div>
 
-            <div className="ml-auto flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                  <Filter className="w-4 h-4" />
-                  <span>Category:</span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-                        selectedCategory === cat
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mobile filter button + view toggles */}
-              <div className="flex items-center gap-2">
-                <button
-                  className="sm:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  onClick={toggleMobileFilters}
-                  aria-expanded={showMobileFilters}
-                  aria-label="Toggle filters"
-                >
-                  <Filter className="w-5 h-5" />
-                </button>
-
-                <button
-                  title="Grid view"
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  title="List view"
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "list"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <LayoutList className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Filters Panel */}
-          {showMobileFilters && (
-            <div className="sm:hidden mt-3 bg-white border border-gray-200 rounded-lg p-3 shadow-md">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium text-gray-700">Filters</div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedCategory("All")}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={() => setShowMobileFilters(false)}
-                    className="text-sm text-indigo-600"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setShowMobileFilters(false);
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                      selectedCategory === cat
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold text-indigo-600">
-              {filteredProducts.length}
-            </span>{" "}
-            of <span className="font-semibold">{products.length}</span> products
-          </div>
+    {/* Filters and View Toggle Row */}
+    <div className="flex items-center justify-between gap-3 sm:gap-4">
+      {/* Desktop Category Filters */}
+      <div className="hidden lg:flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-2 text-sm text-gray-500 font-medium whitespace-nowrap">
+          <Filter className="w-4 h-4" />
+          <span>Category:</span>
         </div>
+        <div className="flex gap-2 flex-wrap">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors text-sm ${
+                selectedCategory === cat
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile/Tablet Filter Button + View Toggle */}
+      <div className="flex items-center gap-2 ml-auto">
+        {/* Mobile/Tablet filter button */}
+        <button
+          className="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+          onClick={toggleMobileFilters}
+          aria-expanded={showMobileFilters}
+          aria-label="Toggle filters"
+        >
+          <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+
+        {/* View Toggle Buttons */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button
+            title="Grid view"
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === "grid"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            title="List view"
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === "list"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <LayoutList className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Mobile/Tablet Filters Panel */}
+  {showMobileFilters && (
+    <div className="lg:hidden mt-3 sm:mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm sm:text-base font-semibold text-gray-700 flex items-center gap-2">
+          <Filter className="w-4 h-4" />
+          Filters
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setSelectedCategory("All")}
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+          >
+            Reset
+          </button>
+          <button
+            onClick={() => setShowMobileFilters(false)}
+            className="text-xs sm:text-sm text-indigo-600 font-medium hover:text-indigo-700 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => {
+              setSelectedCategory(cat);
+              setShowMobileFilters(false);
+            }}
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium whitespace-nowrap text-xs sm:text-sm transition-colors ${
+              selectedCategory === cat
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Results Count */}
+  <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
+    Showing{" "}
+    <span className="font-semibold text-indigo-600">
+      {filteredProducts.length}
+    </span>{" "}
+    of <span className="font-semibold">{products.length}</span> products
+  </div>
+</div>
 
         {/* Error Alert */}
         {error && (

@@ -610,7 +610,7 @@ export default function Orders() {
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                </div>k
+                </div>
               </div>
             </div>
 

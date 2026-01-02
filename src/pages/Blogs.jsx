@@ -888,7 +888,7 @@ import {
   Tag,
   RefreshCw,
   ExternalLink,
-  FileText
+  FileText,
 } from "lucide-react";
 
 const StatsCard = ({ icon: Icon, label, value, color }) => (
@@ -1157,19 +1157,19 @@ export default function Blogs() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-  <div className="p-2 bg-blue-100 rounded-lg">
-    <FileText className="w-6 h-6 text-blue-600" />
-  </div>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
 
-  <div>
-    <h1 className="text-xl font-bold text-gray-900">
-      Blog Management
-    </h1>
-    <p className="text-sm text-gray-600">
-      Manage your blog posts and content
-    </p>
-  </div>
-</div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Blog Management
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your blog posts and content
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={handleRefresh}
@@ -1223,72 +1223,82 @@ export default function Blogs() {
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Search Bar - Takes remaining space on larger screens */}
+            <div className="w-full lg:flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
-                  placeholder="Search blogs by title or description..."
+                  placeholder="Search blogs by title..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 sm:pl-12 lg:pl-14 pr-10 sm:pr-12 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base bg-white shadow-sm"
                 />
                 {searchTerm && (
                   <button
                     onClick={clearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Clear search"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer font-medium transition-colors"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-              </select>
+            {/* Sort Dropdown and View Toggle - Side by side */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Sort Dropdown */}
+              <div className="flex-1 sm:flex-initial">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="w-full sm:w-auto px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer font-medium transition-colors text-xs sm:text-sm bg-white shadow-sm min-w-[140px]"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+              </div>
 
+              {/* View Toggle Buttons */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewStyle("grid")}
-                  className={`px-3 py-2 rounded-md transition-colors ${
+                  title="Grid view"
+                  className={`p-2 rounded-md transition-colors ${
                     viewStyle === "grid"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button
                   onClick={() => setViewStyle("list")}
-                  className={`px-3 py-2 rounded-md transition-colors ${
+                  title="List view"
+                  className={`p-2 rounded-md transition-colors ${
                     viewStyle === "list"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 text-sm text-gray-600">
+          {/* Results Count */}
+          <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
             Showing{" "}
             <span className="font-semibold text-indigo-600">
               {filteredBlogs.length}
             </span>{" "}
             of <span className="font-semibold">{blogs.length}</span> blogs
             {searchTerm && (
-              <span>
+              <span className="block sm:inline mt-1 sm:mt-0">
                 {" "}
                 matching "
                 <span className="font-semibold text-gray-900">

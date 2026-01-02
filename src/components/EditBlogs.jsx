@@ -430,11 +430,12 @@ export default function EditBlog() {
 
       // Handle cover image
       if (formData.coverImage) {
-        // New cover image uploaded
+        // New cover uploaded
         formDataToSend.append("cover", formData.coverImage);
-      } else if (!existingImages.cover) {
-        // Cover was removed (original existed but now null)
+      } else if (removedCover && initialExistingImages.cover) {
+        // User explicitly removed old cover
         formDataToSend.append("removeCover", "1");
+        formDataToSend.append("removedCoverPath", initialExistingImages.cover);
       }
       // If existingImages.cover exists but no new coverImage, keep the existing one
 
@@ -1113,11 +1114,18 @@ export default function EditBlog() {
                 type="button"
                 onClick={() => {
                   setFormData((prev) => ({ ...prev, coverImage: null }));
+
                   if (coverPreview && coverPreview.startsWith("blob:")) {
                     URL.revokeObjectURL(coverPreview);
                   }
+
                   setCoverPreview(null);
+
+                  // ❗ IMPORTANT
+                  setRemovedCover(true);
+
                   setExistingImages((prev) => ({ ...prev, cover: null }));
+
                   setShowCoverDeleteConfirm(false);
                 }}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"

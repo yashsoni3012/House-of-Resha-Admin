@@ -626,6 +626,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useRef } from "react";
+
 import {
   Video,
   Eye,
@@ -808,9 +810,9 @@ const Banners = () => {
 
   // Calculate stats
   const totalBanners = banners.length;
-  const activeBanners = banners.filter(b => b.videoUrl).length;
-  const categoriesCount = [...new Set(banners.map(b => b.category))].length;
-  const bannersWithButton = banners.filter(b => b.buttonText).length;
+  const activeBanners = banners.filter((b) => b.videoUrl).length;
+  const categoriesCount = [...new Set(banners.map((b) => b.category))].length;
+  const bannersWithButton = banners.filter((b) => b.buttonText).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -819,26 +821,28 @@ const Banners = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-  <div className="p-2 bg-blue-100 rounded-lg">
-    <Video className="w-6 h-6 text-blue-600" />
-  </div>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Video className="w-6 h-6 text-blue-600" />
+              </div>
 
-  <div>
-    <h1 className="text-xl font-bold text-gray-900">
-      Video Banners
-    </h1>
-    <p className="text-sm text-gray-600">
-      Manage your promotional video banners
-    </p>
-  </div>
-</div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Video Banners
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your promotional video banners
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={handleRefresh}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </button>
               <button
@@ -887,14 +891,32 @@ const Banners = () => {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                {/* Search Icon */}
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+
+                {/* Input */}
                 <input
                   type="text"
                   placeholder="Search banners..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg
+               focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+               transition-colors"
                 />
+
+                {/* Clear Button */}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2
+                 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -917,7 +939,7 @@ const Banners = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="mt-4 text-sm text-gray-600">
             Showing{" "}
             <span className="font-semibold text-indigo-600">
@@ -1075,7 +1097,9 @@ const Banners = () => {
               <div className="mt-8 text-center">
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-2">
                   <span className="text-lg">🎉</span>
-                  <span className="font-medium">All {filteredBanners.length} banners are displayed!</span>
+                  <span className="font-medium">
+                    All {filteredBanners.length} banners are displayed!
+                  </span>
                 </div>
               </div>
             )}
@@ -1139,7 +1163,9 @@ const Banners = () => {
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Banner Details</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Banner Details
+                </h2>
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
