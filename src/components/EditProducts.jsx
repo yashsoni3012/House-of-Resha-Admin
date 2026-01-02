@@ -366,32 +366,31 @@ const EditProducts = () => {
 
   // Quill modules configuration
   const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }], // ✅ correct
-    [{ color: [] }, { background: [] }],
-    [{ align: [] }],
-    ["link", "image"],
-    ["clean"],
-  ],
-};
-
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }], // ✅ correct
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
 
   // Quill formats
   const quillFormats = [
-  "header",
-  "bold",
-  "italic",
-  "underline",
-  "strike",
-  "list",        // ✔ handles both bullet & ordered
-  "color",
-  "background",
-  "align",
-  "link",
-  "image",
-];
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list", // ✔ handles both bullet & ordered
+    "color",
+    "background",
+    "align",
+    "link",
+    "image",
+  ];
 
   if (loading) {
     return (
@@ -758,15 +757,14 @@ const EditProducts = () => {
                 <div className="flex justify-between">
                   <span>Rich text editor with formatting options</span>
                   <span>
-                    Characters:{" "}
-                    {formData.text.replace(/<[^>]*>/g, "").length}
+                    Characters: {formData.text.replace(/<[^>]*>/g, "").length}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Product Features */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                   <Layers className="w-5 h-5 text-green-600" />
@@ -819,10 +817,10 @@ const EditProducts = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Guarantees */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-purple-600" />
@@ -876,7 +874,7 @@ const EditProducts = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Sidebar */}
@@ -1033,7 +1031,8 @@ const EditProducts = () => {
                     <FileText className="w-3 h-3 text-teal-600" />
                   </div>
                   <p className="text-sm text-gray-600">
-                    Rich text editor allows for better formatting and presentation
+                    Rich text editor allows for better formatting and
+                    presentation
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
