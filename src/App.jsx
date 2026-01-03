@@ -1,72 +1,3 @@
-// import React from 'react';
-// import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-// import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-// import { AuthProvider } from './context/AuthContext';
-// import ProtectedRoute from './components/ProtectedRoute';
-// import Layout from './components/Layout';
-// import Login from './pages/Login';
-// import Dashboard from './pages/Dashboard';
-// import Products from './pages/Products';
-// import Orders from './pages/Orders';
-// import Customers from './pages/Customers';
-// import MIEByResha from './pages/MIEByResha';
-// import Banners from './pages/Banners';
-// import BannerModel from './components/BannerModel';
-
-// // Create a client
-// const queryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       staleTime: 5 * 60 * 1000, // 5 minutes
-//       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-//       retry: 2,
-//       refetchOnWindowFocus: false,
-//     },
-//   },
-// });
-
-// const App = () => {
-//   return (
-//     <QueryClientProvider client={queryClient}>
-//       <AuthProvider>
-//         <Router>
-//           <Routes>
-//             {/* Public Route */}
-//             <Route path="/login" element={<Login />} />
-
-//             {/* Protected Routes */}
-//             <Route
-//               path="/"
-//               element={
-//                 <ProtectedRoute>
-//                   <Layout />
-//                 </ProtectedRoute>
-//               }
-//             >
-//               <Route index element={<Navigate to="/dashboard" replace />} />
-//               <Route path="dashboard" element={<Dashboard />} />
-//               <Route path="products" element={<Products />} />
-//               <Route path="orders" element={<Orders />} />
-//               <Route path="customers" element={<Customers />} />
-//               <Route path="mie-by-resha" element={<MIEByResha />} />
-//               <Route path="banners" element={<BannerModel />} />
-//             </Route>
-
-//             {/* Catch all route - redirect to dashboard */}
-//             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-//           </Routes>
-//         </Router>
-//       </AuthProvider>
-
-//       {/* React Query Devtools - Remove in production */}
-//       <ReactQueryDevtools initialIsOpen={false} />
-//     </QueryClientProvider>
-//   );
-// };
-
-// export default App;
-
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -75,17 +6,21 @@ import {
   Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
-import UserManagement from "./pages/UserManagement"; // Add this import
+import UserManagement from "./pages/UserManagement";
 import Banners from "./pages/Banners";
 import Blogs from "./pages/Blogs";
 import Products from "./pages/Products";
+
 import AddProducts from "./components/AddProducts";
 import EditProducts from "./components/EditProducts";
 import AddBanners from "./components/AddBanners";
@@ -93,12 +28,12 @@ import EditBanner from "./components/EditBanners";
 import AddBlogs from "./components/AddBlogs";
 import EditBlogs from "./components/EditBlogs";
 
-// Create a client
+// ✅ Query Client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 5 * 60 * 1000, // 5 min
+      gcTime: 10 * 60 * 1000, // 10 min
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -111,10 +46,10 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Public Route */}
+            {/* Public */}
             <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes */}
+            {/* Protected */}
             <Route
               path="/"
               element={
@@ -125,28 +60,36 @@ const App = () => {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="products" element={<Products />} />
               <Route path="orders" element={<Orders />} />
               <Route path="customers" element={<Customers />} />
-              <Route path="banners" element={<Banners />} />
-              <Route path="users" element={<UserManagement />} />{" "}
-              <Route path="blogs" element={<Blogs />} />
+              <Route path="users" element={<UserManagement />} />
+
               {/* products */}
+              <Route path="fashion" element={<Products />} />
+              <Route path="glow-rituals" element={<Products />} />
+              <Route path="featured-images" element={<Products />} />
               <Route path="add-product" element={<AddProducts />} />
               <Route path="edit-product/:id" element={<EditProducts />} />
+
+
               {/* banners */}
-              <Route path="/add-banner" element={<AddBanners />} />
-              <Route path="/edit-banner/:id" element={<EditBanner />} />
+              <Route path="banners" element={<Banners />} />
+              <Route path="add-banner" element={<AddBanners />} />
+              <Route path="edit-banner/:id" element={<EditBanner />} />
+
               {/* blogs */}
-              <Route path="/add-blog" element={<AddBlogs />} />
-              <Route path="/edit-blog/:id" element={<EditBlogs />} />
+              <Route path="blogs" element={<Blogs />} />
+              <Route path="add-blog" element={<AddBlogs />} />
+              <Route path="edit-blog/:id" element={<EditBlogs />} />
             </Route>
 
-            {/* Catch all route - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
+
+      {/* ✅ REACT QUERY DEVTOOLS */}
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 };

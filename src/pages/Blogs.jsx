@@ -1267,22 +1267,20 @@ export default function Blogs() {
                 <button
                   onClick={() => setViewStyle("grid")}
                   title="Grid view"
-                  className={`p-2 rounded-md transition-colors ${
-                    viewStyle === "grid"
+                  className={`p-2 rounded-md transition-colors ${viewStyle === "grid"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
-                  }`}
+                    }`}
                 >
                   <Grid className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button
                   onClick={() => setViewStyle("list")}
                   title="List view"
-                  className={`p-2 rounded-md transition-colors ${
-                    viewStyle === "list"
+                  className={`p-2 rounded-md transition-colors ${viewStyle === "list"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
-                  }`}
+                    }`}
                 >
                   <List className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -1505,12 +1503,12 @@ export default function Blogs() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 md:p-6 z-50">
           <div className="bg-white rounded-xl sm:rounded-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 sm:p-6 z-10 shadow-lg">
+            <div className="sticky top-0 p-4 sm:p-6 z-10 shadow-lg">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg sm:text-xl font-bold">Blog Details</h2>
                 <button
                   onClick={closeModal}
-                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
+                  className="text-black/30 hover:text-black/80 hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1586,7 +1584,7 @@ export default function Blogs() {
                                 className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 hover:shadow-md hover:border-indigo-200 transition-all"
                               >
                                 <div className="flex items-center gap-2 mb-3">
-                                  <span className="w-7 h-7 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-md">
+                                  <span className="w-7 h-7 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">
                                     {index + 1}
                                   </span>
                                   <span className="text-xs sm:text-sm font-medium text-gray-900">
@@ -1621,9 +1619,8 @@ export default function Blogs() {
                                         <img
                                           key={imgIdx}
                                           src={getImageUrl(imgSrc)}
-                                          alt={`Section ${index + 1} image ${
-                                            imgIdx + 1
-                                          }`}
+                                          alt={`Section ${index + 1} image ${imgIdx + 1
+                                            }`}
                                           className="rounded-lg w-full h-48 sm:h-56 md:h-64 object-cover object-top shadow-md"
                                           onError={(e) => {
                                             e.target.style.display = "none";

@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import FashionManagement from "../components/FashionManagement";
-import GlowRituals from "../components/GlowRituals";
 import FeaturedImages from "../components/FeaturedImages";
-import { ShoppingBag, Sparkles, Menu, X, Image } from "lucide-react";
+import GlowRituals from "../components/GlowRituals";
+import { ShoppingBag, Image, Menu, X, Sparkles } from "lucide-react";
 
 const Products = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("fashion");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -14,24 +17,40 @@ const Products = () => {
       label: "Fashion Management",
       icon: ShoppingBag,
       color: "pink",
+      path: "/fashion",
     },
     {
       id: "glow",
       label: "Glow Rituals",
       icon: Sparkles,
       color: "purple",
+      path: "/glow-rituals",
     },
     {
       id: "featured",
       label: "Featured Images",
       icon: Image,
       color: "indigo",
+      path: "/featured-images",
     },
   ];
 
+  // Update active tab based on current route
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const currentTab = tabs.find((tab) => tab.path === currentPath);
+    if (currentTab) {
+      setActiveTab(currentTab.id);
+    }
+  }, [location.pathname]);
+
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    setMobileMenuOpen(false);
+    const tab = tabs.find((t) => t.id === tabId);
+    if (tab) {
+      setActiveTab(tabId);
+      navigate(tab.path); // Navigate to the corresponding route
+      setMobileMenuOpen(false);
+    }
   };
 
   const getActiveTabInfo = () => {

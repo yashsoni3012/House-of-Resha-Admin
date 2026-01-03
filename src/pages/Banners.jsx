@@ -682,7 +682,7 @@ const Banners = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState(["All"]);
-  const [visibleCount, setVisibleCount] = useState(6); // Start with 6 banners
+  const [visibleCount, setVisibleCount] = useState(3); // Start with 3 banners
 
   const API_URL = "https://api.houseofresha.com/banner/";
 
@@ -928,7 +928,7 @@ const Banners = () => {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-colors text-sm ${
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
                     selectedCategory === cat
                       ? "bg-indigo-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -1031,7 +1031,7 @@ const Banners = () => {
                     </div>
                     <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
                       <div className="flex items-center gap-1 text-white bg-black/60 px-2 py-1 rounded text-xs">
-                        <Play className="w-3 h-3 sm:w-3 sm:h-3" />
+                        {/* <Play className="w-3 h-3 sm:w-3 sm:h-3" /> */}
                         <span className="hidden xs:inline">
                           {window.innerWidth < 768 ? "Tap" : "Hover"} to play
                         </span>

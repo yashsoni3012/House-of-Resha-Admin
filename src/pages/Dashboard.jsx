@@ -643,7 +643,7 @@ const Dashboard = () => {
                 >
                   <Icon className={stat.iconColor} size={20} />
                 </div>
-                <div
+                {/* <div
                   className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
                     stat.trend === "up"
                       ? "bg-green-100 text-green-700"
@@ -652,7 +652,7 @@ const Dashboard = () => {
                 >
                   <TrendIcon size={10} sm:size={12} />
                   <span className="text-xs">{stat.change}</span>
-                </div>
+                </div> */}
               </div>
               <p className="text-gray-600 text-xs sm:text-sm font-medium mb-1">
                 {stat.title}
@@ -897,7 +897,7 @@ const Dashboard = () => {
                     <div className="text-right flex-shrink-0 ml-2">
                       <span className="text-xs sm:text-sm font-bold text-green-600 whitespace-nowrap">
                         ₹
-                        {(parseFloat(order.amount || 0) / 100).toLocaleString()}
+                        {(parseFloat(order.amount || 0)).toLocaleString()}
                       </span>
                       <p className="text-xs text-gray-500 mt-1 hidden sm:block">
                         {order.createdAt

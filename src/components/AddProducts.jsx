@@ -286,7 +286,7 @@ const AddProducts = () => {
 
       // Redirect after a brief delay
       setTimeout(() => {
-        navigate("/products");
+        navigate("/fashion");
       });
     } catch (error) {
       console.error("Error creating product:", error);
@@ -298,7 +298,7 @@ const AddProducts = () => {
   };
 
   const handleBack = () => {
-    navigate("/products");
+    navigate("/fashion");
   };
 
   // Quill modules configuration
@@ -968,7 +968,7 @@ const AddProducts = () => {
                     <ImageIcon className="w-3 h-3 text-green-600" />
                   </div>
                   <p className="text-sm text-gray-600">
-                    Use high-quality images with white background
+                    Use high-quality images
                   </p>
                 </div>
                 <div className="flex items-start gap-3">

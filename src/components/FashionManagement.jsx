@@ -370,7 +370,7 @@ const FashionManagement = () => {
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1.5 rounded-lg font-medium transition-colors text-sm ${
+                      className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
                         selectedCategory === cat
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -399,7 +399,7 @@ const FashionManagement = () => {
                   <button
                     title="Grid view"
                     onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-2 rounded-md transition-colors ${
                       viewMode === "grid"
                         ? "bg-indigo-600 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -410,7 +410,7 @@ const FashionManagement = () => {
                   <button
                     title="List view"
                     onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-2 rounded-md transition-colors ${
                       viewMode === "list"
                         ? "bg-indigo-600 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"

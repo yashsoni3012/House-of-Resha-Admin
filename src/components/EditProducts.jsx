@@ -350,7 +350,7 @@ const EditProducts = () => {
       showProductUpdated();
 
       setTimeout(() => {
-        navigate("/products");
+        navigate("/fashion");
       });
     } catch (error) {
       console.error("Update error:", error);
@@ -361,7 +361,7 @@ const EditProducts = () => {
   };
 
   const handleBack = () => {
-    navigate("/products");
+    navigate("/fashion");
   };
 
   // Quill modules configuration
