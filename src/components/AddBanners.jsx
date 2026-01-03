@@ -825,7 +825,7 @@ const AddBanners = () => {
                     <video
                       src={previewVideo}
                       controls
-                      className="w-full h-64 object-cover rounded-lg"
+                      className="w-full h-64 object-cover object-top rounded-lg"
                     />
                     <button
                       type="button"

@@ -746,14 +746,16 @@ export default function EditBlog() {
             </div>
 
             {/* Cover Image */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                  <ImageLucide className="w-5 h-5 text-purple-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8">
+              <div className="flex items-start sm:items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-200">
+                  <ImageLucide className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Cover Image</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg">
+                    Cover Image
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                     Update cover image (Optional)
                   </p>
                   {existingImages.cover &&
@@ -765,35 +767,39 @@ export default function EditBlog() {
                 </div>
               </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-indigo-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 md:p-8 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200">
                 {coverPreview ? (
-                  <div className="relative">
-                    <img
-                      src={coverPreview}
-                      alt="Cover preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
+                  <div className="relative group">
+                    <div className="relative w-full overflow-hidden rounded-xl bg-gray-100 shadow-lg">
+                      <img
+                        src={coverPreview}
+                        alt="Cover preview"
+                        className="w-full h-48 sm:h-56 md:h-64 object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+                    </div>
                     <button
                       onClick={() => setShowCoverDeleteConfirm(true)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                      className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-red-500 text-white p-2 sm:p-2.5 rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg hover:shadow-xl z-10"
+                      aria-label="Remove image"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center cursor-pointer">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                      <Upload className="w-6 h-6 text-gray-400" />
+                  <label className="flex flex-col items-center cursor-pointer group">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:from-indigo-50 group-hover:to-indigo-100 transition-all duration-200 shadow-md">
+                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-500 group-hover:text-indigo-600 transition-colors" />
                     </div>
-                    <p className="text-gray-700 font-medium mb-1">
+                    <p className="text-gray-800 font-semibold text-sm sm:text-base md:text-lg mb-1 text-center">
                       {existingImages.cover
                         ? "Replace cover image"
                         : "Upload cover image"}
                     </p>
-                    <p className="text-sm text-gray-500 mb-4">
-                      JPG, PNG up to 10MB
+                    <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-5 text-center">
+                      JPG, PNG or WebP • Max 10MB
                     </p>
-                    <div className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                    <div className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 active:scale-95 transition-all duration-200 font-medium text-sm sm:text-base shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300">
                       {existingImages.cover ? "Replace File" : "Choose File"}
                     </div>
                     <input
@@ -808,16 +814,16 @@ export default function EditBlog() {
             </div>
 
             {/* Content Sections */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                   Content Sections
                 </h3>
                 <button
                   onClick={addContentBlock}
-                  className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 active:scale-95 transition-all duration-200 font-medium text-sm sm:text-base shadow-lg shadow-indigo-200 hover:shadow-xl w-full sm:w-auto"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   Add Section
                 </button>
               </div>
@@ -825,21 +831,21 @@ export default function EditBlog() {
               {formData.content.map((block, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8 hover:shadow-md transition-shadow duration-200"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                        <span className="text-indigo-600 font-bold">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                        <span className="text-white font-bold text-sm sm:text-base">
                           {index + 1}
                         </span>
                       </div>
-                      <h4 className="font-bold text-gray-900">
+                      <h4 className="font-bold text-gray-900 text-base sm:text-lg">
                         Section {index + 1}
                       </h4>
                       {(existingImages.content[index] ||
                         contentPreviews[index]) && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        <span className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-2.5 py-1 rounded-full font-medium shadow-sm">
                           Has Image
                         </span>
                       )}
@@ -847,14 +853,15 @@ export default function EditBlog() {
                     {formData.content.length > 1 && (
                       <button
                         onClick={() => removeContentBlock(index)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg active:scale-95 transition-all duration-200 flex-shrink-0"
+                        aria-label="Remove section"
                       >
-                        <X className="w-5 h-5" />
+                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
                       </button>
                     )}
                   </div>
 
-                  <div className="mb-4">
+                  <div className="mb-4 sm:mb-6">
                     <RichTextEditor
                       value={block.text || ""}
                       onChange={(value) => {
@@ -864,38 +871,42 @@ export default function EditBlog() {
                           handleContentChange(index, "text", value);
                         }
                       }}
-                      placeholder="Write your content here..."
+                      placeholder="Write your content here... Share your story, insights, or ideas."
                       height={250}
                     />
                   </div>
 
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-indigo-400 transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200">
                     {contentPreviews[index] ? (
-                      <div className="relative">
-                        <img
-                          src={contentPreviews[index]}
-                          alt={`Content ${index}`}
-                          className="w-full h-40 object-cover rounded-lg"
-                        />
+                      <div className="relative group">
+                        <div className="relative w-full overflow-hidden rounded-lg shadow-md">
+                          <img
+                            src={contentPreviews[index]}
+                            alt={`Content ${index + 1}`}
+                            className="w-full h-48 sm:h-56 md:h-64 object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+                        </div>
                         <button
                           onClick={() => handleRemoveContentImage(index)}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                          className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-red-500 text-white p-2 sm:p-2.5 rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg hover:shadow-xl z-10"
+                          aria-label="Remove image"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center cursor-pointer">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                          <ImageIcon className="w-5 h-5 text-gray-400" />
+                      <label className="flex flex-col items-center cursor-pointer group py-2">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-2 sm:mb-3 group-hover:from-indigo-50 group-hover:to-indigo-100 transition-all duration-200 shadow-md">
+                          <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500 group-hover:text-indigo-600 transition-colors" />
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-sm sm:text-base text-gray-700 font-medium mb-1">
                           {existingImages.content[index]
                             ? "Replace image"
                             : "Add image (Optional)"}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          JPG, PNG up to 10MB
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          JPG, PNG or WebP • Max 10MB
                         </p>
                         <input
                           type="file"

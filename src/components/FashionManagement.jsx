@@ -54,7 +54,7 @@ const FashionManagement = () => {
   const toggleMobileFilters = () => setShowMobileFilters((s) => !s);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(3);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quillLoaded, setQuillLoaded] = useState(false);
@@ -522,14 +522,14 @@ const FashionManagement = () => {
         ) : (
           <>
             {viewMode === "grid" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                 {productsToDisplay.map((product) => (
                   <div
                     key={product.id}
-                    className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
                   >
                     {/* Product Image */}
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <div className="relative aspect-[4/3] sm:aspect-[4/3] md:aspect-[4/3] overflow-hidden bg-gray-100">
                       <img
                         src={product.image}
                         alt={product.name}
@@ -538,9 +538,10 @@ const FashionManagement = () => {
                           e.target.src =
                             "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400";
                         }}
+                        loading="lazy"
                       />
-                      <div className="absolute top-3 right-3">
-                        <span className="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-semibold capitalize">
+                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                        <span className="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs sm:text-xs font-semibold capitalize whitespace-nowrap">
                           {product.category.charAt(0).toUpperCase() +
                             product.category.slice(1)}
                         </span>
@@ -548,29 +549,25 @@ const FashionManagement = () => {
                     </div>
 
                     {/* Product Info */}
-                    <div className="p-4">
-                      <div className="mb-4">
-                        <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">
+                    <div className="p-3 sm:p-4 flex-1 flex flex-col">
+                      <div className="mb-3 sm:mb-4 flex-1">
+                        <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 line-clamp-1">
                           {product.name}
                         </h3>
-                        <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                        <p className="text-gray-600 text-xs sm:text-sm mb-2 line-clamp-2">
                           {product.description}
                         </p>
-                        {/* {product.text && product.text.replace(/<[^>]*>/g, '').trim() && (
-                          <div className="mb-2 text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            Contains additional information
-                          </div>
-                        )} */}
-                        <div className="flex items-center justify-between">
-                          <p className="text-xl font-bold text-indigo-600">
+                        <div className="flex items-center justify-between mt-auto">
+                          <p className="text-lg sm:text-xl font-bold text-indigo-600">
                             ₹{product.price}
                           </p>
                           {product.sizes.length > 0 && (
-                            <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                              <Package className="w-3 h-3 inline mr-1" />
-                              {product.sizes.slice(0, 2).join(", ")}
-                              {product.sizes.length > 2 && "..."}
+                            <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded hidden sm:inline-flex items-center">
+                              <Package className="w-3 h-3 inline mr-1 flex-shrink-0" />
+                              <span className="truncate max-w-[60px] sm:max-w-[80px]">
+                                {product.sizes.slice(0, 2).join(", ")}
+                                {product.sizes.length > 2 && "..."}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -580,29 +577,32 @@ const FashionManagement = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleView(product)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
+                          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-xs sm:text-sm"
+                          title="View product details"
                         >
-                          <Eye className="w-4 h-4" />
-                          View
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">View</span>
                         </button>
                         <button
                           onClick={() => handleEdit(product)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-xs sm:text-sm"
+                          title="Edit product"
                         >
-                          <Edit2 className="w-4 h-4" />
-                          Edit
+                          <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteClick(product)}
                           disabled={deleteLoading === product.id}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm disabled:opacity-50"
+                          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-xs sm:text-sm disabled:opacity-50"
+                          title="Delete product"
                         >
                           {deleteLoading === product.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                           ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
-                          Delete
+                          <span className="hidden xs:inline">Delete</span>
                         </button>
                       </div>
                     </div>

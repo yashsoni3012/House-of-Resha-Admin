@@ -992,55 +992,64 @@ const Banners = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
               {bannersToDisplay.map((banner) => (
                 <div
                   key={banner.id}
-                  className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
                 >
                   {/* Video Preview */}
-                  <div className="relative h-48 overflow-hidden bg-gray-900">
+                  <div className="relative aspect-[16/9] sm:aspect-[16/9] md:aspect-[16/9] overflow-hidden bg-gray-900">
                     {banner.videoUrl ? (
                       <video
                         src={banner.videoUrl}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-cover object-center"
                         muted
                         loop
                         playsInline
+                        preload="metadata"
                         onMouseEnter={(e) => e.target.play()}
                         onMouseLeave={(e) => {
+                          e.target.pause();
+                          e.target.currentTime = 0;
+                        }}
+                        onTouchStart={(e) => e.target.play()}
+                        onTouchEnd={(e) => {
                           e.target.pause();
                           e.target.currentTime = 0;
                         }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <Video className="w-12 h-12 text-gray-400" />
+                        <Video className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400" />
                       </div>
                     )}
-                    <div className="absolute top-3 right-3">
-                      <span className="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-semibold capitalize">
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                      <span className="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs sm:text-xs font-semibold capitalize whitespace-nowrap">
                         {banner.category}
                       </span>
                     </div>
-                    <div className="absolute bottom-3 left-3">
-                      <div className="flex items-center gap-1 text-white bg-black/50 px-2 py-1 rounded text-xs">
-                        <Play className="w-3 h-3" />
-                        <span>Hover to play</span>
+                    <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
+                      <div className="flex items-center gap-1 text-white bg-black/60 px-2 py-1 rounded text-xs">
+                        <Play className="w-3 h-3 sm:w-3 sm:h-3" />
+                        <span className="hidden xs:inline">
+                          {window.innerWidth < 768 ? "Tap" : "Hover"} to play
+                        </span>
+                        <span className="xs:hidden">▶︎ Play</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Banner Info */}
-                  <div className="p-4">
-                    <div className="mb-4">
-                      <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1">
+                  <div className="p-3 sm:p-4 flex-1 flex flex-col">
+                    <div className="mb-3 sm:mb-4 flex-1">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 line-clamp-1">
                         {banner.title}
                       </h3>
                       {banner.buttonText && (
-                        <div className="flex items-center gap-2 text-sm text-purple-600">
-                          <MousePointerClick className="w-3 h-3" />
-                          <span>{banner.buttonText}</span>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-purple-600">
+                          <MousePointerClick className="w-3 h-3 sm:w-3 sm:h-3 flex-shrink-0" />
+                          <span className="truncate">{banner.buttonText}</span>
                         </div>
                       )}
                     </div>
@@ -1049,29 +1058,32 @@ const Banners = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleView(banner)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-xs sm:text-sm"
+                        title="View banner"
                       >
-                        <Eye className="w-4 h-4" />
-                        View
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden xs:inline">View</span>
                       </button>
                       <button
                         onClick={() => handleEdit(banner)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-xs sm:text-sm"
+                        title="Edit banner"
                       >
-                        <Edit2 className="w-4 h-4" />
-                        Edit
+                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden xs:inline">Edit</span>
                       </button>
                       <button
                         onClick={() => handleDeleteClick(banner)}
                         disabled={deleteLoading === banner.id}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-xs sm:text-sm disabled:opacity-50"
+                        title="Delete banner"
                       >
                         {deleteLoading === banner.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                         ) : (
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         )}
-                        Delete
+                        <span className="hidden xs:inline">Delete</span>
                       </button>
                     </div>
                   </div>
