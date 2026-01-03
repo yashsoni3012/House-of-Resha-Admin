@@ -1020,7 +1020,7 @@ const FeaturedImages = () => {
                     <img
                       src={`https://api.houseofresha.com${category.imageUrl}`}
                       alt={category.name || "Category"}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         e.currentTarget.src = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=300&fit=crop";
                       }}

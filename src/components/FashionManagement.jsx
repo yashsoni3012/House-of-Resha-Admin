@@ -65,7 +65,7 @@ const FashionManagement = () => {
 
   useEffect(() => {
     fetchProducts();
-    
+
     // Load Quill for viewing
     setQuillLoaded(true);
   }, []);
@@ -276,7 +276,7 @@ const FashionManagement = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button
+              {/* <button
                 onClick={handleRefresh}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
@@ -285,7 +285,7 @@ const FashionManagement = () => {
                   className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
                 />
                 Refresh
-              </button>
+              </button> */}
               <button
                 onClick={handleAddNewProduct}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
@@ -533,7 +533,7 @@ const FashionManagement = () => {
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           e.target.src =
                             "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400";
@@ -637,12 +637,13 @@ const FashionManagement = () => {
                           <p className="text-gray-600 text-sm truncate">
                             {product.description}
                           </p>
-                          {product.text && product.text.replace(/<[^>]*>/g, '').trim() && (
-                            <div className="mt-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              Rich text content available
-                            </div>
-                          )}
+                          {product.text &&
+                            product.text.replace(/<[^>]*>/g, "").trim() && (
+                              <div className="mt-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                Rich text content available
+                              </div>
+                            )}
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-bold text-indigo-600">
@@ -819,33 +820,36 @@ const FashionManagement = () => {
                   <p className="text-gray-600 mb-4">
                     {selectedProduct.description}
                   </p>
-                  
+
                   {/* Additional Text with React Quill Viewer */}
-                  {selectedProduct.text && selectedProduct.text.replace(/<[^>]*>/g, '').trim() && (
-                    <div className="mb-4">
-                      <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Additional Information
-                      </h4>
-                      <div className="bg-blue-50 rounded-lg p-4">
-                        {quillLoaded ? (
-                          <ReactQuill
-                            value={selectedProduct.text}
-                            readOnly={true}
-                            theme="bubble"
-                            modules={{ toolbar: false }}
-                            className="border-0 bg-transparent"
-                          />
-                        ) : (
-                          <div 
-                            className="prose max-w-none text-gray-700"
-                            dangerouslySetInnerHTML={{ __html: selectedProduct.text }}
-                          />
-                        )}
+                  {selectedProduct.text &&
+                    selectedProduct.text.replace(/<[^>]*>/g, "").trim() && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Additional Information
+                        </h4>
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          {quillLoaded ? (
+                            <ReactQuill
+                              value={selectedProduct.text}
+                              readOnly={true}
+                              theme="bubble"
+                              modules={{ toolbar: false }}
+                              className="border-0 bg-transparent"
+                            />
+                          ) : (
+                            <div
+                              className="prose max-w-none text-gray-700"
+                              dangerouslySetInnerHTML={{
+                                __html: selectedProduct.text,
+                              }}
+                            />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
+                    )}
+
                   <div className="flex items-center justify-between">
                     <p className="text-3xl font-bold text-indigo-600">
                       ₹{selectedProduct.price}

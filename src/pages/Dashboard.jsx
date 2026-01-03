@@ -564,7 +564,8 @@ const Dashboard = () => {
     <div className="space-y-4 ">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-xl">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* LEFT: Welcome Text */}
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
               Welcome Back, Admin!
@@ -572,15 +573,20 @@ const Dashboard = () => {
             <p className="text-purple-100 text-xs sm:text-sm lg:text-base">
               {isLoading
                 ? "Loading store data..."
-                : `You have ${totalOrders} orders and ₹${(
-                    totalRevenue / 100
-                  ).toLocaleString()} in revenue`}
+                : "Here you can see today what's happening in your store"}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-lg w-full sm:w-auto">
-              <Calendar size={18} className="flex-shrink-0" />
-              <span className="font-medium text-xs sm:text-sm truncate">
+
+          {/* RIGHT: Date + Refresh */}
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-lg
+                bg-white/10 backdrop-blur-md
+                border border-white/20
+                shadow-sm"
+            >
+              <Calendar size={16} className="text-white/80" />
+              <span className="text-sm font-medium text-white/90 tracking-wide">
                 {new Date().toLocaleDateString("en-US", {
                   weekday: "short",
                   year: "numeric",
@@ -589,7 +595,8 @@ const Dashboard = () => {
                 })}
               </span>
             </div>
-            <button
+
+            {/* <button
               onClick={() => {
                 refetchProducts();
                 refetchOrders();
@@ -600,10 +607,9 @@ const Dashboard = () => {
             >
               <RefreshCw
                 size={18}
-                sm:size={20}
                 className={isLoading ? "animate-spin" : ""}
               />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -668,7 +674,7 @@ const Dashboard = () => {
       </div>
 
       {/* Order Status Summary */}
-      {orderStatusCounts.total > 0 && (
+      {/* {orderStatusCounts.total > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-green-200">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -733,7 +739,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Recent Activity Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

@@ -275,6 +275,10 @@ const UserManagement = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <UserCheck className="w-6 h-6 text-green-600" />
+              </div>
+
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
                   Manage Users
@@ -285,7 +289,7 @@ const UserManagement = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button
+              {/* <button
                 onClick={handleRefreshAll}
                 disabled={isFetching}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
@@ -294,7 +298,7 @@ const UserManagement = () => {
                   className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
                 />
                 Refresh
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -793,238 +797,397 @@ const UserManagement = () => {
       )} */}
 
       {viewModalOpen && selectedUser && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    {/* Backdrop */}
-    <div
-      className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-      onClick={closeView}
-    ></div>
-    
-    {/* Modal */}
-    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform transition-all duration-300 scale-100">
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-4 border-white/30">
-                <span className="text-white text-2xl font-bold">
-                  {getUserField(selectedUser, ["firstname", "firstName", "name"]).charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">
-                {getUserField(selectedUser, ["firstname", "firstName", "name"])}{" "}
-                {getUserField(selectedUser, ["lastname", "lastName"])}
-              </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full">
-                  {getUserField(selectedUser, ["role", "roles"])}
-                </span>
-                <span className="text-white/80 text-sm">
-                  ID: {selectedUser.id || selectedUser._id || "N/A"}
-                </span>
-              </div>
-            </div>
-          </div>
-          <button
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={closeView}
-            className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors group"
-          >
-            <X className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-          </button>
-        </div>
-      </div>
+          ></div>
 
-      {/* Main Content */}
-      <div className="p-6 overflow-y-auto max-h-[60vh]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Contact Information Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-gray-800">Contact Information</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform transition-all duration-300 scale-100">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-4 border-white/30">
+                      <span className="text-white text-2xl font-bold">
+                        {getUserField(selectedUser, [
+                          "firstname",
+                          "firstName",
+                          "name",
+                        ])
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">
+                      {getUserField(selectedUser, [
+                        "firstname",
+                        "firstName",
+                        "name",
+                      ])}{" "}
+                      {getUserField(selectedUser, ["lastname", "lastName"])}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full">
+                        {getUserField(selectedUser, ["role", "roles"])}
+                      </span>
+                      <span className="text-white/80 text-sm">
+                        ID: {selectedUser.id || selectedUser._id || "N/A"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Email Address</p>
-                  <p className="font-medium text-gray-900">
-                    {getUserField(selectedUser, ["email", "emailAddress"]) || "Not provided"}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Phone Number</p>
-                  <p className="font-medium text-gray-900">
-                    {getUserField(selectedUser, ["phone", "phoneNumber", "mobile"]) || "Not provided"}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Address</p>
-                  <p className="font-medium text-gray-900">
-                    {getUserField(selectedUser, ["address", "location", "city"]) || "Not provided"}
-                  </p>
-                </div>
+                <button
+                  onClick={closeView}
+                  className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors group"
+                >
+                  <X className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Account Information Card */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-gray-800">Account Information</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Last Login</p>
-                  <p className="font-medium text-gray-900">
-                    {selectedUser.lastLogin
-                      ? new Date(selectedUser.lastLogin).toLocaleString()
-                      : "Never logged in"}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Account Created</p>
-                  <p className="font-medium text-gray-900">
-                    {selectedUser.createdAt
-                      ? new Date(selectedUser.createdAt).toLocaleString()
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Account Status</p>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Active
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            {/* Main Content */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Contact Information Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-gray-800">
+                      Contact Information
+                    </h3>
+                  </div>
 
-        {/* Additional Information Section */}
-        <div className="mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="font-bold text-gray-800">Additional Information</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(selectedUser).map(([key, value]) => {
-              // Skip already displayed fields
-              const skipFields = [
-                'id', '_id', 'firstname', 'firstName', 'name', 'lastname', 'lastName',
-                'email', 'emailAddress', 'phone', 'phoneNumber', 'mobile',
-                'address', 'location', 'city', 'role', 'roles', 
-                'lastLogin', 'createdAt', 'profilePicture', 'avatar'
-              ];
-              
-              if (skipFields.includes(key) || !value) return null;
-              
-              return (
-                <div key={key} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
-                  <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2-2h4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2H5z" />
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Email Address</p>
+                        <p className="font-medium text-gray-900">
+                          {getUserField(selectedUser, [
+                            "email",
+                            "emailAddress",
+                          ]) || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Phone Number</p>
+                        <p className="font-medium text-gray-900">
+                          {getUserField(selectedUser, [
+                            "phone",
+                            "phoneNumber",
+                            "mobile",
+                          ]) || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Address</p>
+                        <p className="font-medium text-gray-900">
+                          {getUserField(selectedUser, [
+                            "address",
+                            "location",
+                            "city",
+                          ]) || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Information Card */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-gray-800">
+                      Account Information
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Last Login</p>
+                        <p className="font-medium text-gray-900">
+                          {selectedUser.lastLogin
+                            ? new Date(selectedUser.lastLogin).toLocaleString()
+                            : "Never logged in"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Account Created</p>
+                        <p className="font-medium text-gray-900">
+                          {selectedUser.createdAt
+                            ? new Date(selectedUser.createdAt).toLocaleString()
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Account Status</p>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          Active
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information Section */}
+              <div className="mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </p>
-                    <p className="text-sm text-gray-900 font-medium mt-1 truncate">
-                      {typeof value === 'object' ? JSON.stringify(value) : value.toString()}
-                    </p>
-                  </div>
+                  <h3 className="font-bold text-gray-800">
+                    Additional Information
+                  </h3>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 bg-gray-50 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(selectedUser).map(([key, value]) => {
+                    // Skip already displayed fields
+                    const skipFields = [
+                      "id",
+                      "_id",
+                      "firstname",
+                      "firstName",
+                      "name",
+                      "lastname",
+                      "lastName",
+                      "email",
+                      "emailAddress",
+                      "phone",
+                      "phoneNumber",
+                      "mobile",
+                      "address",
+                      "location",
+                      "city",
+                      "role",
+                      "roles",
+                      "lastLogin",
+                      "createdAt",
+                      "profilePicture",
+                      "avatar",
+                    ];
+
+                    if (skipFields.includes(key) || !value) return null;
+
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg
+                            className="w-4 h-4 text-blue-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2-2h4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2H5z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium mt-1 truncate">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : value.toString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>Updated just now</span> */}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={closeView}
-              className="px-5 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Close
-            </button>
-            {/* <button
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeView}
+                    className="px-5 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    Close
+                  </button>
+                  {/* <button
               onClick={() => {
                 // Add edit functionality here
                 console.log('Edit user:', selectedUser);
@@ -1034,12 +1197,12 @@ const UserManagement = () => {
             >
               Edit Profile
             </button> */}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };

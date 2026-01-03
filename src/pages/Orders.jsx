@@ -567,13 +567,13 @@ export default function Orders() {
               </div>
 
               {/* Right: Refresh Button */}
-              <button
+              {/* <button
                 onClick={fetchOrders}
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">Refresh</span>
-              </button>
+              </button> */}
             </div>
             <p className="text-sm sm:text-base text-gray-600">
               Monitor and manage your orders effectively

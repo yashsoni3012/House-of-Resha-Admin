@@ -349,7 +349,7 @@ const Customers = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button
+              {/* <button
                 onClick={handleRefresh}
                 disabled={refreshing}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
@@ -358,7 +358,7 @@ const Customers = () => {
                   className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
                 />
                 Refresh
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

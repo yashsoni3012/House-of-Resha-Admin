@@ -25,7 +25,7 @@
 //     if (savedNotifications) {
 //       const parsed = JSON.parse(savedNotifications);
 //       setNotifications(parsed);
-      
+
 //       // Calculate new order count (unread notifications)
 //       const newCount = parsed.filter(n => !n.read).length;
 //       setNewOrderCount(newCount);
@@ -50,17 +50,17 @@
 //       try {
 //         const response = await fetch("https://api.houseofresha.com/orders");
 //         if (!response.ok) return;
-        
+
 //         const data = await response.json();
 //         const orders = data.data || data.orders || data;
-        
+
 //         if (Array.isArray(orders) && orders.length > 0) {
 //           const latestOrder = orders[0];
-          
+
 //           // Check if this is a new order
 //           if (latestOrder._id !== lastOrderId) {
 //             setLastOrderId(latestOrder._id);
-            
+
 //             // Check if notification already exists
 //             const exists = notifications.some(n => n.id === latestOrder._id);
 //             if (!exists) {
@@ -75,10 +75,10 @@
 
 //     // Initial poll
 //     pollOrders();
-    
+
 //     // Set up interval for polling
 //     const intervalId = setInterval(pollOrders, 30000); // 30 seconds
-    
+
 //     return () => clearInterval(intervalId);
 //   }, [lastOrderId, notifications]);
 
@@ -97,16 +97,16 @@
 //     };
 
 //     const updatedNotifications = [newNotification, ...notifications];
-    
+
 //     // Keep only last 50 notifications
 //     const limitedNotifications = updatedNotifications.slice(0, 50);
-    
+
 //     setNotifications(limitedNotifications);
 //     setNewOrderCount(prev => prev + 1);
-    
+
 //     // Save to localStorage
 //     localStorage.setItem("orderNotifications", JSON.stringify(limitedNotifications));
-    
+
 //     // Play notification sound
 //     if (notificationSound.current) {
 //       notificationSound.current.currentTime = 0;
@@ -114,7 +114,7 @@
 //         // Sound play failed, ignore
 //       });
 //     }
-    
+
 //     // Show browser notification
 //     if (Notification.permission === "granted") {
 //       new window.Notification("New Order Received!", {
@@ -129,13 +129,13 @@
 //     const updated = notifications.map(notification =>
 //       notification.id === id ? { ...notification, read: true } : notification
 //     );
-    
+
 //     setNotifications(updated);
-    
+
 //     // Update new count
 //     const newCount = updated.filter(n => !n.read).length;
 //     setNewOrderCount(newCount);
-    
+
 //     // Save to localStorage
 //     localStorage.setItem("orderNotifications", JSON.stringify(updated));
 //   };
@@ -145,10 +145,10 @@
 //       ...notification,
 //       read: true
 //     }));
-    
+
 //     setNotifications(updated);
 //     setNewOrderCount(0);
-    
+
 //     // Save to localStorage
 //     localStorage.setItem("orderNotifications", JSON.stringify(updated));
 //   };
@@ -156,11 +156,11 @@
 //   const deleteNotification = (id) => {
 //     const updated = notifications.filter(notification => notification.id !== id);
 //     setNotifications(updated);
-    
+
 //     // Update new count
 //     const newCount = updated.filter(n => !n.read).length;
 //     setNewOrderCount(newCount);
-    
+
 //     // Save to localStorage
 //     localStorage.setItem("orderNotifications", JSON.stringify(updated));
 //   };
@@ -227,7 +227,7 @@
 //           className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors group"
 //         >
 //           <Bell className="w-5 h-5 text-gray-600 group-hover:text-gray-800" />
-          
+
 //           {/* Notification Badge */}
 //           {newOrderCount > 0 && (
 //             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
@@ -365,7 +365,7 @@
 //                                 Read
 //                               </span>
 //                             )}
-                            
+
 //                             {notification.type === "new_order" && (
 //                               <button
 //                                 onClick={() => handleViewOrder(notification.id)}
@@ -375,7 +375,7 @@
 //                                 View Order
 //                               </button>
 //                             )}
-                            
+
 //                             <button
 //                               onClick={() => deleteNotification(notification.id)}
 //                               className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1 ml-auto"
