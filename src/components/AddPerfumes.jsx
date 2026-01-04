@@ -1,194 +1,9 @@
-// import React, { useState } from 'react';
-// import axios from 'axios';
-// import { useNavigate } from 'react-router-dom';
-
-// const AddPerfumes = () => {
-//   const navigate = useNavigate();
-//   const [loading, setLoading] = useState(false);
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     price: '',
-//     volume: '',
-//     text: '',
-//     inStock: true
-//   });
-//   const [imageFile, setImageFile] = useState(null);
-
-//   const handleInputChange = (e) => {
-//     const { name, value, type, checked } = e.target;
-//     setFormData(prev => ({
-//       ...prev,
-//       [name]: type === 'checkbox' ? checked : value
-//     }));
-//   };
-
-//   const handleImageChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       setImageFile(file);
-//     }
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       // Create FormData for file upload
-//       const postData = new FormData();
-//       postData.append('name', formData.name);
-//       postData.append('price', Number(formData.price));
-//       postData.append('volume', Number(formData.volume));
-//       postData.append('text', formData.text);
-//       postData.append('inStock', formData.inStock);
-
-//       if (imageFile) {
-//         postData.append('image', imageFile);
-//       }
-
-//       // Post data to API
-//       const response = await axios.post(
-//         'https://api.houseofresha.com/perfume',
-//         postData,
-//         {
-//           headers: {
-//             'Content-Type': 'multipart/form-data'
-//           }
-//         }
-//       );
-
-//       console.log('Success:', response.data);
-
-//       // Redirect to /glow-rituals on success
-//       navigate('/glow-rituals');
-
-//     } catch (error) {
-//       console.error('Error posting perfume:', error);
-//       alert(error.response?.data?.message || 'Failed to add perfume. Please try again.');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-//       <h2>Add New Perfume</h2>
-//       <form onSubmit={handleSubmit}>
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="name" style={{ display: 'block', marginBottom: '5px' }}>
-//             Name *
-//           </label>
-//           <input
-//             type="text"
-//             id="name"
-//             name="name"
-//             value={formData.name}
-//             onChange={handleInputChange}
-//             required
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="image" style={{ display: 'block', marginBottom: '5px' }}>
-//             Image *
-//           </label>
-//           <input
-//             type="file"
-//             id="image"
-//             accept="image/*"
-//             onChange={handleImageChange}
-//             required
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="price" style={{ display: 'block', marginBottom: '5px' }}>
-//             Price *
-//           </label>
-//           <input
-//             type="number"
-//             id="price"
-//             name="price"
-//             value={formData.price}
-//             onChange={handleInputChange}
-//             required
-//             min="0"
-//             step="0.01"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="volume" style={{ display: 'block', marginBottom: '5px' }}>
-//             Volume (ml) *
-//           </label>
-//           <input
-//             type="number"
-//             id="volume"
-//             name="volume"
-//             value={formData.volume}
-//             onChange={handleInputChange}
-//             required
-//             min="0"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="text" style={{ display: 'block', marginBottom: '5px' }}>
-//             Description
-//           </label>
-//           <textarea
-//             id="text"
-//             name="text"
-//             value={formData.text}
-//             onChange={handleInputChange}
-//             rows="4"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label style={{ display: 'flex', alignItems: 'center' }}>
-//             <input
-//               type="checkbox"
-//               name="inStock"
-//               checked={formData.inStock}
-//               onChange={handleInputChange}
-//               style={{ marginRight: '8px' }}
-//             />
-//             In Stock
-//           </label>
-//         </div>
-
-//         <button
-//           type="submit"
-//           disabled={loading}
-//           style={{
-//             padding: '10px 20px',
-//             backgroundColor: loading ? '#ccc' : '#007bff',
-//             color: 'white',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: loading ? 'not-allowed' : 'pointer'
-//           }}
-//         >
-//           {loading ? 'Adding...' : 'Add Perfume'}
-//         </button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default AddPerfumes;
-
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import Swal from 'sweetalert2';
 import {
   Upload,
   Plus,
@@ -253,6 +68,44 @@ const AddPerfumes = () => {
     };
   }, [previewImage]);
 
+  // SweetAlert function for perfume creation success
+  const showPerfumeCreated = async () => {
+    return Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Perfume added successfully!',
+      showConfirmButton: false,
+      timer: 1500,
+      timerProgressBar: true,
+      background: '#10B981',
+      color: 'white',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'text-white'
+      }
+    });
+  };
+
+  // SweetAlert function for errors
+  const showErrorPopup = async (message) => {
+    return Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: message,
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      background: '#EF4444',
+      color: 'white',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'text-white'
+      }
+    });
+  };
+
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -301,70 +154,77 @@ const AddPerfumes = () => {
     setFormData((prev) => ({ ...prev, text: value }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
 
-  setError(null);
+    // Validation
+    if (!formData.name) {
+      const errorMsg = "Perfume name is required";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
+      return;
+    }
 
-  // Validation
-  if (!formData.name) {
-    setError("Perfume name is required");
-    return;
-  }
+    if (!formData.price || Number(formData.price) <= 0) {
+      const errorMsg = "Please enter a valid price";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
+      return;
+    }
 
-  if (!formData.price || Number(formData.price) <= 0) {
-    setError("Please enter a valid price");
-    return;
-  }
+    if (!formData.volume || Number(formData.volume) <= 0) {
+      const errorMsg = "Please enter a valid volume";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
+      return;
+    }
 
-  if (!formData.volume || Number(formData.volume) <= 0) {
-    setError("Please enter a valid volume");
-    return;
-  }
+    if (!selectedFile) {
+      const errorMsg = "Perfume image is required";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
+      return;
+    }
 
-  if (!selectedFile) {
-    setError("Perfume image is required");
-    return;
-  }
+    try {
+      setSaveLoading(true);
 
-  try {
-    setSaveLoading(true);
+      const postData = new FormData();
+      postData.append("name", formData.name.trim());
+      postData.append("price", Number(formData.price));
+      postData.append("volume", Number(formData.volume));
+      postData.append("text", formData.text || "");
+      postData.append("inStock", formData.inStock);
+      postData.append("image", selectedFile);
 
-    const postData = new FormData();
-    postData.append("name", formData.name.trim());
-    postData.append("price", Number(formData.price));
-    postData.append("volume", Number(formData.volume));
-    postData.append("text", formData.text || "");
-    postData.append("inStock", formData.inStock);
+      const response = await axios.post(
+        "https://api.houseofresha.com/perfume",
+        postData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-    // ✅ FIXED LINE
-    postData.append("image", selectedFile);
+      console.log("Success:", response.data);
+      
+      // Show success popup
+      await showPerfumeCreated();
+      
+      // Navigate after showing the popup
+      navigate("/glow-rituals");
 
-    const response = await axios.post(
-      "https://api.houseofresha.com/perfume",
-      postData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
-    console.log("Success:", response.data);
-    alert("Perfume created successfully!");
-    navigate("/glow-rituals");
-
-  } catch (error) {
-    console.error("Error posting perfume:", error);
-    setError(
-      error.response?.data?.message ||
-      "Failed to add perfume. Please try again."
-    );
-  } finally {
-    setSaveLoading(false);
-  }
-};
-
+    } catch (error) {
+      console.error("Error posting perfume:", error);
+      const errorMsg = error.response?.data?.message || "Failed to add perfume. Please try again.";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   const handleBack = () => {
     navigate("/glow-rituals");
@@ -372,7 +232,9 @@ const handleSubmit = async (e) => {
 
   const handlePreview = () => {
     if (!formData.name || !selectedFile) {
-      setError("Complete name and image to preview");
+      const errorMsg = "Complete name and image to preview";
+      setError(errorMsg);
+      showErrorPopup(errorMsg);
       return;
     }
     setShowPreviewModal(true);
@@ -389,7 +251,7 @@ const handleSubmit = async (e) => {
       completed: !!formData.volume && Number(formData.volume) > 0,
     },
     { label: "Image uploaded", completed: !!selectedFile },
-    { label: "Stock status", completed: true }, // Always true as checkbox has default value
+    { label: "Stock status", completed: true },
   ];
 
   const completedStepsCount = completionSteps.filter(
@@ -941,7 +803,7 @@ const handleSubmit = async (e) => {
                 <img
                   src={previewImage}
                   alt={formData.name}
-                  className="w-full h-64 sm:h-96 object-cover object-center"
+                  className="w-full h-64 sm:h-96 object-cover object-top"
                 />
                 <div className="absolute top-4 right-4">
                   <span
@@ -1015,9 +877,9 @@ const handleSubmit = async (e) => {
                   Close Preview
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setShowPreviewModal(false);
-                    handleSubmit({ preventDefault: () => {} });
+                    await handleSubmit({ preventDefault: () => {} });
                   }}
                   disabled={saveLoading}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"

@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import Swal from 'sweetalert2';
 import {
   Upload,
   Plus,
@@ -60,6 +61,44 @@ const EditPerfumes = () => {
     text: "",
     inStock: true,
   });
+
+  // SweetAlert function for perfume update success
+  const showPerfumeUpdated = async () => {
+    return Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Perfume updated successfully!',
+      showConfirmButton: false,
+      timer: 1500,
+      timerProgressBar: true,
+      background: '#10B981',
+      color: 'white',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'text-white'
+      }
+    });
+  };
+
+  // SweetAlert function for errors
+  const showErrorPopup = async (message) => {
+    return Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: message,
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      background: '#EF4444',
+      color: 'white',
+      customClass: {
+        popup: 'swal2-toast',
+        title: 'text-white'
+      }
+    });
+  };
 
   useEffect(() => {
     fetchPerfumeData();
@@ -124,11 +163,13 @@ const EditPerfumes = () => {
 
     if (!file.type.match("image.*")) {
       setError("Please select an image file (JPEG, PNG, etc.)");
+      showErrorPopup("Please select an image file (JPEG, PNG, etc.)");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       setError("File size too large. Maximum size is 5MB.");
+      showErrorPopup("File size too large. Maximum size is 5MB.");
       return;
     }
 
@@ -205,17 +246,23 @@ const EditPerfumes = () => {
 
     // Validation
     if (!formData.name || !formData.name.trim()) {
-      setError("Perfume name is required");
+      const errorMsg = "Perfume name is required";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
       return;
     }
 
     if (!formData.price || Number(formData.price) <= 0) {
-      setError("Please enter a valid price");
+      const errorMsg = "Please enter a valid price";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
       return;
     }
 
     if (!formData.volume || Number(formData.volume) <= 0) {
-      setError("Please enter a valid volume");
+      const errorMsg = "Please enter a valid volume";
+      setError(errorMsg);
+      await showErrorPopup(errorMsg);
       return;
     }
 
@@ -254,8 +301,8 @@ const EditPerfumes = () => {
 
       console.log("Update successful:", response.data);
       
-      // Show success message
-      alert("Perfume updated successfully!");
+      // Show success popup
+      await showPerfumeUpdated();
       
       // Redirect to /glow-rituals on success
       navigate("/glow-rituals");
@@ -269,6 +316,7 @@ const EditPerfumes = () => {
                           error.response?.data?.error || 
                           "Failed to update perfume. Please try again.";
       setError(`Update failed: ${errorMessage}`);
+      await showErrorPopup(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -280,7 +328,9 @@ const EditPerfumes = () => {
 
   const handlePreview = () => {
     if (!formData.name) {
-      setError("Complete perfume name to preview");
+      const errorMsg = "Complete perfume name to preview";
+      setError(errorMsg);
+      showErrorPopup(errorMsg);
       return;
     }
     setShowPreviewModal(true);
@@ -572,7 +622,7 @@ const EditPerfumes = () => {
                     <img
                       src={previewImage}
                       alt="Perfume preview"
-                      className="w-full h-64 object-cover object-center rounded-lg"
+                      className="w-full h-64 object-cover object-top rounded-lg"
                     />
                     <button
                       type="button"
@@ -857,7 +907,7 @@ const EditPerfumes = () => {
                 <img
                   src={previewImage || "https://via.placeholder.com/800x400?text=No+Image"}
                   alt={formData.name}
-                  className="w-full h-64 sm:h-96 object-cover object-center"
+                  className="w-full h-64 sm:h-96 object-cover object-top"
                 />
                 <div className="absolute top-4 right-4">
                   <span
@@ -930,9 +980,9 @@ const EditPerfumes = () => {
                   Close Preview
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setShowPreviewModal(false);
-                    handleSubmit({ preventDefault: () => {} });
+                    await handleSubmit({ preventDefault: () => {} });
                   }}
                   disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
@@ -942,7 +992,7 @@ const EditPerfumes = () => {
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Updating...
                     </>
-                  ) : (
+                ) : (
                     <>
                       <Save className="w-4 h-4" />
                       Update Perfume Now

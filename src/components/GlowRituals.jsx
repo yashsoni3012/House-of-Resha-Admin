@@ -15,11 +15,11 @@
 //   const fetchPerfumes = async () => {
 //     setLoading(true);
 //     setError(null);
-    
+
 //     try {
 //       const response = await axios.get('https://api.houseofresha.com/perfume');
 //       console.log('API Response:', response.data);
-      
+
 //       if (Array.isArray(response.data)) {
 //         setPerfumes(response.data);
 //       } else if (response.data.data && Array.isArray(response.data.data)) {
@@ -40,7 +40,7 @@
 //     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) {
 //       return;
 //     }
-    
+
 //     try {
 //       await axios.delete(`https://api.houseofresha.com/perfume/${id}`);
 //       setPerfumes(perfumes.filter(p => p._id !== id));
@@ -109,9 +109,9 @@
 //   }
 
 //   return (
-//     <div style={{ 
-//       padding: '20px', 
-//       maxWidth: '1400px', 
+//     <div style={{
+//       padding: '20px',
+//       maxWidth: '1400px',
 //       margin: '0 auto',
 //       backgroundColor: '#f8f9fa',
 //       minHeight: '100vh'
@@ -422,10 +422,10 @@ const GlowRituals = () => {
       }
 
       const result = await response.json();
-      
+
       // Handle different response structures
       let perfumeData = [];
-      
+
       if (Array.isArray(result)) {
         perfumeData = result;
       } else if (result.data && Array.isArray(result.data)) {
@@ -440,11 +440,13 @@ const GlowRituals = () => {
         price: item.price || 0,
         volume: item.volume || 0,
         text: item.text || "",
-        description: item.text ? stripHtmlTags(item.text).substring(0, 100) + "..." : "",
+        description: item.text
+          ? stripHtmlTags(item.text).substring(0, 100) + "..."
+          : "",
         inStock: item.inStock !== undefined ? item.inStock : true,
         image: item.images
-          ? item.images.startsWith('http') 
-            ? item.images 
+          ? item.images.startsWith("http")
+            ? item.images
             : `https://api.houseofresha.com/${item.images}`
           : "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&auto=format&fit=crop",
         createdAt: item.createdAt,
@@ -468,9 +470,11 @@ const GlowRituals = () => {
           price: 2999,
           volume: 100,
           text: "<h3>Midnight Rose Perfume</h3><p>A captivating blend of <strong>rose</strong>, <strong>oud</strong>, and <strong>musk</strong>. Perfect for evening wear.</p><ul><li>Long lasting fragrance</li><li>Unisex scent</li><li>Premium packaging</li></ul>",
-          description: "A captivating blend of rose, oud, and musk. Perfect for evening wear.",
+          description:
+            "A captivating blend of rose, oud, and musk. Perfect for evening wear.",
           inStock: true,
-          image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
+          image:
+            "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
           createdAt: new Date().toISOString(),
         },
         {
@@ -481,7 +485,8 @@ const GlowRituals = () => {
           text: "<h3>Ocean Breeze</h3><p>Fresh and aquatic scent inspired by the sea. <strong>Notes:</strong> marine accord, citrus, white musk.</p>",
           description: "Fresh and aquatic scent inspired by the sea.",
           inStock: true,
-          image: "https://images.unsplash.com/photo-1590736969954-285ed1f98817?w=400",
+          image:
+            "https://images.unsplash.com/photo-1590736969954-285ed1f98817?w=400",
           createdAt: new Date().toISOString(),
         },
         {
@@ -490,9 +495,11 @@ const GlowRituals = () => {
           price: 3499,
           volume: 100,
           text: "<h2>Sandalwood Dreams</h2><p>Warm and woody fragrance with <em>premium sandalwood</em> and spice notes.</p>",
-          description: "Warm and woody fragrance with premium sandalwood and spice notes.",
+          description:
+            "Warm and woody fragrance with premium sandalwood and spice notes.",
           inStock: false,
-          image: "https://images.unsplash.com/photo-1590736969954-285ed1f98817?w=400",
+          image:
+            "https://images.unsplash.com/photo-1590736969954-285ed1f98817?w=400",
           createdAt: new Date().toISOString(),
         },
       ];
@@ -503,10 +510,10 @@ const GlowRituals = () => {
   };
 
   const stripHtmlTags = (html) => {
-    if (!html) return '';
-    const tmp = document.createElement('div');
+    if (!html) return "";
+    const tmp = document.createElement("div");
     tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    return tmp.textContent || tmp.innerText || "";
   };
 
   const filterPerfumes = () => {
@@ -522,7 +529,9 @@ const GlowRituals = () => {
         (p) =>
           p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          stripHtmlTags(p.text)?.toLowerCase().includes(searchQuery.toLowerCase())
+          stripHtmlTags(p.text)
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase())
       );
     }
 
@@ -589,9 +598,12 @@ const GlowRituals = () => {
   const totalPerfumes = perfumes.length;
   const inStockPerfumes = perfumes.filter((p) => p.inStock).length;
   const outOfStockPerfumes = perfumes.filter((p) => !p.inStock).length;
-  const averagePrice = perfumes.length > 0 
-    ? Math.round(perfumes.reduce((sum, p) => sum + p.price, 0) / perfumes.length)
-    : 0;
+  const averagePrice =
+    perfumes.length > 0
+      ? Math.round(
+          perfumes.reduce((sum, p) => sum + p.price, 0) / perfumes.length
+        )
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -602,7 +614,7 @@ const GlowRituals = () => {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  Glow Rituals - Perfume Collection
+                  MIE by Resha
                 </h1>
                 <p className="text-sm text-gray-600">
                   Manage your premium perfume collection
@@ -696,7 +708,7 @@ const GlowRituals = () => {
                       onClick={() => setSelectedStock(option)}
                       className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
                         selectedStock === option
-                          ? option === "In Stock" 
+                          ? option === "In Stock"
                             ? "bg-green-600 text-white"
                             : option === "Out of Stock"
                             ? "bg-red-600 text-white"
@@ -785,7 +797,7 @@ const GlowRituals = () => {
                     }}
                     className={`px-3 sm:px-4 py-2 rounded-lg font-medium whitespace-nowrap text-xs sm:text-sm transition-colors ${
                       selectedStock === option
-                        ? option === "In Stock" 
+                        ? option === "In Stock"
                           ? "bg-green-600 text-white shadow-md"
                           : option === "Out of Stock"
                           ? "bg-red-600 text-white shadow-md"
@@ -873,11 +885,13 @@ const GlowRituals = () => {
                         loading="lazy"
                       />
                       <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                        <span className={`px-2 py-1 rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap ${
-                          perfume.inStock 
-                            ? "bg-green-100 text-green-800 border border-green-200"
-                            : "bg-red-100 text-red-800 border border-red-200"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap ${
+                            perfume.inStock
+                              ? "bg-green-100 text-green-800 border border-green-200"
+                              : "bg-red-100 text-red-800 border border-red-200"
+                          }`}
+                        >
                           {perfume.inStock ? "In Stock" : "Out of Stock"}
                         </span>
                       </div>
@@ -889,18 +903,17 @@ const GlowRituals = () => {
                         <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 line-clamp-1">
                           {perfume.name}
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm mb-2 line-clamp-2">
-                          {perfume.description}
-                        </p>
+
                         <div className="flex items-center justify-between mt-auto">
-                          <div>
-                            <p className="text-lg sm:text-xl font-bold text-indigo-600">
-                              ₹{perfume.price}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {perfume.volume}ml
-                            </p>
-                          </div>
+                          {/* Price - Left */}
+                          <p className="text-lg sm:text-xl font-bold text-indigo-600">
+                            ₹{perfume.price}
+                          </p>
+
+                          {/* Volume - Right */}
+                          <p className="text-xs text-gray-500">
+                            {perfume.volume}ml
+                          </p>
                         </div>
                       </div>
 
@@ -951,7 +964,7 @@ const GlowRituals = () => {
                       <img
                         src={perfume.image}
                         alt={perfume.name}
-                        className="w-full h-full object-cover object-center"
+                        className="w-full h-full object-cover object-top object-center"
                         onError={(e) => {
                           e.target.src =
                             "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400";
@@ -981,11 +994,13 @@ const GlowRituals = () => {
                             ₹{perfume.price}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              perfume.inStock 
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${
+                                perfume.inStock
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
                               {perfume.inStock ? "In Stock" : "Out of Stock"}
                             </span>
                             <span className="text-xs text-gray-500">
@@ -1140,14 +1155,16 @@ const GlowRituals = () => {
                 <img
                   src={selectedPerfume.image}
                   alt={selectedPerfume.name}
-                  className="w-full h-64 sm:h-96 object-cover object-center"
+                  className="w-full h-64 sm:h-96 object-cover object-top"
                 />
                 <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
-                    selectedPerfume.inStock 
-                      ? "bg-green-100 text-green-800 border border-green-200"
-                      : "bg-red-100 text-red-800 border border-red-200"
-                  }`}>
+                  <span
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
+                      selectedPerfume.inStock
+                        ? "bg-green-100 text-green-800 border border-green-200"
+                        : "bg-red-100 text-red-800 border border-red-200"
+                    }`}
+                  >
                     {selectedPerfume.inStock ? "In Stock" : "Out of Stock"}
                   </span>
                 </div>
@@ -1237,22 +1254,24 @@ const GlowRituals = () => {
                   )}
 
                   {/* Stock Status */}
-                  <div className={`rounded-lg p-4 ${
-                    selectedPerfume.inStock 
-                      ? "bg-green-50" 
-                      : "bg-red-50"
-                  }`}>
+                  <div
+                    className={`rounded-lg p-4 ${
+                      selectedPerfume.inStock ? "bg-green-50" : "bg-red-50"
+                    }`}
+                  >
                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Check className="w-4 h-4" />
                       Stock Status
                     </h4>
-                    <p className={`text-lg font-bold ${
-                      selectedPerfume.inStock 
-                        ? "text-green-700" 
-                        : "text-red-700"
-                    }`}>
-                      {selectedPerfume.inStock 
-                        ? "✓ Available for purchase" 
+                    <p
+                      className={`text-lg font-bold ${
+                        selectedPerfume.inStock
+                          ? "text-green-700"
+                          : "text-red-700"
+                      }`}
+                    >
+                      {selectedPerfume.inStock
+                        ? "✓ Available for purchase"
                         : "✗ Currently unavailable"}
                     </p>
                   </div>
