@@ -81,7 +81,7 @@ const Navbar = ({ toggle }) => {
     "/banners": "Banners",
     "/add-banner": "Add Banner",
     "/fashion": "Products",
-    "/glow-rituals": "Glow Rituals", // Changed from "Products" to "Glow Rituals"
+    "/glow-rituals": "Products",
     "/featured-images": "Products",
     "/add-perfume": "Add Perfume",
     "/orders": "Orders",
