@@ -1,192 +1,6 @@
-// import React, { useState } from 'react';
-// import axios from 'axios';
-// import { useNavigate } from 'react-router-dom';
-
-// const AddPerfumes = () => {
-//   const navigate = useNavigate();
-//   const [loading, setLoading] = useState(false);
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     price: '',
-//     volume: '',
-//     text: '',
-//     inStock: true
-//   });
-//   const [imageFile, setImageFile] = useState(null);
-
-//   const handleInputChange = (e) => {
-//     const { name, value, type, checked } = e.target;
-//     setFormData(prev => ({
-//       ...prev,
-//       [name]: type === 'checkbox' ? checked : value
-//     }));
-//   };
-
-//   const handleImageChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       setImageFile(file);
-//     }
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       // Create FormData for file upload
-//       const postData = new FormData();
-//       postData.append('name', formData.name);
-//       postData.append('price', Number(formData.price));
-//       postData.append('volume', Number(formData.volume));
-//       postData.append('text', formData.text);
-//       postData.append('inStock', formData.inStock);
-
-//       if (imageFile) {
-//         postData.append('image', imageFile);
-//       }
-
-//       // Post data to API
-//       const response = await axios.post(
-//         'https://api.houseofresha.com/perfume',
-//         postData,
-//         {
-//           headers: {
-//             'Content-Type': 'multipart/form-data'
-//           }
-//         }
-//       );
-
-//       console.log('Success:', response.data);
-
-//       // Redirect to /glow-rituals on success
-//       navigate('/glow-rituals');
-
-//     } catch (error) {
-//       console.error('Error posting perfume:', error);
-//       alert(error.response?.data?.message || 'Failed to add perfume. Please try again.');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-//       <h2>Add New Perfume</h2>
-//       <form onSubmit={handleSubmit}>
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="name" style={{ display: 'block', marginBottom: '5px' }}>
-//             Name *
-//           </label>
-//           <input
-//             type="text"
-//             id="name"
-//             name="name"
-//             value={formData.name}
-//             onChange={handleInputChange}
-//             required
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="image" style={{ display: 'block', marginBottom: '5px' }}>
-//             Image *
-//           </label>
-//           <input
-//             type="file"
-//             id="image"
-//             accept="image/*"
-//             onChange={handleImageChange}
-//             required
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="price" style={{ display: 'block', marginBottom: '5px' }}>
-//             Price *
-//           </label>
-//           <input
-//             type="number"
-//             id="price"
-//             name="price"
-//             value={formData.price}
-//             onChange={handleInputChange}
-//             required
-//             min="0"
-//             step="0.01"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="volume" style={{ display: 'block', marginBottom: '5px' }}>
-//             Volume (ml) *
-//           </label>
-//           <input
-//             type="number"
-//             id="volume"
-//             name="volume"
-//             value={formData.volume}
-//             onChange={handleInputChange}
-//             required
-//             min="0"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label htmlFor="text" style={{ display: 'block', marginBottom: '5px' }}>
-//             Description
-//           </label>
-//           <textarea
-//             id="text"
-//             name="text"
-//             value={formData.text}
-//             onChange={handleInputChange}
-//             rows="4"
-//             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-//           />
-//         </div>
-
-//         <div style={{ marginBottom: '15px' }}>
-//           <label style={{ display: 'flex', alignItems: 'center' }}>
-//             <input
-//               type="checkbox"
-//               name="inStock"
-//               checked={formData.inStock}
-//               onChange={handleInputChange}
-//               style={{ marginRight: '8px' }}
-//             />
-//             In Stock
-//           </label>
-//         </div>
-
-//         <button
-//           type="submit"
-//           disabled={loading}
-//           style={{
-//             padding: '10px 20px',
-//             backgroundColor: loading ? '#ccc' : '#007bff',
-//             color: 'white',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: loading ? 'not-allowed' : 'pointer'
-//           }}
-//         >
-//           {loading ? 'Adding...' : 'Add Perfume'}
-//         </button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default AddPerfumes;
-
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {
@@ -200,7 +14,6 @@ import {
   BarChart3,
   Type,
   Image as ImageIcon,
-  Package,
   DollarSign,
   Shield,
   AlertCircle,
@@ -209,6 +22,7 @@ import {
   Droplets,
   CheckSquare,
   AlertTriangle,
+  Package,
 } from "lucide-react";
 
 const StatsCard = ({ icon: Icon, label, value, color }) => (
@@ -225,15 +39,18 @@ const StatsCard = ({ icon: Icon, label, value, color }) => (
   </div>
 );
 
-const AddPerfumes = () => {
+const EditPerfumes = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const fileInputRef = useRef(null);
 
-  const [loading, setLoading] = useState(false);
-  const [saveLoading, setSaveLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [existingImage, setExistingImage] = useState(null);
+  const [removedImage, setRemovedImage] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -245,13 +62,61 @@ const AddPerfumes = () => {
   });
 
   useEffect(() => {
+    fetchPerfumeData();
+    
     // Cleanup preview URL on unmount
     return () => {
       if (previewImage && previewImage.startsWith("blob:")) {
         URL.revokeObjectURL(previewImage);
       }
     };
-  }, [previewImage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const fetchPerfumeData = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching perfume with ID:', id);
+      
+      const response = await axios.get(`https://api.houseofresha.com/perfume/${id}`);
+      console.log('API Response:', response.data);
+      
+      const perfume = response.data;
+      
+      // Handle different possible response structures
+      const perfumeData = perfume.data || perfume;
+      
+      if (!perfumeData) {
+        throw new Error('No data received from API');
+      }
+      
+      setFormData({
+        name: perfumeData.name || "",
+        price: perfumeData.price || "",
+        volume: perfumeData.volume || "",
+        text: perfumeData.text || perfumeData.description || "",
+        inStock: perfumeData.inStock !== undefined ? perfumeData.inStock : true
+      });
+      
+      // Handle image path - check different possible properties
+      const imagePath = perfumeData.image || perfumeData.images || perfumeData.imageUrl || "";
+      if (imagePath) {
+        const fullImagePath = imagePath.startsWith('http') 
+          ? imagePath 
+          : `https://api.houseofresha.com/${imagePath}`;
+        setPreviewImage(fullImagePath);
+        setExistingImage(imagePath);
+      }
+      
+      setLoading(false);
+      
+    } catch (error) {
+      console.error("Error fetching perfume:", error);
+      console.error("Error details:", error.response?.data);
+      setError(`Failed to load perfume data: ${error.response?.data?.message || error.message}`);
+      setLoading(false);
+    }
+  };
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -268,8 +133,9 @@ const AddPerfumes = () => {
     }
 
     setSelectedFile(file);
+    setError(null);
+    setRemovedImage(false);
 
-    // Create preview URL
     const previewUrl = URL.createObjectURL(file);
     setPreviewImage(previewUrl);
   };
@@ -279,11 +145,41 @@ const AddPerfumes = () => {
   };
 
   const clearImage = () => {
-    if (previewImage && previewImage.startsWith("blob:")) {
-      URL.revokeObjectURL(previewImage);
+    if (selectedFile) {
+      if (previewImage && previewImage.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(previewImage);
+        } catch (e) {}
+      }
+      setSelectedFile(null);
+      setPreviewImage(
+        existingImage
+          ? existingImage.startsWith("http")
+            ? existingImage
+            : `https://api.houseofresha.com/${existingImage}`
+          : null
+      );
+      setRemovedImage(false);
+    } else if (existingImage) {
+      if (previewImage && previewImage.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(previewImage);
+        } catch (e) {}
+      }
+      setSelectedFile(null);
+      setPreviewImage(null);
+      setRemovedImage(true);
+      setExistingImage(null);
+    } else {
+      if (previewImage && previewImage.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(previewImage);
+        } catch (e) {}
+      }
+      setSelectedFile(null);
+      setPreviewImage(null);
+      setRemovedImage(false);
     }
-    setSelectedFile(null);
-    setPreviewImage(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -295,106 +191,100 @@ const AddPerfumes = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    setError(null);
   };
 
   const handleTextChange = (value) => {
     setFormData((prev) => ({ ...prev, text: value }));
+    setError(null);
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
 
-  setError(null);
+    // Validation
+    if (!formData.name || !formData.name.trim()) {
+      setError("Perfume name is required");
+      return;
+    }
 
-  // Validation
-  if (!formData.name) {
-    setError("Perfume name is required");
-    return;
-  }
+    if (!formData.price || Number(formData.price) <= 0) {
+      setError("Please enter a valid price");
+      return;
+    }
 
-  if (!formData.price || Number(formData.price) <= 0) {
-    setError("Please enter a valid price");
-    return;
-  }
+    if (!formData.volume || Number(formData.volume) <= 0) {
+      setError("Please enter a valid volume");
+      return;
+    }
 
-  if (!formData.volume || Number(formData.volume) <= 0) {
-    setError("Please enter a valid volume");
-    return;
-  }
+    try {
+      setSaving(true);
 
-  if (!selectedFile) {
-    setError("Perfume image is required");
-    return;
-  }
-
-  try {
-    setSaveLoading(true);
-
-    const postData = new FormData();
-    postData.append("name", formData.name.trim());
-    postData.append("price", Number(formData.price));
-    postData.append("volume", Number(formData.volume));
-    postData.append("text", formData.text || "");
-    postData.append("inStock", formData.inStock);
-
-    // ✅ FIXED LINE
-    postData.append("image", selectedFile);
-
-    const response = await axios.post(
-      "https://api.houseofresha.com/perfume",
-      postData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // Create FormData for file upload
+      const updateData = new FormData();
+      updateData.append("name", formData.name.trim());
+      updateData.append("price", Number(formData.price));
+      updateData.append("volume", Number(formData.volume));
+      updateData.append("text", formData.text || "");
+      updateData.append("inStock", formData.inStock);
+      
+      // Only append image if a new one is selected
+      if (selectedFile) {
+        updateData.append("image", selectedFile);
       }
-    );
 
-    console.log("Success:", response.data);
-    alert("Perfume created successfully!");
-    navigate("/glow-rituals");
+      if (removedImage) {
+        updateData.append("removeImage", "1");
+      }
 
-  } catch (error) {
-    console.error("Error posting perfume:", error);
-    setError(
-      error.response?.data?.message ||
-      "Failed to add perfume. Please try again."
-    );
-  } finally {
-    setSaveLoading(false);
-  }
-};
+      console.log("Sending update data for ID:", id);
+      
+      // Update data using PATCH method
+      const response = await axios.patch(
+        `https://api.houseofresha.com/perfume/${id}`,
+        updateData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
+      console.log("Update successful:", response.data);
+      
+      // Show success message
+      alert("Perfume updated successfully!");
+      
+      // Redirect to /glow-rituals on success
+      navigate("/glow-rituals");
+      
+    } catch (error) {
+      console.error("Error updating perfume:", error);
+      console.error("Error response:", error.response?.data);
+      
+      // Show detailed error message
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          "Failed to update perfume. Please try again.";
+      setError(`Update failed: ${errorMessage}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleBack = () => {
     navigate("/glow-rituals");
   };
 
   const handlePreview = () => {
-    if (!formData.name || !selectedFile) {
-      setError("Complete name and image to preview");
+    if (!formData.name) {
+      setError("Complete perfume name to preview");
       return;
     }
     setShowPreviewModal(true);
   };
-
-  const completionSteps = [
-    { label: "Perfume name", completed: !!formData.name },
-    {
-      label: "Price set",
-      completed: !!formData.price && Number(formData.price) > 0,
-    },
-    {
-      label: "Volume set",
-      completed: !!formData.volume && Number(formData.volume) > 0,
-    },
-    { label: "Image uploaded", completed: !!selectedFile },
-    { label: "Stock status", completed: true }, // Always true as checkbox has default value
-  ];
-
-  const completedStepsCount = completionSteps.filter(
-    (step) => step.completed
-  ).length;
 
   // Quill modules configuration
   const quillModules = {
@@ -424,6 +314,26 @@ const handleSubmit = async (e) => {
     "image",
   ];
 
+  const completionSteps = [
+    { label: "Perfume name", completed: !!formData.name },
+    { label: "Price updated", completed: !!formData.price && Number(formData.price) > 0 },
+    { label: "Volume updated", completed: !!formData.volume && Number(formData.volume) > 0 },
+    { label: "Stock status", completed: true },
+  ];
+
+  const completedStepsCount = completionSteps.filter(step => step.completed).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading perfume data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -441,17 +351,17 @@ const handleSubmit = async (e) => {
               <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  Add New Perfume
+                  Edit Perfume
                 </h1>
                 <p className="text-sm text-gray-600">
-                  Add a new perfume to your Glow Rituals collection
+                  Update your existing perfume
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePreview}
-                disabled={!formData.name || !selectedFile}
+                disabled={!formData.name}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Eye className="w-4 h-4" />
@@ -460,23 +370,22 @@ const handleSubmit = async (e) => {
               <button
                 onClick={handleSubmit}
                 disabled={
-                  saveLoading ||
+                  saving ||
                   !formData.name ||
                   !formData.price ||
-                  !formData.volume ||
-                  !selectedFile
+                  !formData.volume
                 }
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
-                {saveLoading ? (
+                {saving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating...
+                    Updating...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Create Perfume
+                    Update Perfume
                   </>
                 )}
               </button>
@@ -509,7 +418,7 @@ const handleSubmit = async (e) => {
           <StatsCard
             icon={BarChart3}
             label="Progress"
-            value={`${completedStepsCount}/5`}
+            value={`${completedStepsCount}/4`}
             color="bg-yellow-500"
           />
         </div>
@@ -536,7 +445,7 @@ const handleSubmit = async (e) => {
                 <div>
                   <h3 className="font-bold text-gray-900">Perfume Name</h3>
                   <p className="text-sm text-gray-600">
-                    Enter your perfume name
+                    Update your perfume name
                   </p>
                 </div>
               </div>
@@ -571,7 +480,7 @@ const handleSubmit = async (e) => {
                   <div>
                     <h3 className="font-bold text-gray-900">Price</h3>
                     <p className="text-sm text-gray-600">
-                      Perfume price in INR
+                      Update perfume price in INR
                     </p>
                   </div>
                 </div>
@@ -602,7 +511,7 @@ const handleSubmit = async (e) => {
                   <div>
                     <h3 className="font-bold text-gray-900">Volume</h3>
                     <p className="text-sm text-gray-600">
-                      Volume in milliliters (ml)
+                      Update volume in milliliters (ml)
                     </p>
                   </div>
                 </div>
@@ -634,8 +543,17 @@ const handleSubmit = async (e) => {
                 <div>
                   <h3 className="font-bold text-gray-900">Perfume Image</h3>
                   <p className="text-sm text-gray-600">
-                    Upload perfume image (Required)
+                    Update perfume image (Optional)
                   </p>
+                  {removedImage ? (
+                    <p className="text-xs text-red-500 mt-1">
+                      Image marked for removal — it will be deleted when you save
+                    </p>
+                  ) : existingImage && !selectedFile ? (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Current image will be kept if not replaced
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -673,13 +591,15 @@ const handleSubmit = async (e) => {
                       <Upload className="w-6 h-6 text-gray-400" />
                     </div>
                     <p className="text-gray-700 font-medium mb-1">
-                      Click to upload perfume image
+                      {existingImage
+                        ? "Replace perfume image"
+                        : "Upload perfume image"}
                     </p>
                     <p className="text-sm text-gray-500 mb-4">
                       JPG, PNG up to 5MB
                     </p>
                     <div className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
-                      Choose File
+                      {existingImage ? "Replace File" : "Choose File"}
                     </div>
                   </div>
                 )}
@@ -687,7 +607,7 @@ const handleSubmit = async (e) => {
 
               {selectedFile && (
                 <p className="text-sm text-green-600 mt-3 font-medium">
-                  ✓ {selectedFile.name} selected
+                  ✓ New image selected: {selectedFile.name}
                 </p>
               )}
             </div>
@@ -701,7 +621,7 @@ const handleSubmit = async (e) => {
                 <div>
                   <h3 className="font-bold text-gray-900">Description</h3>
                   <p className="text-sm text-gray-600">
-                    Add perfume description and details
+                    Update perfume description and details
                   </p>
                 </div>
               </div>
@@ -713,7 +633,7 @@ const handleSubmit = async (e) => {
                   modules={quillModules}
                   formats={quillFormats}
                   theme="snow"
-                  placeholder="Enter detailed description about the perfume including fragrance notes, usage, etc..."
+                  placeholder="Update detailed description about the perfume including fragrance notes, usage, etc..."
                   className="min-h-[200px] bg-white"
                 />
               </div>
@@ -736,7 +656,7 @@ const handleSubmit = async (e) => {
                 <div>
                   <h3 className="font-bold text-gray-900">Stock Status</h3>
                   <p className="text-sm text-gray-600">
-                    Set availability status
+                    Update availability status
                   </p>
                 </div>
               </div>
@@ -782,9 +702,7 @@ const handleSubmit = async (e) => {
           <div className="lg:col-span-1 space-y-6">
             {/* Progress */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">
-                Creation Progress
-              </h3>
+              <h3 className="font-bold text-gray-900 mb-4">Update Progress</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-1">
@@ -792,14 +710,14 @@ const handleSubmit = async (e) => {
                       Completion
                     </span>
                     <span className="text-sm font-medium text-gray-700">
-                      {completedStepsCount}/5
+                      {completedStepsCount}/4
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-green-600 h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${(completedStepsCount / 5) * 100}%`,
+                        width: `${(completedStepsCount / 4) * 100}%`,
                       }}
                     ></div>
                   </div>
@@ -833,14 +751,14 @@ const handleSubmit = async (e) => {
 
             {/* Tips */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Perfume Tips</h3>
+              <h3 className="font-bold text-gray-900 mb-4">Editing Tips</h3>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Type className="w-3 h-3 text-blue-600" />
                   </div>
                   <p className="text-sm text-gray-600">
-                    Use descriptive and appealing perfume names
+                    Keep perfume names clear and appealing
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -878,38 +796,36 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Create Card */}
+            {/* Update Card */}
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Ready to create?</h3>
+              <h3 className="font-bold text-gray-900 mb-4">Save Changes</h3>
               <p className="text-sm text-gray-600 mb-6">
-                All required fields must be filled. Your perfume will be added
-                to your Glow Rituals collection immediately.
+                Your updates will be saved immediately. The perfume will be updated in your Glow Rituals collection.
               </p>
               <button
                 onClick={handleSubmit}
                 disabled={
-                  saveLoading ||
+                  saving ||
                   !formData.name ||
                   !formData.price ||
-                  !formData.volume ||
-                  !selectedFile
+                  !formData.volume
                 }
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
-                {saveLoading ? (
+                {saving ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating...
+                    Updating...
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    Create Perfume
+                    Update Perfume
                   </>
                 )}
               </button>
               <p className="text-xs text-gray-500 text-center mt-3">
-                Perfume will be visible in your Glow Rituals collection
+                Changes will be visible immediately
               </p>
             </div>
           </div>
@@ -939,7 +855,7 @@ const handleSubmit = async (e) => {
               {/* Perfume Image */}
               <div className="relative rounded-lg overflow-hidden bg-gray-900">
                 <img
-                  src={previewImage}
+                  src={previewImage || "https://via.placeholder.com/800x400?text=No+Image"}
                   alt={formData.name}
                   className="w-full h-64 sm:h-96 object-cover object-center"
                 />
@@ -996,8 +912,7 @@ const handleSubmit = async (e) => {
                         <div
                           className="prose max-w-none text-gray-700"
                           dangerouslySetInnerHTML={{
-                            __html:
-                              formData.text || "<p>No description provided</p>",
+                            __html: formData.text || "<p>No description provided</p>",
                           }}
                         />
                       </div>
@@ -1019,18 +934,18 @@ const handleSubmit = async (e) => {
                     setShowPreviewModal(false);
                     handleSubmit({ preventDefault: () => {} });
                   }}
-                  disabled={saveLoading}
+                  disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
                 >
-                  {saveLoading ? (
+                  {saving ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Creating...
+                      Updating...
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      Create Perfume Now
+                      Update Perfume Now
                     </>
                   )}
                 </button>
@@ -1043,4 +958,4 @@ const handleSubmit = async (e) => {
   );
 };
 
-export default AddPerfumes;
+export default EditPerfumes;

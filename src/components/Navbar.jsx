@@ -25,6 +25,12 @@ const availableComponents = [
     category: "Products",
   },
   {
+    path: "/add-perfume",
+    name: "Add Perfume",
+    icon: "➕",
+    category: "Products",
+  },
+  {
     path: "/add-product",
     name: "Add Product",
     icon: "➕",
@@ -49,6 +55,7 @@ const excludedPages = [
   "/edit-product/:id",
   "/edit-blog/:id",
   "/edit-banner/:id",
+  "/edit-perfumes/:id",
   // Add other edit pages here if needed
 ];
 
@@ -67,14 +74,16 @@ const Navbar = ({ toggle }) => {
   const isEditProduct = useMatch("/edit-product/:id");
   const isEditBlog = useMatch("/edit-blog/:id");
   const isEditBanner = useMatch("/edit-banner/:id");
+  const isEditPerfume = useMatch("/edit-perfumes/:id");
 
   const pageTitles = {
     "/dashboard": "Dashboard",
     "/banners": "Banners",
     "/add-banner": "Add Banner",
-    "/fashion": "products",
-    "/glow-rituals": "products",
-    "/featured-images": "products",
+    "/fashion": "Products",
+    "/glow-rituals": "Glow Rituals", // Changed from "Products" to "Glow Rituals"
+    "/featured-images": "Products",
+    "/add-perfume": "Add Perfume",
     "/orders": "Orders",
     "/customers": "Customers",
     "/users": "Users",
@@ -84,6 +93,7 @@ const Navbar = ({ toggle }) => {
     "/edit-product/:id": "Edit Product",
     "/edit-blog/:id": "Edit Blog",
     "/edit-banner/:id": "Edit Banner",
+    "/edit-perfumes/:id": "Edit Perfume", // Added this
   };
 
   let pageTitle = pageTitles[location.pathname] || "Dashboard";
@@ -95,6 +105,8 @@ const Navbar = ({ toggle }) => {
     pageTitle = "Edit Blog";
   } else if (isEditBanner) {
     pageTitle = "Edit Banner";
+  } else if (isEditPerfume) {
+    pageTitle = "Edit Perfume"; // Added this
   }
 
   // Filter components based on search query and exclude edit pages

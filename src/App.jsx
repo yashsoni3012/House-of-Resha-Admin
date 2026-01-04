@@ -27,6 +27,8 @@ import AddBanners from "./components/AddBanners";
 import EditBanner from "./components/EditBanners";
 import AddBlogs from "./components/AddBlogs";
 import EditBlogs from "./components/EditBlogs";
+import AddPerfumes from "./components/AddPerfumes";
+import EditPerfumes from "./components/EditPerfumes";
 
 // ✅ Query Client
 const queryClient = new QueryClient({
@@ -70,6 +72,8 @@ const App = () => {
               <Route path="featured-images" element={<Products />} />
               <Route path="add-product" element={<AddProducts />} />
               <Route path="edit-product/:id" element={<EditProducts />} />
+              <Route path="/add-perfume" element={<AddPerfumes />} />
+              <Route path="/edit-perfume/:id" element={<EditPerfumes />} />
 
 
               {/* banners */}
