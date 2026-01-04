@@ -751,7 +751,7 @@ const Dashboard = () => {
               <span className="truncate">Recent Products</span>
             </h3>
             <Link
-              to="/products"
+              to="/fashion"
               className="text-purple-600 hover:text-purple-700 font-medium text-xs sm:text-sm flex items-center gap-1 flex-shrink-0"
             >
               <span className="hidden sm:inline">View All</span>
