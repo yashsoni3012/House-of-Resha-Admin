@@ -511,7 +511,7 @@ const UserManagement = () => {
                               "first_name",
                               "fname",
                               "name",
-                            ]).charAt(0)}
+                            ]).charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">
@@ -1083,7 +1083,7 @@ const UserManagement = () => {
               </div>
 
               {/* Additional Information Section */}
-              <div className="mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
+              {/* <div className="mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                     <svg
@@ -1168,7 +1168,7 @@ const UserManagement = () => {
                     );
                   })}
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Footer */}
