@@ -253,9 +253,6 @@ export default function Orders() {
               <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
                 Order Details
               </h2>
-              <p className="text-xs sm:text-sm text-gray-500 font-mono mt-1 truncate">
-                ID: {orderId}
-              </p>
             </div>
             <button
               onClick={onClose}
@@ -439,7 +436,7 @@ export default function Orders() {
             )}
 
             {/* Payment Details */}
-            {razorpay.paymentId && (
+            {/* {razorpay.paymentId && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
                 <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-gray-700" />
@@ -466,7 +463,7 @@ export default function Orders() {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
