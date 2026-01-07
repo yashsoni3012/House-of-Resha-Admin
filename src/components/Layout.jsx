@@ -1,8 +1,8 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
-import { useSidebar } from '../hooks/useSidebar';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import Navbar from "./Navbar";
+import { useSidebar } from "../hooks/useSidebar";
 
 const Layout = () => {
   const { isOpen, toggle } = useSidebar();

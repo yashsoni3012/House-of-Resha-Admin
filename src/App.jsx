@@ -75,7 +75,6 @@ const App = () => {
               <Route path="/add-perfume" element={<AddPerfumes />} />
               <Route path="/edit-perfume/:id" element={<EditPerfumes />} />
 
-
               {/* banners */}
               <Route path="banners" element={<Banners />} />
               <Route path="add-banner" element={<AddBanners />} />
