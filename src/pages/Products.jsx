@@ -17,6 +17,11 @@ const Products = () => {
       label: "Fashion Management",
       icon: ShoppingBag,
       color: "pink",
+      colorClasses: {
+        text: "text-pink-600",
+        bg: "bg-pink-600",
+        bgLight: "bg-pink-50",
+      },
       path: "/fashion",
     },
     {
@@ -24,6 +29,11 @@ const Products = () => {
       label: "Glow Rituals",
       icon: Sparkles,
       color: "purple",
+      colorClasses: {
+        text: "text-purple-600",
+        bg: "bg-purple-600",
+        bgLight: "bg-purple-50",
+      },
       path: "/glow-rituals",
     },
     {
@@ -31,6 +41,11 @@ const Products = () => {
       label: "Featured Images",
       icon: Image,
       color: "indigo",
+      colorClasses: {
+        text: "text-indigo-600",
+        bg: "bg-indigo-600",
+        bgLight: "bg-indigo-50",
+      },
       path: "/featured-images",
     },
   ];
@@ -68,7 +83,7 @@ const Products = () => {
           <div className="flex items-center justify-between py-4 md:hidden">
             <div className="flex items-center gap-3">
               {React.createElement(activeTabInfo.icon, {
-                className: `w-6 h-6 text-${activeTabInfo.color}-600`,
+                className: `${activeTabInfo.colorClasses.text} w-6 h-6`,
               })}
               <h1 className="text-lg font-bold text-gray-800">
                 {activeTabInfo.label}
@@ -92,21 +107,22 @@ const Products = () => {
             <div className="md:hidden border-t border-gray-200 py-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      activeTab === tab.id
-                        ? `bg-${tab.color}-50 text-${tab.color}-600`
+                      isActive
+                        ? `${tab.colorClasses.bgLight} ${tab.colorClasses.text}`
                         : "text-gray-600 hover:bg-gray-50"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{tab.label}</span>
-                    {activeTab === tab.id && (
+                    {isActive && (
                       <div
-                        className={`ml-auto w-2 h-2 rounded-full bg-${tab.color}-600`}
+                        className={`ml-auto w-2 h-2 rounded-full ${tab.colorClasses.bg}`}
                       ></div>
                     )}
                   </button>
@@ -126,7 +142,7 @@ const Products = () => {
                   onClick={() => handleTabChange(tab.id)}
                   className={`flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 font-medium transition-all relative whitespace-nowrap ${
                     isActive
-                      ? `text-${tab.color}-600`
+                      ? tab.colorClasses.text
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
@@ -134,7 +150,7 @@ const Products = () => {
                   <span className="text-sm lg:text-base">{tab.label}</span>
                   {isActive && (
                     <div
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-${tab.color}-600`}
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${tab.colorClasses.bg}`}
                     ></div>
                   )}
                 </button>

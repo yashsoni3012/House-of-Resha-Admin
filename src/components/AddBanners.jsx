@@ -603,27 +603,38 @@ const AddBanners = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
+            {/* Left Section: Back Button and Title */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              {/* Back Button */}
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors self-start sm:self-auto"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back to Banners</span>
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base whitespace-nowrap">
+                  Back to Banners
+                </span>
               </button>
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+
+              {/* Divider - Hidden on mobile, visible on tablet+ */}
+              <div className="h-6 w-px bg-gray-300 hidden sm:block flex-shrink-0"></div>
+
+              {/* Title and Description */}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Add New Banner
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 truncate">
                   Add a new video banner to your site
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Right Section: Action Buttons */}
+            <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
+              {/* Preview Button */}
               <button
                 onClick={() => {
                   if (hasRequiredFields()) {
@@ -632,25 +643,28 @@ const AddBanners = () => {
                     setError("Complete required fields to preview");
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base whitespace-nowrap"
               >
-                <Eye className="w-4 h-4" />
-                Preview
+                <Eye className="w-4 h-4 flex-shrink-0" />
+                <span>Preview</span>
               </button>
+
+              {/* Submit Button */}
               <button
                 onClick={handleSubmit}
                 disabled={saveLoading || !hasRequiredFields()}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 font-medium shadow-sm hover:shadow-md text-sm sm:text-base whitespace-nowrap"
               >
                 {saveLoading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating...
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                    <span>Creating...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4" />
-                    Create Banner
+                    <Save className="w-4 h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Create Banner</span>
+                    <span className="sm:hidden">Create</span>
                   </>
                 )}
               </button>
@@ -702,33 +716,40 @@ const AddBanners = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Banner Title */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <Type className="w-5 h-5 text-blue-600" />
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Type className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Banner Title</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Banner Title
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                     Enter your banner title
                   </p>
                 </div>
               </div>
+
+              {/* Input Field */}
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base placeholder:text-gray-400"
                 placeholder="e.g., Summer Collection Launch"
                 maxLength={100}
                 required
               />
-              <div className="flex justify-between mt-2">
-                <span className="text-xs text-gray-500">
+
+              {/* Character Counter */}
+              <div className="flex justify-between items-center gap-2 mt-2">
+                <span className="text-xs text-gray-500 truncate">
                   Max 100 characters
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
                   {formData.title.length}/100
                 </span>
               </div>
@@ -737,29 +758,36 @@ const AddBanners = () => {
             {/* Category & Button Text */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Category */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <Tag className="w-5 h-5 text-green-600" />
+              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+                {/* Header Section */}
+                <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">Category</h3>
-                    <p className="text-sm text-gray-600">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                      Category
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                       Select banner category
                     </p>
                   </div>
                 </div>
+
+                {/* Select Field or Loading State */}
                 {loadingCategories ? (
-                  <div className="w-full px-4 py-3 border border-gray-300 rounded-lg flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-indigo-600 mr-2" />
-                    <span className="text-gray-500">Loading categories...</span>
+                  <div className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-indigo-600 mr-2 flex-shrink-0" />
+                    <span className="text-gray-500 text-sm sm:text-base">
+                      Loading categories...
+                    </span>
                   </div>
                 ) : (
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base bg-white cursor-pointer"
                     required
                   >
                     <option value="">Select category</option>
@@ -773,39 +801,48 @@ const AddBanners = () => {
               </div>
 
               {/* Button Text */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <MousePointerClick className="w-5 h-5 text-purple-600" />
+             <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+                {/* Header Section */}
+                <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">Button Text</h3>
-                    <p className="text-sm text-gray-600">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                      Button Text
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                       Call-to-action button text
                     </p>
                   </div>
                 </div>
+
+                {/* Input Field */}
                 <input
                   type="text"
                   name="buttonText"
                   value={formData.buttonText}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base placeholder:text-gray-400"
                   placeholder="e.g., Shop Now, Learn More"
                 />
               </div>
             </div>
 
             {/* Video Upload */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center">
-                  <Video className="w-5 h-5 text-pink-600" />
+           <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-pink-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Video className="w-4 h-4 sm:w-5 sm:h-5 text-pink-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Video Upload</h3>
-                  <p className="text-sm text-gray-600">
-                    Upload banner video (Required)
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Video Upload
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
+                    Upload banner video{" "}
+                    <span className="text-red-600 font-medium">(Required)</span>
                   </p>
                 </div>
               </div>
@@ -819,75 +856,96 @@ const AddBanners = () => {
                 className="hidden"
               />
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-indigo-400 transition-colors">
+              {/* Upload Area */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-5 lg:p-6 hover:border-indigo-400 transition-colors">
                 {previewVideo ? (
+                  // Video Preview
                   <div className="relative">
                     <video
                       src={previewVideo}
                       controls
-                      className="w-full h-64 object-cover object-top rounded-lg"
+                      className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover object-top rounded-lg"
                     />
                     <button
                       type="button"
                       onClick={clearVideo}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-red-600 active:bg-red-700 transition-colors shadow-lg"
+                      aria-label="Remove video"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 ) : (
+                  // Upload Prompt
                   <div
                     onClick={triggerFileInput}
-                    className="flex flex-col items-center cursor-pointer"
+                    className="flex flex-col items-center cursor-pointer py-4 sm:py-6"
                   >
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                      <Upload className="w-6 h-6 text-gray-400" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                      <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
                     </div>
-                    <p className="text-gray-700 font-medium mb-1">
+                    <p className="text-gray-700 font-medium mb-1 text-sm sm:text-base text-center px-2">
                       Click to upload banner video
                     </p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 text-center">
                       MP4, WebM, OGG up to 50MB
                     </p>
-                    <div className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                    <div className="px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors font-medium text-sm sm:text-base shadow-sm hover:shadow-md">
                       Choose File
                     </div>
                   </div>
                 )}
               </div>
 
+              {/* File Selected Info */}
               {selectedFile && (
-                <p className="text-sm text-green-600 mt-3 font-medium">
-                  ✓ {selectedFile.name} selected (
-                  {Math.round((selectedFile.size / 1024 / 1024) * 100) / 100}MB)
-                </p>
+                <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 flex-shrink-0 text-green-600 mt-0.5 font-bold">
+                      ✓
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-green-700 font-medium break-words">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-green-600 mt-0.5">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Button Link */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                  <ExternalLink className="w-5 h-5 text-indigo-600" />
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Button Link URL</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Button Link URL
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                     Link for the call-to-action button
                   </p>
                 </div>
               </div>
 
+              {/* Input Field */}
               <input
                 type="url"
                 name="buttonLink"
                 value={formData.buttonLink}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base placeholder:text-gray-400"
                 placeholder="https://example.com"
               />
 
-              <div className="mt-2 text-xs text-gray-500">
+              {/* Helper Text */}
+              <div className="mt-2 text-xs text-gray-500 leading-relaxed">
                 Enter a valid URL starting with http:// or https://
               </div>
             </div>

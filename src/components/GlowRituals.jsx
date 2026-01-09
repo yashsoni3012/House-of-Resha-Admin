@@ -609,25 +609,29 @@ const GlowRituals = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            {/* Left Section: Title and Description */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   MIE by Resha
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 truncate">
                   Manage your premium perfume collection
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Right Section: Action Button */}
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
               <button
                 onClick={handleAddNewPerfume}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors font-medium shadow-sm hover:shadow-md text-sm sm:text-base whitespace-nowrap w-full sm:w-auto"
               >
-                <Plus className="w-4 h-4" />
-                Add Perfume
+                <Plus className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Add Perfume</span>
+                <span className="xs:hidden sm:hidden">Add</span>
               </button>
             </div>
           </div>

@@ -279,29 +279,102 @@ export default function AddBlogs() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-4">
+            {/* Back Button - Mobile separate line */}
+            <div className="flex sm:hidden">
               <button
                 onClick={navigateToBlogs}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back</span>
+                <span className="font-medium text-sm">Back to Blogs</span>
               </button>
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+            </div>
+
+            {/* Header Section - Desktop layout */}
+            <div className="hidden sm:flex sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={navigateToBlogs}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors shrink-0"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-medium">Back</span>
+                </button>
+                <div className="h-6 w-px bg-gray-300 shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl font-bold text-gray-900 truncate">
+                    Create New Blog
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Share your story with the world
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions Section - Desktop (right side) */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const hasRequiredFields =
+                      formData.title &&
+                      formData.description &&
+                      formData.coverImage;
+                    if (hasRequiredFields) {
+                      alert("Preview would show here");
+                    } else {
+                      setMessage({
+                        type: "error",
+                        text: "Complete required fields to preview",
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={
+                    loading ||
+                    !formData.title ||
+                    !formData.description ||
+                    !formData.coverImage
+                  }
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Publish
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Title Section - Mobile separate line */}
+            <div className="flex sm:hidden">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold text-gray-900 truncate">
                   Create New Blog
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs text-gray-600">
                   Share your story with the world
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Preview Button - Mobile separate line */}
+            <div className="flex sm:hidden">
               <button
                 onClick={() => {
-                  // Preview functionality
                   const hasRequiredFields =
                     formData.title &&
                     formData.description &&
@@ -315,11 +388,15 @@ export default function AddBlogs() {
                     });
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-gray-600 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <Eye className="w-4 h-4" />
                 Preview
               </button>
+            </div>
+
+            {/* Publish Button - Mobile separate line */}
+            <div className="flex sm:hidden">
               <button
                 onClick={handleSubmit}
                 disabled={
@@ -328,7 +405,7 @@ export default function AddBlogs() {
                   !formData.description ||
                   !formData.coverImage
                 }
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {loading ? (
                   <>

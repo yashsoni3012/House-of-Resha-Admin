@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Save,
   FileText,
+  Info,
 } from "lucide-react";
 import { showProductUpdated } from "../utils/sweetAlertConfig";
 
@@ -55,6 +56,8 @@ const EditProducts = () => {
   const [commitmentInput, setCommitmentInput] = useState("");
   const [existingImage, setExistingImage] = useState(null);
   const [removedImage, setRemovedImage] = useState(false);
+  const [showNoChangesModal, setShowNoChangesModal] = useState(false);
+  const [originalData, setOriginalData] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -131,16 +134,22 @@ const EditProducts = () => {
           }
         }
 
-        setFormData({
+        // FIX: Parse price as integer to avoid floating point issues
+        const parsedPrice = Math.round(loadedPrice);
+
+        const formDataObj = {
           name: product.name || "",
           categoryId: product.categoryId?._id || "",
-          price: parseFloat(Number(loadedPrice).toFixed(2)),
+          price: parsedPrice,
           description: product.description || "",
           text: product.text || "",
           sizes: product.sizes || [],
           details: product.details || [],
           commitment: product.commitment || [],
-        });
+        };
+
+        setFormData(formDataObj);
+        setOriginalData(formDataObj);
 
         if (product.images) {
           const imageUrl = product.images.startsWith("http")
@@ -159,6 +168,33 @@ const EditProducts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasChanges = () => {
+    if (!originalData) return false;
+
+    // Check form data changes
+    const formFields = ['name', 'price', 'categoryId', 'description', 'text'];
+    for (let field of formFields) {
+      if (String(formData[field]) !== String(originalData[field])) {
+        return true;
+      }
+    }
+
+    // Check arrays changes
+    const arrayFields = ['sizes', 'details', 'commitment'];
+    for (let field of arrayFields) {
+      if (JSON.stringify(formData[field]) !== JSON.stringify(originalData[field])) {
+        return true;
+      }
+    }
+
+    // Check image changes
+    if (selectedFile || removedImage) {
+      return true;
+    }
+
+    return false;
   };
 
   const handleFileSelect = (event) => {
@@ -229,8 +265,23 @@ const EditProducts = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+    if (name === "price") {
+      const numericValue = value.replace(/[^\d]/g, "");
+
+      if (numericValue === "") {
+        setFormData((prev) => ({ ...prev, price: "" }));
+      } else {
+        const intValue = parseInt(numericValue, 10);
+        if (!isNaN(intValue)) {
+          setFormData((prev) => ({ ...prev, price: intValue }));
+        }
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
     setError(null);
   };
 
@@ -299,6 +350,12 @@ const EditProducts = () => {
       return;
     }
 
+    // Check if there are any changes
+    if (!hasChanges()) {
+      setShowNoChangesModal(true);
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -307,7 +364,12 @@ const EditProducts = () => {
       fd.append("categoryId", formData.categoryId);
       fd.append("description", formData.description || "");
       fd.append("text", formData.text || "");
-      fd.append("price", String(Math.round(Number(formData.price))));
+
+      const priceInt = parseInt(formData.price, 10);
+      if (isNaN(priceInt) || priceInt <= 0) {
+        throw new Error("Invalid price value");
+      }
+      fd.append("price", priceInt.toString());
 
       formData.sizes.forEach((s) => fd.append("sizes[]", s));
       formData.details.forEach((d) => fd.append("details[]", d));
@@ -323,7 +385,7 @@ const EditProducts = () => {
 
       console.log("Updating product with data:", {
         name: formData.name,
-        price: Math.round(Number(formData.price)),
+        price: priceInt,
         categoryId: formData.categoryId,
         text: formData.text,
         sizes: formData.sizes,
@@ -364,12 +426,11 @@ const EditProducts = () => {
     navigate("/fashion");
   };
 
-  // Quill modules configuration
   const quillModules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
       ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }], // ✅ correct
+      [{ list: "ordered" }, { list: "bullet" }],
       [{ color: [] }, { background: [] }],
       [{ align: [] }],
       ["link", "image"],
@@ -377,14 +438,13 @@ const EditProducts = () => {
     ],
   };
 
-  // Quill formats
   const quillFormats = [
     "header",
     "bold",
     "italic",
     "underline",
     "strike",
-    "list", // ✔ handles both bullet & ordered
+    "list",
     "color",
     "background",
     "align",
@@ -405,29 +465,77 @@ const EditProducts = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* No Changes Modal */}
+      {showNoChangesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100">
+                <Info className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                No Changes Detected
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                You haven't made any changes to the product information. 
+                Please make changes before updating.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowNoChangesModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => {
+                    setShowNoChangesModal(false);
+                    navigate("/fashion");
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Back to Products
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
+            {/* Left Section: Back Button and Title */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              {/* Back Button */}
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors self-start sm:self-auto"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back to Products</span>
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base whitespace-nowrap">
+                  Back to Products
+                </span>
               </button>
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+
+              {/* Divider - Hidden on mobile, visible on tablet+ */}
+              <div className="h-6 w-px bg-gray-300 hidden sm:block flex-shrink-0"></div>
+
+              {/* Title and Description */}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Edit Product
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 truncate">
                   Update your existing product
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Right Section: Action Buttons */}
+            <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
+              {/* Preview Button */}
               <button
                 onClick={() => {
                   const hasRequiredFields =
@@ -438,11 +546,13 @@ const EditProducts = () => {
                     setError("Complete required fields to preview");
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base whitespace-nowrap"
               >
-                <Eye className="w-4 h-4" />
-                Preview
+                <Eye className="w-4 h-4 flex-shrink-0" />
+                <span>Preview</span>
               </button>
+
+              {/* Update Button */}
               <button
                 onClick={handleSubmit}
                 disabled={
@@ -451,17 +561,18 @@ const EditProducts = () => {
                   !formData.categoryId ||
                   !formData.price
                 }
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 font-medium shadow-sm hover:shadow-md text-sm sm:text-base whitespace-nowrap"
               >
                 {saving ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Updating...
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                    <span>Updating...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4" />
-                    Update Product
+                    <Save className="w-4 h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Update Product</span>
+                    <span className="sm:hidden">Update</span>
                   </>
                 )}
               </button>
@@ -580,7 +691,7 @@ const EditProducts = () => {
                 </select>
               </div>
 
-              {/* Price */}
+              {/* Price - FIXED SECTION */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -598,38 +709,47 @@ const EditProducts = () => {
                     ₹
                   </span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     name="price"
-                    step="1"
-                    min="0"
                     value={formData.price}
                     onChange={handleInputChange}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="0.00"
+                    placeholder="0"
                     required
                   />
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  <div className="flex justify-between">
+                    <span>Enter whole number (e.g., 14700, 2500)</span>
+                    <span>Current: ₹{formData.price || 0}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Product Image */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center">
-                  <ImageIcon className="w-5 h-5 text-pink-600" />
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-pink-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-pink-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Product Image</h3>
-                  <p className="text-sm text-gray-600">
-                    Update product image (Optional)
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Product Image
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
+                    Update product image{" "}
+                    <span className="text-gray-500 font-medium">(Optional)</span>
                   </p>
                   {removedImage ? (
-                    <p className="text-xs text-red-500 mt-1">
-                      Image marked for removal — it will be deleted when you
-                      save
+                    <p className="text-xs text-red-500 mt-1 sm:mt-1.5 leading-relaxed">
+                      Image marked for removal — it will be deleted when you save
                     </p>
                   ) : existingImage && !selectedFile ? (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1 sm:mt-1.5 leading-relaxed">
                       Current image will be kept if not replaced
                     </p>
                   ) : null}
@@ -645,76 +765,100 @@ const EditProducts = () => {
                 className="hidden"
               />
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-indigo-400 transition-colors">
+              {/* Upload Area */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-5 lg:p-6 hover:border-indigo-400 transition-colors">
                 {previewImage ? (
+                  // Image Preview
                   <div className="relative">
                     <img
                       src={previewImage}
                       alt="Product preview"
-                      className="w-full h-64 object-cover object-top rounded-lg"
+                      className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover object-top rounded-lg"
                     />
                     <button
                       type="button"
                       onClick={clearImage}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-red-600 active:bg-red-700 transition-colors shadow-lg"
+                      aria-label="Remove image"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 ) : (
+                  // Upload Prompt
                   <div
                     onClick={triggerFileInput}
-                    className="flex flex-col items-center cursor-pointer"
+                    className="flex flex-col items-center cursor-pointer py-4 sm:py-6"
                   >
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                      <Upload className="w-6 h-6 text-gray-400" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                      <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
                     </div>
-                    <p className="text-gray-700 font-medium mb-1">
+                    <p className="text-gray-700 font-medium mb-1 text-sm sm:text-base text-center px-2">
                       {existingImage
                         ? "Replace product image"
                         : "Upload product image"}
                     </p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 text-center">
                       JPG, PNG up to 5MB
                     </p>
-                    <div className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                    <div className="px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors font-medium text-sm sm:text-base shadow-sm hover:shadow-md">
                       {existingImage ? "Replace File" : "Choose File"}
                     </div>
                   </div>
                 )}
               </div>
 
+              {/* File Selected Info */}
               {selectedFile && (
-                <p className="text-sm text-green-600 mt-3 font-medium">
-                  ✓ New image selected: {selectedFile.name}
-                </p>
+                <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 flex-shrink-0 text-green-600 mt-0.5 font-bold">
+                      ✓
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-green-700 font-medium">
+                        New image selected
+                      </p>
+                      <p className="text-xs sm:text-sm text-green-600 break-words mt-0.5">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-green-600 mt-0.5">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Sizes */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
-                  <Layers className="w-5 h-5 text-yellow-600" />
+           <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-yellow-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Available Sizes</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Available Sizes
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                     Update available sizes for this product
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Size Buttons */}
+              <div className="flex flex-wrap gap-2 sm:gap-2.5">
                 {availableSizes.map((size) => (
                   <button
                     key={size}
                     type="button"
                     onClick={() => toggleSize(size)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base min-w-[60px] sm:min-w-[70px] ${
                       formData.sizes.includes(size)
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 active:bg-indigo-800"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
                     }`}
                   >
                     {size}
@@ -722,26 +866,47 @@ const EditProducts = () => {
                 ))}
               </div>
 
-              <div className="mt-4 text-sm text-gray-600">
-                Selected:{" "}
-                {formData.sizes.length > 0 ? formData.sizes.join(", ") : "None"}
+              {/* Selected Sizes Info */}
+              <div className="mt-3 sm:mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2">
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Selected:
+                  </span>
+                  <span className="text-xs sm:text-sm text-gray-600 break-words">
+                    {formData.sizes.length > 0 ? (
+                      <span className="font-medium text-indigo-600">
+                        {formData.sizes.join(", ")}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 italic">None</span>
+                    )}
+                  </span>
+                  {formData.sizes.length > 0 && (
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                      ({formData.sizes.length} size{formData.sizes.length > 1 ? 's' : ''})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-
             {/* Text Field with React Quill Editor */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-teal-600" />
+           <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-teal-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Additional Text</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate">
+                    Additional Text
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                     Update additional text information
                   </p>
                 </div>
               </div>
 
+              {/* Editor Container */}
               <div className="rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
                 <ReactQuill
                   value={formData.text}
@@ -750,131 +915,22 @@ const EditProducts = () => {
                   formats={quillFormats}
                   theme="snow"
                   placeholder="Update additional text information about the product..."
-                  className="min-h-[200px] bg-white"
+                  className="min-h-[160px] sm:min-h-[200px] lg:min-h-[240px] bg-white"
                 />
               </div>
-              <div className="mt-3 text-xs text-gray-500">
-                <div className="flex justify-between">
-                  <span>Rich text editor with formatting options</span>
-                  <span>
+
+              {/* Footer Info */}
+              <div className="mt-2 sm:mt-3 text-xs text-gray-500">
+                <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-2">
+                  <span className="truncate">
+                    Rich text editor with formatting options
+                  </span>
+                  <span className="text-gray-600 font-medium whitespace-nowrap">
                     Characters: {formData.text.replace(/<[^>]*>/g, "").length}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Product Features */}
-            {/* <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                  <Layers className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Product Features</h3>
-                  <p className="text-sm text-gray-600">
-                    Update key features of your product
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={detailInput}
-                  onChange={(e) => setDetailInput(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), handleAddDetail())
-                  }
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="e.g., 100% Cotton, Machine Washable"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddDetail}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {formData.details.map((detail, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">{detail}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveDetail(index)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div> */}
-
-            {/* Guarantees */}
-            {/* <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Our Guarantees</h3>
-                  <p className="text-sm text-gray-600">
-                    Update product guarantees and commitments
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={commitmentInput}
-                  onChange={(e) => setCommitmentInput(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" &&
-                    (e.preventDefault(), handleAddCommitment())
-                  }
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="e.g., 30-day money back guarantee"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCommitment}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {formData.commitment.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">{item}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCommitment(index)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div> */}
           </div>
 
           {/* Sidebar */}
@@ -1022,9 +1078,11 @@ const EditProducts = () => {
                   <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Tag className="w-3 h-3 text-purple-600" />
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Accurate sizes reduce return rates
-                  </p>
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      Accurate sizes reduce return rates
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">

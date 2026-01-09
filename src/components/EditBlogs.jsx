@@ -561,65 +561,136 @@ export default function EditBlog() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={navigateToBlogs}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back to Blogs</span>
-              </button>
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Edit Blog Post
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Update your existing blog content
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  const hasRequiredFields =
-                    formData.title && formData.description;
-                  if (hasRequiredFields) {
-                    alert("Preview would show here");
-                  } else {
-                    setMessage({
-                      type: "error",
-                      text: "Complete required fields to preview",
-                    });
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-              >
-                <Eye className="w-4 h-4" />
-                Preview
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !formData.title || !formData.description}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Update Blog
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+  <div className="flex flex-col gap-4">
+    {/* Back Button - Mobile separate line */}
+    <div className="flex sm:hidden">
+      <button
+        onClick={navigateToBlogs}
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium text-sm">Back to Blogs</span>
+      </button>
+    </div>
+
+    {/* Header Section - Desktop layout */}
+    <div className="hidden sm:flex sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={navigateToBlogs}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors shrink-0"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Back to Blogs</span>
+        </button>
+        <div className="h-6 w-px bg-gray-300 shrink-0"></div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-bold text-gray-900 truncate">
+            Edit Blog Post
+          </h1>
+          <p className="text-sm text-gray-600">
+            Update your existing blog content
+          </p>
         </div>
+      </div>
+
+      {/* Actions Section - Desktop (right side) */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => {
+            const hasRequiredFields =
+              formData.title && formData.description;
+            if (hasRequiredFields) {
+              alert("Preview would show here");
+            } else {
+              setMessage({
+                type: "error",
+                text: "Complete required fields to preview",
+              });
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+        >
+          <Eye className="w-4 h-4" />
+          Preview
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !formData.title || !formData.description}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Updating...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Update Blog
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+
+    {/* Title Section - Mobile separate line */}
+    <div className="flex sm:hidden">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-lg font-bold text-gray-900 truncate">
+          Edit Blog Post
+        </h1>
+        <p className="text-xs text-gray-600">
+          Update your existing blog content
+        </p>
+      </div>
+    </div>
+
+    {/* Preview Button - Mobile separate line */}
+    <div className="flex sm:hidden">
+      <button
+        onClick={() => {
+          const hasRequiredFields =
+            formData.title && formData.description;
+          if (hasRequiredFields) {
+            alert("Preview would show here");
+          } else {
+            setMessage({
+              type: "error",
+              text: "Complete required fields to preview",
+            });
+          }
+        }}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-gray-600 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      >
+        <Eye className="w-4 h-4" />
+        Preview
+      </button>
+    </div>
+
+    {/* Update Button - Mobile separate line */}
+    <div className="flex sm:hidden">
+      <button
+        onClick={handleSubmit}
+        disabled={loading || !formData.title || !formData.description}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+      >
+        {loading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Updating...
+          </>
+        ) : (
+          <>
+            <Send className="w-4 h-4" />
+            Update Blog
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+</div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -677,141 +748,137 @@ export default function EditBlog() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Title */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <Type className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Title</h3>
-                  <p className="text-sm text-gray-600">
-                    Update your blog title
-                  </p>
-                </div>
-              </div>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                placeholder="Enter blog title..."
-                maxLength={100}
-              />
-              <div className="flex justify-between mt-2">
-                <span className="text-xs text-gray-500">
-                  Max 100 characters
-                </span>
-                <span className="text-xs text-gray-500">
-                  {formData.title.length}/100
-                </span>
-              </div>
-            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+  <div className="flex items-start sm:items-center gap-3 mb-4">
+    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+      <Type className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+    </div>
+    <div className="min-w-0 flex-1">
+      <h3 className="font-bold text-gray-900 text-base sm:text-lg">Title</h3>
+      <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+        Update your blog title
+      </p>
+    </div>
+  </div>
+  <input
+    type="text"
+    value={formData.title}
+    onChange={(e) =>
+      setFormData((prev) => ({ ...prev, title: e.target.value }))
+    }
+    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm sm:text-base"
+    placeholder="Enter blog title..."
+    maxLength={100}
+  />
+  <div className="flex justify-between mt-2 gap-2">
+    <span className="text-xs text-gray-500">
+      Max 100 characters
+    </span>
+    <span className="text-xs text-gray-500 shrink-0">
+      {formData.title.length}/100
+    </span>
+  </div>
+</div>
 
             {/* Description */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Description</h3>
-                  <p className="text-sm text-gray-600">
-                    Update your blog description
-                  </p>
-                </div>
-              </div>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                placeholder="Write a compelling description..."
-                maxLength={200}
-              />
-              <div className="flex justify-between mt-2">
-                <span className="text-xs text-gray-500">
-                  Max 200 characters
-                </span>
-                <span className="text-xs text-gray-500">
-                  {formData.description.length}/200
-                </span>
-              </div>
-            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+  <div className="flex items-start sm:items-center gap-3 mb-4">
+    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
+      <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+    </div>
+    <div className="min-w-0 flex-1">
+      <h3 className="font-bold text-gray-900 text-base sm:text-lg">Description</h3>
+      <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+        Update your blog description
+      </p>
+    </div>
+  </div>
+  <textarea
+    value={formData.description}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        description: e.target.value,
+      }))
+    }
+    rows={3}
+    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none text-sm sm:text-base"
+    placeholder="Write a compelling description..."
+    maxLength={200}
+  />
+  <div className="flex justify-between mt-2 gap-2">
+    <span className="text-xs text-gray-500">
+      Max 200 characters
+    </span>
+    <span className="text-xs text-gray-500 shrink-0">
+      {formData.description.length}/200
+    </span>
+  </div>
+</div>
 
             {/* Cover Image */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8">
-              <div className="flex items-start sm:items-center gap-3 mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <ImageLucide className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-base sm:text-lg">
-                    Cover Image
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                    Update cover image (Optional)
-                  </p>
-                  {existingImages.cover &&
-                    !coverPreview?.startsWith("blob:") && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Current image will be kept if not replaced
-                      </p>
-                    )}
-                </div>
-              </div>
+           <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+  <div className="flex items-start sm:items-center gap-3 mb-4">
+    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-purple-50 rounded-lg flex items-center justify-center shrink-0">
+      <ImageLucide className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+    </div>
+    <div className="min-w-0 flex-1">
+      <h3 className="font-bold text-gray-900 text-base sm:text-lg">
+        Cover Image
+      </h3>
+      <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+        Update cover image (Optional)
+      </p>
+      {existingImages.cover && !coverPreview?.startsWith("blob:") && (
+        <p className="text-xs text-gray-500 mt-1">
+          Current image will be kept if not replaced
+        </p>
+      )}
+    </div>
+  </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 md:p-8 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200">
-                {coverPreview ? (
-                  <div className="relative group">
-                    <div className="relative w-full overflow-hidden rounded-xl bg-gray-100 shadow-lg">
-                      <img
-                        src={coverPreview}
-                        alt="Cover preview"
-                        className="w-full h-48 sm:h-56 md:h-64 object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
-                    </div>
-                    <button
-                      onClick={() => setShowCoverDeleteConfirm(true)}
-                      className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-red-500 text-white p-2 sm:p-2.5 rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg hover:shadow-xl z-10"
-                      aria-label="Remove image"
-                    >
-                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center cursor-pointer group">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:from-indigo-50 group-hover:to-indigo-100 transition-all duration-200 shadow-md">
-                      <Upload className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-500 group-hover:text-indigo-600 transition-colors" />
-                    </div>
-                    <p className="text-gray-800 font-semibold text-sm sm:text-base md:text-lg mb-1 text-center">
-                      {existingImages.cover
-                        ? "Replace cover image"
-                        : "Upload cover image"}
-                    </p>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-5 text-center">
-                      JPG, PNG or WebP • Max 10MB
-                    </p>
-                    <div className="px-5 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 active:scale-95 transition-all duration-200 font-medium text-sm sm:text-base shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300">
-                      {existingImages.cover ? "Replace File" : "Choose File"}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 hover:border-indigo-400 transition-colors">
+    {coverPreview ? (
+      <div className="relative">
+        <img
+          src={coverPreview}
+          alt="Cover preview"
+          className="w-full h-48 sm:h-56 md:h-64 object-cover rounded-lg"
+        />
+        <button
+          onClick={() => setShowCoverDeleteConfirm(true)}
+          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
+          aria-label="Remove image"
+        >
+          <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        </button>
+      </div>
+    ) : (
+      <label className="flex flex-col items-center cursor-pointer">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+          <Upload className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-gray-400" />
+        </div>
+        <p className="text-gray-800 font-semibold text-sm sm:text-base mb-1 text-center">
+          {existingImages.cover
+            ? "Replace cover image"
+            : "Upload cover image"}
+        </p>
+        <p className="text-xs sm:text-sm text-gray-500 mb-4 text-center">
+          JPG, PNG or WebP • Max 10MB
+        </p>
+        <div className="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm sm:text-base">
+          {existingImages.cover ? "Replace File" : "Choose File"}
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleCoverImageChange}
+          className="hidden"
+        />
+      </label>
+    )}
+  </div>
+</div>
 
             {/* Content Sections */}
             <div className="space-y-4 sm:space-y-6">

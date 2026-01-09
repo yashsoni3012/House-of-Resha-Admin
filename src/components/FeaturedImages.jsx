@@ -656,7 +656,20 @@
 // export default FeaturedImages;
 
 import React, { useState, useEffect } from "react";
-import { Image, Edit2, Trash2, Loader, Search, X, BarChart3, Tag, Package, Plus, RefreshCw, AlertCircle } from "lucide-react";
+import {
+  Image,
+  Edit2,
+  Trash2,
+  Loader,
+  Search,
+  X,
+  BarChart3,
+  Tag,
+  Package,
+  Plus,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 import {
   showConfirm,
   showProductUpdated,
@@ -736,10 +749,33 @@ const FeaturedImages = () => {
       setError("Failed to load categories. Showing demo data.");
       // Demo data
       const demoData = [
-        { _id: "1", name: "Women", description: "Women's fashion category", imageUrl: "/images/women.jpg", type: "fashion" },
-        { _id: "2", name: "Men", description: "Men's fashion category", imageUrl: "/images/men.jpg", type: "fashion" },
-        { _id: "3", name: "Unisex", description: "Unisex fashion items", type: "fashion" },
-        { _id: "4", name: "Accessories", description: "Fashion accessories", imageUrl: "/images/accessories.jpg", type: "accessories" },
+        {
+          _id: "1",
+          name: "Women",
+          description: "Women's fashion category",
+          imageUrl: "/images/women.jpg",
+          type: "fashion",
+        },
+        {
+          _id: "2",
+          name: "Men",
+          description: "Men's fashion category",
+          imageUrl: "/images/men.jpg",
+          type: "fashion",
+        },
+        {
+          _id: "3",
+          name: "Unisex",
+          description: "Unisex fashion items",
+          type: "fashion",
+        },
+        {
+          _id: "4",
+          name: "Accessories",
+          description: "Fashion accessories",
+          imageUrl: "/images/accessories.jpg",
+          type: "accessories",
+        },
       ];
       setCategories(demoData);
       setFilteredCategories(demoData);
@@ -882,34 +918,27 @@ const FeaturedImages = () => {
   // Calculate stats
   const totalCategories = categories.length;
   const withImages = categories.filter((cat) => cat.imageUrl).length;
-  const fashionCategories = categories.filter(cat => cat.type === "fashion" || !cat.type).length;
+  const fashionCategories = categories.filter(
+    (cat) => cat.type === "fashion" || !cat.type
+  ).length;
   const otherCategories = totalCategories - fashionCategories;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            {/* Left Section: Title and Description */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Featured Images
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 truncate">
                   Manage category images and details
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                Refresh
-              </button>
             </div>
           </div>
         </div>
@@ -968,7 +997,7 @@ const FeaturedImages = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="mt-4 text-sm text-gray-600">
             Showing{" "}
             <span className="font-semibold text-indigo-600">
@@ -1022,7 +1051,8 @@ const FeaturedImages = () => {
                       alt={category.name || "Category"}
                       className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=300&fit=crop";
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=300&fit=crop";
                       }}
                     />
                   ) : (
@@ -1055,7 +1085,10 @@ const FeaturedImages = () => {
                         );
 
                         const json = await res.json();
-                        if (!res.ok) throw new Error(json.message || "Failed to update image");
+                        if (!res.ok)
+                          throw new Error(
+                            json.message || "Failed to update image"
+                          );
 
                         await fetchCategories();
                       } catch (err) {
@@ -1111,10 +1144,13 @@ const FeaturedImages = () => {
                     </button>
                     <button
                       onClick={() => openDeleteModal(category)}
-                      disabled={deleteLoading && categoryToDelete?._id === category._id}
+                      disabled={
+                        deleteLoading && categoryToDelete?._id === category._id
+                      }
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm disabled:opacity-50"
                     >
-                      {deleteLoading && categoryToDelete?._id === category._id ? (
+                      {deleteLoading &&
+                      categoryToDelete?._id === category._id ? (
                         <>
                           <Loader className="w-4 h-4 animate-spin" />
                           Deleting...
@@ -1190,7 +1226,9 @@ const FeaturedImages = () => {
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Edit Category</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Edit Category
+                </h2>
                 <button
                   onClick={() => setShowEditModal(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1248,7 +1286,9 @@ const FeaturedImages = () => {
                 {/* Right Column - Image Upload */}
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Category Image</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                      Category Image
+                    </h3>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
                       {editImagePreview ? (
                         <div className="relative">

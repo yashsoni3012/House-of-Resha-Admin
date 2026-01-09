@@ -511,7 +511,9 @@ const UserManagement = () => {
                               "first_name",
                               "fname",
                               "name",
-                            ]).charAt(0).toUpperCase()}
+                            ])
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">
