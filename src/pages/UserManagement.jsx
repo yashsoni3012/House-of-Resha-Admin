@@ -334,93 +334,109 @@ const UserManagement = () => {
         </div>
 
         {/* Search & Tabs Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveTab("active")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
-                  activeTab === "active"
-                    ? "bg-green-50 text-green-600 border border-green-200"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                <UserCheck className="w-4 h-4" />
-                Active ({totalActiveUsers})
-              </button>
-              <button
-                onClick={() => setActiveTab("inactive")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
-                  activeTab === "inactive"
-                    ? "bg-red-50 text-red-600 border border-red-200"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                <UserX className="w-4 h-4" />
-                Inactive ({totalInactiveUsers})
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search users by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Main Controls Row - Desktop: all in one line, Mobile: stacked */}
+            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-center">
+              {/* Tabs */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab("active")}
+                  className={`flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 rounded-lg font-medium transition-colors text-sm ${
+                    activeTab === "active"
+                      ? "bg-green-50 text-green-600 border border-green-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    Active ({totalActiveUsers})
+                  </span>
+                  <span className="sm:hidden">Active</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("inactive")}
+                  className={`flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 rounded-lg font-medium transition-colors text-sm ${
+                    activeTab === "inactive"
+                      ? "bg-red-50 text-red-600 border border-red-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <UserX className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    Inactive ({totalInactiveUsers})
+                  </span>
+                  <span className="sm:hidden">Inactive</span>
+                </button>
               </div>
+
+              {/* Search - Flexible width */}
+              <div className="flex-1 lg:min-w-[300px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search users by name, email, or phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Export Button */}
+              <button
+                onClick={handleExportCSV}
+                disabled={isLoading || exporting || filteredUsers.length === 0}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
+              >
+                {exporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="hidden sm:inline">Exporting...</span>
+                    <span className="sm:hidden">Export...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span className="hidden md:inline">
+                      Export CSV ({filteredUsers.length})
+                    </span>
+                    <span className="md:hidden">
+                      Export ({filteredUsers.length})
+                    </span>
+                  </>
+                )}
+              </button>
             </div>
 
-            {/* Export Button */}
-            <button
-              onClick={handleExportCSV}
-              disabled={isLoading || exporting || filteredUsers.length === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 whitespace-nowrap"
-            >
-              {exporting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Export CSV ({filteredUsers.length})
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="mt-4 text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold text-indigo-600">
-              {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)}
-            </span>{" "}
-            of <span className="font-semibold">{filteredUsers.length}</span>{" "}
-            users
-            {searchTerm && (
-              <span>
-                {" "}
-                matching "
-                <span className="font-semibold text-gray-900">
-                  {searchTerm}
+            {/* Results Info */}
+            <div className="text-xs sm:text-sm text-gray-600">
+              Showing{" "}
+              <span className="font-semibold text-indigo-600">
+                {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)}
+              </span>{" "}
+              of <span className="font-semibold">{filteredUsers.length}</span>{" "}
+              users
+              {searchTerm && (
+                <span className="block sm:inline mt-1 sm:mt-0">
+                  {" "}
+                  matching "
+                  <span className="font-semibold text-gray-900 break-words">
+                    {searchTerm}
+                  </span>
+                  "
                 </span>
-                "
-              </span>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -626,36 +642,49 @@ const UserManagement = () => {
 
             {/* Pagination */}
             {filteredUsers.length > 0 && (
-              <div className="border-t border-gray-200 px-6 py-4">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-sm text-gray-600">
-                    Page <span className="font-semibold">{currentPage}</span> of{" "}
-                    <span className="font-semibold">{totalPages}</span>
+              <div className="border-t border-gray-200 px-4 sm:px-6 py-4">
+                <div className="flex flex-col gap-4">
+                  {/* Page Info - Mobile Top */}
+                  <div className="flex sm:hidden justify-between items-center text-xs text-gray-600">
+                    <div>
+                      Page <span className="font-semibold">{currentPage}</span>{" "}
+                      of <span className="font-semibold">{totalPages}</span>
+                    </div>
+                    <div>{usersPerPage} users per page</div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* First Page */}
-                    <button
-                      onClick={goToFirstPage}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <ChevronsLeft className="w-4 h-4" />
-                    </button>
+                  {/* Desktop Layout */}
+                  <div className="hidden sm:flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Page <span className="font-semibold">{currentPage}</span>{" "}
+                      of <span className="font-semibold">{totalPages}</span>
+                    </div>
 
-                    {/* Previous Page */}
-                    <button
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* First Page */}
+                      <button
+                        onClick={goToFirstPage}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronsLeft className="w-4 h-4" />
+                      </button>
 
-                    {/* Page Numbers */}
-                    <div className="flex gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
+                      {/* Previous Page */}
+                      <button
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      {/* Page Numbers */}
+                      <div className="flex gap-1">
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((page) => (
                           <button
                             key={page}
                             onClick={() => handlePageChange(page)}
@@ -667,31 +696,94 @@ const UserManagement = () => {
                           >
                             {page}
                           </button>
-                        )
-                      )}
+                        ))}
+                      </div>
+
+                      {/* Next Page */}
+                      <button
+                        onClick={goToNextPage}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      {/* Last Page */}
+                      <button
+                        onClick={goToLastPage}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronsRight className="w-4 h-4" />
+                      </button>
                     </div>
 
-                    {/* Next Page */}
-                    <button
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-
-                    {/* Last Page */}
-                    <button
-                      onClick={goToLastPage}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <ChevronsRight className="w-4 h-4" />
-                    </button>
+                    <div className="text-sm text-gray-600">
+                      {usersPerPage} users per page
+                    </div>
                   </div>
 
-                  <div className="text-sm text-gray-600">
-                    {usersPerPage} users per page
+                  {/* Mobile Pagination Controls - Centered */}
+                  <div className="flex sm:hidden justify-center">
+                    <div className="flex items-center gap-2">
+                      {/* First Page */}
+                      <button
+                        onClick={goToFirstPage}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronsLeft className="w-4 h-4" />
+                      </button>
+
+                      {/* Previous Page */}
+                      <button
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      {/* Page Numbers - Limited on Mobile */}
+                      <div className="flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((page) => {
+                            // Show current page and 1 page on each side on mobile
+                            return Math.abs(page - currentPage) <= 1;
+                          })
+                          .map((page) => (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+                                currentPage === page
+                                  ? "bg-indigo-600 text-white"
+                                  : "border border-gray-300 hover:bg-gray-50 text-gray-700"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                      </div>
+
+                      {/* Next Page */}
+                      <button
+                        onClick={goToNextPage}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      {/* Last Page */}
+                      <button
+                        onClick={goToLastPage}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronsRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

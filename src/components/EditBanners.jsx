@@ -1,335 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { useNavigate, useParams } from "react-router-dom";
-// import axios from "axios";
-// import {
-//   Video,
-//   Upload,
-//   X,
-//   AlertCircle,
-//   ArrowLeft,
-//   Loader2,
-//   Save,
-//   ExternalLink,
-//   MousePointerClick,
-//   Tag,
-// } from "lucide-react";
-
-// const EditBanner = () => {
-//   const navigate = useNavigate();
-//   const { id } = useParams();
-//   const [formData, setFormData] = useState({
-//     title: "",
-//     buttonText: "",
-//     buttonLink: "",
-//     category: "",
-//     videoFile: null,
-//   });
-//   const [existingVideoUrl, setExistingVideoUrl] = useState("");
-//   const [videoPreview, setVideoPreview] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [updateLoading, setUpdateLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [categories, setCategories] = useState([]);
-//   const [loadingCategories, setLoadingCategories] = useState(false);
-
-//   const API_URL = "https://api.houseofresha.com/banner/";
-
-//   // Fetch banner details and categories on component mount
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         setLoading(true);
-//         setError(null);
-
-//         // Fetch banner details
-//         console.log("Fetching banner with ID:", id);
-
-//         // Try to get the specific banner
-//         let bannerData = null;
-
-//         // First, try to get all banners and find the one with matching ID
-//         try {
-//           const allBannersResponse = await axios.get(API_URL);
-//           console.log("All banners response:", allBannersResponse.data);
-
-//           if (allBannersResponse.data.success && allBannersResponse.data.data) {
-//             const allBanners = allBannersResponse.data.data;
-//             const banner = allBanners.find((b) => b._id === id);
-
-//             if (banner) {
-//               bannerData = banner;
-//             } else {
-//               // Try direct endpoint if not found in all banners
-//               try {
-//                 const directResponse = await axios.get(`${API_URL}${id}`);
-//                 console.log("Direct endpoint response:", directResponse.data);
-
-//                 if (directResponse.data.success && directResponse.data.data) {
-//                   bannerData = directResponse.data.data;
-//                 }
-//               } catch (directError) {
-//                 console.log("Direct endpoint failed");
-//               }
-//             }
-//           }
-//         } catch (fetchError) {
-//           console.error("Error fetching banners:", fetchError);
-//         }
-
-//         if (!bannerData) {
-//           throw new Error("Banner not found. It may have been deleted.");
-//         }
-
-//         // Set form data from banner
-//         setFormData({
-//           title: bannerData.title || "",
-//           buttonText: bannerData.buttonText || "",
-//           buttonLink: bannerData.buttonLink || "",
-//           category: bannerData.category || "",
-//           videoFile: null,
-//         });
-
-//         // Set video preview if exists
-//         if (bannerData.videoUrl) {
-//           const videoUrl = bannerData.videoUrl.startsWith('http')
-//             ? bannerData.videoUrl
-//             : `https://api.houseofresha.com${bannerData.videoUrl}`;
-
-//           setExistingVideoUrl(videoUrl);
-//           setVideoPreview(videoUrl);
-//         }
-
-//         // Fetch categories from API
-//         await fetchCategories();
-
-//       } catch (error) {
-//         console.error("Error fetching banner details:", error);
-//         console.error("Error details:", error.response?.data || error.message);
-//         setError(
-//           error.response?.data?.message ||
-//           error.message ||
-//           "Failed to load banner details. Please try again."
-//         );
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, [id]);
-
-//   // Function to fetch categories
-//   const fetchCategories = async () => {
-//     try {
-//       setLoadingCategories(true);
-//       const response = await axios.get(API_URL);
-
-//       if (response.data.success && response.data.data) {
-//         // Extract unique categories from banner data
-//         const allCategories = response.data.data
-//           .map((item) => item.category)
-//           .filter(category => category && category.trim() !== ""); // Filter out empty/null categories
-
-//         const uniqueCategories = [...new Set(allCategories)];
-//         setCategories(uniqueCategories);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching categories:", error);
-//       // Don't set error for categories fetch as it's not critical
-//     } finally {
-//       setLoadingCategories(false);
-//     }
-//   };
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({
-//       ...prev,
-//       [name]: value,
-//     }));
-//   };
-
-//   const handleVideoChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       if (!file.type.startsWith("video/")) {
-//         setError("Please select a valid video file");
-//         return;
-//       }
-
-//       if (file.size > 50 * 1024 * 1024) {
-//         setError("Video file size should be less than 50MB");
-//         return;
-//       }
-
-//       setFormData((prev) => ({
-//         ...prev,
-//         videoFile: file,
-//       }));
-
-//       // Create preview URL for new video
-//       const previewUrl = URL.createObjectURL(file);
-
-//       // Clean up previous preview if it was a blob URL
-//       if (videoPreview && videoPreview !== existingVideoUrl && videoPreview.startsWith('blob:')) {
-//         URL.revokeObjectURL(videoPreview);
-//       }
-
-//       setVideoPreview(previewUrl);
-//       setError(null);
-//     }
-//   };
-
-//   const handleRemoveVideo = () => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       videoFile: null,
-//     }));
-
-//     // Clean up blob URL if it exists
-//     if (videoPreview && videoPreview !== existingVideoUrl && videoPreview.startsWith('blob:')) {
-//       URL.revokeObjectURL(videoPreview);
-//     }
-
-//     // Reset to existing video if available
-//     setVideoPreview(existingVideoUrl);
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setError(null);
-
-//     // Validation
-//     if (!formData.title.trim()) {
-//       setError("Please enter a banner title");
-//       return;
-//     }
-
-//     if (!formData.category.trim()) {
-//       setError("Please select a category");
-//       return;
-//     }
-
-//     try {
-//       setUpdateLoading(true);
-
-//       // Create FormData for PATCH request
-//       const submitData = new FormData();
-//       submitData.append("title", formData.title);
-//       submitData.append("buttonText", formData.buttonText);
-//       submitData.append("buttonLink", formData.buttonLink);
-//       submitData.append("category", formData.category);
-
-//       // Only append video if a new one was selected
-//       if (formData.videoFile) {
-//         submitData.append("video", formData.videoFile);
-//       }
-
-//       console.log("Updating banner with ID:", id);
-//       console.log("Form data:", {
-//         title: formData.title,
-//         buttonText: formData.buttonText,
-//         buttonLink: formData.buttonLink,
-//         category: formData.category,
-//         hasNewVideo: !!formData.videoFile,
-//       });
-
-//       // Use PATCH method for updating
-//       const response = await axios.patch(`${API_URL}${id}`, submitData, {
-//         headers: {
-//           "Content-Type": "multipart/form-data",
-//         },
-//       });
-
-//       console.log("Update response:", response.data);
-
-//       if (response.data.success) {
-//         navigate("/banners");
-//       } else {
-//         throw new Error("Failed to update banner");
-//       }
-//     } catch (error) {
-//       console.error("Error updating banner:", error);
-//       console.error("Error details:", error.response?.data || error.message);
-
-//       let errorMessage = "Failed to update banner. Please try again.";
-
-//       if (error.response?.data?.message) {
-//         errorMessage = error.response.data.message;
-//       } else if (error.response?.data?.error) {
-//         errorMessage = error.response.data.error;
-//       } else if (error.message) {
-//         errorMessage = error.message;
-//       }
-
-//       setError(errorMessage);
-//     } finally {
-//       setUpdateLoading(false);
-//     }
-//   };
-
-//   // Loading state
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
-//         <div className="flex flex-col items-center">
-//           <div className="relative">
-//             <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200"></div>
-//             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600 absolute top-0"></div>
-//           </div>
-//           <p className="text-gray-600 mt-4">Loading banner details...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-//       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-//         {/* Header */}
-//         <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
-//           <div className="flex items-center gap-4">
-//             <button
-//               onClick={() => navigate("/banners")}
-//               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-//               disabled={updateLoading}
-//             >
-//               <ArrowLeft className="w-5 h-5 text-gray-600" />
-//             </button>
-//             <div className="flex-1">
-//               <div className="flex items-center gap-3 mb-2">
-//                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-//                   <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-//                 </div>
-//                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-//                   Edit Banner
-//                 </h1>
-//               </div>
-//               <p className="text-sm sm:text-base text-gray-600">
-//                 Update your video banner details
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Form */}
-//         <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 border border-white/20">
-//           {error && (
-//             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-start gap-2">
-//               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-//               <div className="flex-1">
-//                 <p className="text-sm">{error}</p>
-//               </div>
-//               <button
-//                 onClick={() => setError(null)}
-//                 className="text-red-500 hover:text-red-700"
-//                 disabled={updateLoading}
-//               >
-//                 <X className="w-4 h-4" />
-//               </button>
-//             </div>
-//
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
@@ -392,6 +60,7 @@ const EditBanner = () => {
   const [previewVideo, setPreviewVideo] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [existingVideoUrl, setExistingVideoUrl] = useState("");
+  const [isVideoRemoved, setIsVideoRemoved] = useState(false); // New state to track if video is removed
 
   // Track original values to determine whether any changes have been made
   const initialDataRef = useRef(null);
@@ -420,9 +89,9 @@ const EditBanner = () => {
       formData.buttonText !== init.buttonText ||
       formData.buttonLink !== init.buttonLink ||
       formData.category !== init.category;
-    const videoChanged = Boolean(selectedFile);
+    const videoChanged = Boolean(selectedFile) || isVideoRemoved;
     setIsDirty(fieldsChanged || videoChanged);
-  }, [formData, selectedFile]);
+  }, [formData, selectedFile, isVideoRemoved]);
 
   const fetchCategories = async () => {
     try {
@@ -447,6 +116,7 @@ const EditBanner = () => {
     try {
       setLoading(true);
       setError(null);
+      setIsVideoRemoved(false); // Reset video removal state
 
       let bannerData = null;
 
@@ -495,6 +165,9 @@ const EditBanner = () => {
 
         setExistingVideoUrl(videoUrl);
         setPreviewVideo(videoUrl);
+      } else {
+        setExistingVideoUrl("");
+        setPreviewVideo(null);
       }
 
       // Snapshot initial data so we can detect changes (dirty state)
@@ -532,8 +205,9 @@ const EditBanner = () => {
       return;
     }
 
-    // New video file selected - mark as dirty
+    // New video file selected - mark as dirty and reset removal state
     setSelectedFile(file);
+    setIsVideoRemoved(false); // Reset removal if new file is selected
 
     // Create preview URL for new video
     const previewUrl = URL.createObjectURL(file);
@@ -549,40 +223,45 @@ const EditBanner = () => {
 
     setPreviewVideo(previewUrl);
     setError(null);
-
-    // Mark the form as changed
-    setIsDirty(true);
   };
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
 
-  const clearVideo = () => {
-    setSelectedFile(null);
+  const handleRemoveVideo = async () => {
+    try {
+      const res = await showConfirm(
+        "Remove Video",
+        "Are you sure you want to remove this video? This will delete the video from the server.",
+        "Yes, remove"
+      );
 
-    if (
-      previewVideo &&
-      previewVideo !== existingVideoUrl &&
-      previewVideo.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(previewVideo);
-    }
+      if (!res || !res.isConfirmed) return;
 
-    setPreviewVideo(existingVideoUrl);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+      // Mark video as removed
+      setIsVideoRemoved(true);
+      setSelectedFile(null);
 
-    // Recompute dirty state now that selected file was cleared
-    const init = initialDataRef.current;
-    if (init) {
-      const fieldsChanged =
-        formData.title !== init.title ||
-        formData.buttonText !== init.buttonText ||
-        formData.buttonLink !== init.buttonLink ||
-        formData.category !== init.category;
-      setIsDirty(fieldsChanged || false);
+      // Clear preview
+      if (
+        previewVideo &&
+        previewVideo !== existingVideoUrl &&
+        previewVideo.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(previewVideo);
+      }
+
+      setPreviewVideo(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Show success message
+      await showSuccess("Video Removed", "Video has been marked for removal. Click Update Banner to save changes.");
+    } catch (error) {
+      console.error("Error removing video:", error);
+      await showError("Error", "Failed to remove video");
     }
   };
 
@@ -615,7 +294,11 @@ const EditBanner = () => {
       submitData.append("category", formData.category);
 
       if (selectedFile) {
+        // If new video is selected
         submitData.append("video", selectedFile);
+      } else if (isVideoRemoved) {
+        // If video was removed
+        submitData.append("removeVideo", "true");
       }
 
       console.log("Updating banner with ID:", id);
@@ -625,6 +308,7 @@ const EditBanner = () => {
         buttonLink: formData.buttonLink,
         category: formData.category,
         hasNewVideo: !!selectedFile,
+        isVideoRemoved: isVideoRemoved,
       });
 
       const response = await axios.patch(`${API_URL}${id}`, submitData, {
@@ -722,7 +406,7 @@ const EditBanner = () => {
   const completionCount = [
     formData.title,
     formData.category,
-    previewVideo,
+    previewVideo || isVideoRemoved, // Count as complete if video is removed (intentional)
   ].filter(Boolean).length;
 
   return (
@@ -883,8 +567,8 @@ const EditBanner = () => {
           <StatsCard
             icon={Video}
             label="Video Status"
-            value={previewVideo ? "Available" : "Missing"}
-            color={previewVideo ? "bg-green-500" : "bg-red-500"}
+            value={previewVideo ? "Available" : isVideoRemoved ? "Removed" : "Missing"}
+            color={previewVideo ? "bg-green-500" : isVideoRemoved ? "bg-yellow-500" : "bg-red-500"}
           />
           <StatsCard
             icon={Tag}
@@ -901,8 +585,8 @@ const EditBanner = () => {
           <StatsCard
             icon={BarChart3}
             label="Status"
-            value="Editing"
-            color="bg-yellow-500"
+            value={isDirty ? "Modified" : "Editing"}
+            color={isDirty ? "bg-orange-500" : "bg-yellow-500"}
           />
         </div>
 
@@ -1053,7 +737,7 @@ const EditBanner = () => {
         />
         <button
           type="button"
-          onClick={clearVideo}
+          onClick={handleRemoveVideo}
           disabled={saveLoading}
           className="absolute top-2 right-2 bg-red-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 shadow-lg"
         >
@@ -1076,13 +760,13 @@ const EditBanner = () => {
           <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
         </div>
         <p className="text-gray-700 font-medium mb-1 text-sm sm:text-base text-center">
-          Click to upload banner video
+          {isVideoRemoved ? "Video marked for removal" : "Click to upload banner video"}
         </p>
         <p className="text-xs sm:text-sm text-gray-500 mb-4 text-center px-2">
-          MP4, WebM, OGG up to 50MB
+          {isVideoRemoved ? "Click to upload new video" : "MP4, WebM, OGG up to 50MB"}
         </p>
         <div className="px-4 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 text-sm sm:text-base">
-          Choose File
+          {isVideoRemoved ? "Upload New Video" : "Choose File"}
         </div>
       </div>
     )}
@@ -1094,11 +778,15 @@ const EditBanner = () => {
       {Math.round((selectedFile.size / 1024 / 1024) * 100) / 100}MB)
     </p>
   ) : (
-    previewVideo && (
+    isVideoRemoved ? (
+      <p className="text-xs sm:text-sm text-red-600 mt-3 font-medium">
+        ⚠ Video will be removed when you click "Update Banner"
+      </p>
+    ) : previewVideo ? (
       <p className="text-xs sm:text-sm text-blue-600 mt-3 font-medium">
         ⓘ Using existing video file
       </p>
-    )
+    ) : null
   )}
 </div>
 
@@ -1196,21 +884,23 @@ const EditBanner = () => {
                   </div>
                   <div
                     className={`flex items-center gap-3 p-3 rounded-lg ${
-                      previewVideo
+                      previewVideo || isVideoRemoved
                         ? "bg-green-50 text-green-700"
                         : "bg-gray-50 text-gray-600"
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                        previewVideo ? "bg-green-500" : "bg-gray-300"
+                        previewVideo || isVideoRemoved ? "bg-green-500" : "bg-gray-300"
                       }`}
                     >
-                      {previewVideo ? (
+                      {previewVideo || isVideoRemoved ? (
                         <CheckCircle className="w-3 h-3 text-white" />
                       ) : null}
                     </div>
-                    <span className="text-sm">Video available</span>
+                    <span className="text-sm">
+                      {isVideoRemoved ? "Video removed" : "Video available"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1225,7 +915,9 @@ const EditBanner = () => {
                     <Video className="w-3 h-3 text-blue-600" />
                   </div>
                   <p className="text-sm text-gray-600">
-                    Replacing video will update it on all pages
+                    {isVideoRemoved 
+                      ? "Video removal will take effect after update" 
+                      : "Replacing video will update it on all pages"}
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1259,8 +951,9 @@ const EditBanner = () => {
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100 p-6">
               <h3 className="font-bold text-gray-900 mb-4">Ready to update?</h3>
               <p className="text-sm text-gray-600 mb-6">
-                All required fields must be filled. Your banner will be updated
-                across your site immediately.
+                {isVideoRemoved 
+                  ? "Video will be removed and other changes will be applied." 
+                  : "All changes will be updated across your site immediately."}
               </p>
               <button
                 onClick={handleSubmit}
@@ -1280,7 +973,7 @@ const EditBanner = () => {
                 )}
               </button>
               <p className="text-xs text-gray-500 text-center mt-3">
-                Changes will be reflected immediately
+                {isDirty ? "Changes pending" : "No changes made"}
               </p>
             </div>
           </div>
