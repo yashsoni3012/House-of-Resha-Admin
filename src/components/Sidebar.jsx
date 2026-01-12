@@ -13,6 +13,7 @@ import {
   Image,
   BookOpen,
   ChevronRight,
+  FileText 
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,6 +23,7 @@ const Sidebar = ({ isOpen, toggle }) => {
   const { logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  /* ================= MENU ITEMS ================= */
   const menuItems = [
     { path: "/dashboard", name: "Dashboard", icon: Home },
     { path: "/fashion", name: "Products", icon: Package },
@@ -30,6 +32,9 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/orders", name: "Orders", icon: ShoppingCart },
     { path: "/customers", name: "Customers", icon: Users },
     { path: "/users", name: "Users", icon: Users },
+
+    /* ✅ ONLY ONE CONTENT ENTRY */
+    { path: "/content", name: "Content Manager", icon: FileText  },
   ];
 
   const handleNavigation = (path) => {
@@ -47,7 +52,7 @@ const Sidebar = ({ isOpen, toggle }) => {
 
   const handleCancelLogout = () => setShowLogoutModal(false);
 
-  // Check if current route is either fashion or featured-images
+  /* Products active (existing logic) */
   const isProductsActive = () => {
     return (
       location.pathname === "/fashion" ||
@@ -56,12 +61,17 @@ const Sidebar = ({ isOpen, toggle }) => {
     );
   };
 
+  /* ✅ Content Manager active for ALL nested routes */
+  const isContentActive = () => {
+    return location.pathname.startsWith("/content");
+  };
+
   return (
     <>
       {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={toggle}
         />
       )}
@@ -75,33 +85,25 @@ const Sidebar = ({ isOpen, toggle }) => {
         <div className="flex flex-col h-full">
           {/* Logo Section */}
           <div className="relative p-6 border-b border-gray-100">
-            {/* Close button for mobile */}
             <button
               onClick={toggle}
-              className="absolute top-5 right-5 lg:hidden text-gray-600 hover:text-gray-700 transition-colors p-1 hover:bg-gray-100 rounded-lg"
+              className="absolute top-5 right-5 lg:hidden text-gray-600 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-lg"
             >
               <X size={20} />
             </button>
 
-            {/* Logo Container */}
-            <div className="flex flex-col items-center justify-center gap-0">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-0"></div>
-                <div className="relative w-40 h-20 bg-white rounded-xl p-2">
-                  <img
-                    src={logoImg}
-                    alt="House of Resha Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+            <div className="flex flex-col items-center">
+              <div className="relative w-40 h-20 bg-white rounded-xl p-2">
+                <img
+                  src={logoImg}
+                  alt="House of Resha Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
 
-              {/* Brand Name */}
-              <div className="text-center">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                  House of Resha
-                </h1>
-              </div>
+              <h1 className="mt-2 text-xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                House of Resha
+              </h1>
             </div>
           </div>
 
@@ -110,16 +112,22 @@ const Sidebar = ({ isOpen, toggle }) => {
             <div className="space-y-1.5">
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  item.path === "/fashion"
-                    ? isProductsActive()
-                    : location.pathname === item.path;
+
+                let isActive = false;
+
+                if (item.path === "/fashion") {
+                  isActive = isProductsActive();
+                } else if (item.path === "/content") {
+                  isActive = isContentActive(); // ✅ nested active
+                } else {
+                  isActive = location.pathname === item.path;
+                }
 
                 return (
                   <button
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-all duration-200 group relative ${
                       isActive
                         ? "bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 text-purple-700 shadow-sm"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -127,12 +135,12 @@ const Sidebar = ({ isOpen, toggle }) => {
                   >
                     {/* Active indicator */}
                     {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-r-full"></div>
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-r-full" />
                     )}
 
                     <div className="flex items-center gap-3 flex-1">
                       <div
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-2 rounded-lg ${
                           isActive
                             ? "bg-gradient-to-br from-purple-100 to-pink-100"
                             : "group-hover:bg-gray-200"
@@ -152,7 +160,7 @@ const Sidebar = ({ isOpen, toggle }) => {
                       size={16}
                       className={`transition-all duration-200 ${
                         isActive
-                          ? "text-purple-600 opacity-100 translate-x-0"
+                          ? "text-purple-600 opacity-100"
                           : "text-gray-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
                       }`}
                     />
@@ -162,15 +170,14 @@ const Sidebar = ({ isOpen, toggle }) => {
             </div>
           </nav>
 
-          {/* User Profile & Logout */}
+          {/* Logout */}
           <div className="p-4 border-t border-gray-100">
-            {/* Logout Button */}
             <button
               onClick={handleLogoutClick}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-md transition-all duration-200 text-white shadow-md hover:shadow-lg text-sm font-semibold group"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-md text-white shadow-md text-sm font-semibold"
             >
               <LogOut size={18} />
-              <span>Logout</span>
+              Logout
             </button>
           </div>
         </div>
@@ -178,36 +185,32 @@ const Sidebar = ({ isOpen, toggle }) => {
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto transform transition-all animate-in zoom-in duration-200 border border-gray-100">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-xl flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border">
+            <div className="p-6 border-b">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                   <AlertTriangle className="text-red-600" size={24} />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    Confirm Logout
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1.5">
-                    Are you sure you want to logout from your account?
+                <div>
+                  <h3 className="text-xl font-bold">Confirm Logout</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Are you sure you want to logout?
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 p-6">
               <button
                 onClick={handleCancelLogout}
-                className="flex-1 px-5 py-3 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                className="flex-1 px-5 py-3 border-2 border-gray-200 rounded-lg font-semibold text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmLogout}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all font-semibold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2"
               >
                 <LogOut size={16} />
                 Logout

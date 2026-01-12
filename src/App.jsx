@@ -30,12 +30,18 @@ import EditBlogs from "./components/EditBlogs";
 import AddPerfumes from "./components/AddPerfumes";
 import EditPerfumes from "./components/EditPerfumes";
 
-// ✅ Query Client
+/* ✅ CONTENT MANAGER (NESTED) */
+import ContentManager from "./pages/ContentManager";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import FAQ from "./components/FAQ";
+import OurStory from "./components/OurStory";
+
+/* ✅ React Query Client */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 min
-      gcTime: 10 * 60 * 1000, // 10 min
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -48,10 +54,10 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Public */}
+            {/* ================= PUBLIC ================= */}
             <Route path="/login" element={<Login />} />
 
-            {/* Protected */}
+            {/* ================= PROTECTED ================= */}
             <Route
               path="/"
               element={
@@ -60,7 +66,10 @@ const App = () => {
                 </ProtectedRoute>
               }
             >
+              {/* default */}
               <Route index element={<Navigate to="/dashboard" replace />} />
+
+              {/* dashboard */}
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="customers" element={<Customers />} />
@@ -72,8 +81,8 @@ const App = () => {
               <Route path="featured-images" element={<Products />} />
               <Route path="add-product" element={<AddProducts />} />
               <Route path="edit-product/:id" element={<EditProducts />} />
-              <Route path="/add-perfume" element={<AddPerfumes />} />
-              <Route path="/edit-perfume/:id" element={<EditPerfumes />} />
+              <Route path="add-perfume" element={<AddPerfumes />} />
+              <Route path="edit-perfume/:id" element={<EditPerfumes />} />
 
               {/* banners */}
               <Route path="banners" element={<Banners />} />
@@ -84,14 +93,26 @@ const App = () => {
               <Route path="blogs" element={<Blogs />} />
               <Route path="add-blog" element={<AddBlogs />} />
               <Route path="edit-blog/:id" element={<EditBlogs />} />
+
+              {/* ================= CONTENT MANAGER ================= */}
+              <Route path="content" element={<ContentManager />}>
+                {/* default tab */}
+                <Route index element={<PrivacyPolicy />} />
+
+                {/* tabs */}
+                <Route path="privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="faq" element={<FAQ />} />
+                <Route path="our-story" element={<OurStory />} />
+              </Route>
             </Route>
 
+            {/* fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
 
-      {/* ✅ REACT QUERY DEVTOOLS */}
+      {/* Devtools */}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

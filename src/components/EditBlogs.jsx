@@ -289,18 +289,18 @@ export default function EditBlog() {
   const confirmRemoveCoverImage = () => {
     // Mark cover image for deletion
     setDeletedCoverImage(true);
-    
+
     // Clear the form data and preview
     setFormData((prev) => ({ ...prev, coverImage: null }));
-    
+
     // Clean up blob URL if exists
     if (coverPreview && coverPreview.startsWith("blob:")) {
       URL.revokeObjectURL(coverPreview);
     }
-    
+
     setCoverPreview(null);
     setExistingImages((prev) => ({ ...prev, cover: null }));
-    
+
     setShowCoverDeleteConfirm(false);
   };
 
@@ -355,10 +355,7 @@ export default function EditBlog() {
   const addContentBlock = () => {
     setFormData((prev) => ({
       ...prev,
-      content: [
-        ...prev.content,
-        { text: "", img: null },
-      ],
+      content: [...prev.content, { text: "", img: null }],
     }));
     setContentPreviews((prev) => [...prev, null]);
     setExistingImages((prev) => ({
@@ -435,7 +432,10 @@ export default function EditBlog() {
           // New image uploaded for this section
           formDataToSend.append(`contentImages[${index}]`, block.img);
           payload.img = ""; // backend will assign new path
-        } else if (existingImages.content[index] && !deletedContentImages.includes(index)) {
+        } else if (
+          existingImages.content[index] &&
+          !deletedContentImages.includes(index)
+        ) {
           // Keep existing image path (if not marked for deletion)
           payload.img = existingImages.content[index];
         } else {
@@ -448,7 +448,10 @@ export default function EditBlog() {
 
       // Send deleted content indices to backend
       if (deletedContentImages.length > 0) {
-        formDataToSend.append("deletedContentImages", JSON.stringify(deletedContentImages));
+        formDataToSend.append(
+          "deletedContentImages",
+          JSON.stringify(deletedContentImages)
+        );
       }
 
       formDataToSend.append("content", JSON.stringify(contentPayload));
