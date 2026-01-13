@@ -803,192 +803,194 @@ const FashionManagement = () => {
 
       {/* View Product Modal */}
       {showViewModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Product Details
-                </h2>
-                <button
-                  onClick={() => setShowViewModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+    {/* Modal Header */}
+    <div className="sticky top-0 bg-white border-b border-gray-200 p-3 sm:p-4 md:p-6 z-10">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+          Product Details
+        </h2>
+        <button
+          onClick={() => setShowViewModal(false)}
+          className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
 
-            <div className="p-6 space-y-6">
-              {/* Product Image */}
-              <div className="relative rounded-lg overflow-hidden bg-gray-900">
-                <img
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  className="w-full h-64 sm:h-96 object-cover object-top"
-                />
-                <div className="absolute top-4 right-4">
-                  <span className="bg-indigo-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold capitalize">
-                    {selectedProduct.category}
-                  </span>
-                </div>
-              </div>
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+      {/* Product Image */}
+      <div className="relative rounded-lg overflow-hidden bg-gray-900">
+        <img
+          src={selectedProduct.image}
+          alt={selectedProduct.name}
+          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover object-top"
+        />
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+          <span className="bg-indigo-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold capitalize">
+            {selectedProduct.category}
+          </span>
+        </div>
+      </div>
 
-              {/* Product Info */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                    {selectedProduct.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {selectedProduct.description}
-                  </p>
+      {/* Product Info */}
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4">
+            {selectedProduct.name}
+          </h3>
+          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
+            {selectedProduct.description}
+          </p>
 
-                  {/* Additional Text with React Quill Viewer */}
-                  {selectedProduct.text &&
-                    selectedProduct.text.replace(/<[^>]*>/g, "").trim() && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                          <FileText className="w-4 h-4" />
-                          Additional Information
-                        </h4>
-                        <div className="bg-blue-50 rounded-lg p-4">
-                          {quillLoaded ? (
-                            <ReactQuill
-                              value={selectedProduct.text}
-                              readOnly={true}
-                              theme="bubble"
-                              modules={{ toolbar: false }}
-                              className="border-0 bg-transparent"
-                            />
-                          ) : (
-                            <div
-                              className="prose max-w-none text-gray-700"
-                              dangerouslySetInnerHTML={{
-                                __html: selectedProduct.text,
-                              }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                  <div className="flex items-center justify-between">
-                    <p className="text-3xl font-bold text-indigo-600">
-                      ₹{selectedProduct.price}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Sizes */}
-                  {selectedProduct.sizes.length > 0 && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        Available Sizes
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProduct.sizes.map((size, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-white px-3 py-1.5 rounded-lg text-sm font-medium"
-                          >
-                            {size}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Created Date */}
-                  {selectedProduct.createdAt && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Added On
-                      </h4>
-                      <p className="text-gray-600 text-sm">
-                        {new Date(selectedProduct.createdAt).toLocaleDateString(
-                          "en-IN",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Features */}
-                  {selectedProduct.details.length > 0 && (
-                    <div className="bg-green-50 rounded-lg p-4 md:col-span-2">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Check className="w-4 h-4" />
-                        Features
-                      </h4>
-                      <ul className="space-y-2">
-                        {selectedProduct.details.map((detail, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600">{detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Guarantee */}
-                  {selectedProduct.commitment.length > 0 && (
-                    <div className="bg-purple-50 rounded-lg p-4 md:col-span-2">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Shield className="w-4 h-4" />
-                        Guarantee
-                      </h4>
-                      <ul className="space-y-2">
-                        {selectedProduct.commitment.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Shield className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+          {/* Additional Text with React Quill Viewer */}
+          {selectedProduct.text &&
+            selectedProduct.text.replace(/<[^>]*>/g, "").trim() && (
+              <div className="mb-3 sm:mb-4">
+                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                  <FileText className="w-4 h-4" />
+                  Additional Information
+                </h4>
+                <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+                  {quillLoaded ? (
+                    <ReactQuill
+                      value={selectedProduct.text}
+                      readOnly={true}
+                      theme="bubble"
+                      modules={{ toolbar: false }}
+                      className="border-0 bg-transparent text-sm sm:text-base"
+                    />
+                  ) : (
+                    <div
+                      className="prose prose-sm sm:prose max-w-none text-gray-700"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedProduct.text,
+                      }}
+                    />
                   )}
                 </div>
               </div>
+            )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleEdit(selectedProduct);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Product
-                </button>
-                <button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleDeleteClick(selectedProduct);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Product
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center justify-between">
+            <p className="text-2xl sm:text-3xl font-bold text-indigo-600">
+              ₹{selectedProduct.price}
+            </p>
           </div>
         </div>
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Sizes */}
+          {selectedProduct.sizes.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Package className="w-4 h-4" />
+                Available Sizes
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedProduct.sizes.map((size, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium"
+                  >
+                    {size}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Created Date */}
+          {selectedProduct.createdAt && (
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Calendar className="w-4 h-4" />
+                Added On
+              </h4>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                {new Date(selectedProduct.createdAt).toLocaleDateString(
+                  "en-IN",
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Features */}
+          {selectedProduct.details.length > 0 && (
+            <div className="bg-green-50 rounded-lg p-3 sm:p-4 sm:col-span-2">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Check className="w-4 h-4" />
+                Features
+              </h4>
+              <ul className="space-y-2">
+                {selectedProduct.details.map((detail, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-600 text-xs sm:text-sm">{detail}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Guarantee */}
+          {selectedProduct.commitment.length > 0 && (
+            <div className="bg-purple-50 rounded-lg p-3 sm:p-4 sm:col-span-2">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Shield className="w-4 h-4" />
+                Guarantee
+              </h4>
+              <ul className="space-y-2">
+                {selectedProduct.commitment.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-600 text-xs sm:text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200">
+        <button
+          onClick={() => {
+            setShowViewModal(false);
+            handleEdit(selectedProduct);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm sm:text-base"
+        >
+          <Edit2 className="w-4 h-4" />
+          <span className="hidden xs:inline">Edit Product</span>
+          <span className="xs:hidden">Edit</span>
+        </button>
+        <button
+          onClick={() => {
+            setShowViewModal(false);
+            handleDeleteClick(selectedProduct);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="hidden xs:inline">Delete Product</span>
+          <span className="xs:hidden">Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
       )}
     </div>
   );

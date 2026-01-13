@@ -3,9 +3,11 @@ import { useLocation, useMatch, useNavigate } from "react-router-dom";
 import { Menu, Bell, Search, X } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
-// Define all available routes and their components (excluding edit pages)
+// Define all available routes and their components (only those that exist in App.jsx)
 const availableComponents = [
   { path: "/dashboard", name: "Dashboard", icon: "📊", category: "Overview" },
+
+  // Products Management
   {
     path: "/fashion",
     name: "Fashion Management",
@@ -34,8 +36,10 @@ const availableComponents = [
     path: "/add-product",
     name: "Add Product",
     icon: "➕",
-    category: "Inventory",
+    category: "Products",
   },
+
+  // Banner Management
   { path: "/banners", name: "Banners", icon: "🖼️", category: "Marketing" },
   {
     path: "/add-banner",
@@ -43,20 +47,55 @@ const availableComponents = [
     icon: "➕",
     category: "Marketing",
   },
+
+  // Blog Management
   { path: "/blogs", name: "Blogs", icon: "📝", category: "Content" },
   { path: "/add-blog", name: "Add Blog", icon: "➕", category: "Content" },
+
+  // Orders Management
   { path: "/orders", name: "Orders", icon: "📦", category: "Sales" },
+
+  // Customer Management
   { path: "/customers", name: "Customers", icon: "👥", category: "Users" },
+
+  // User Management
   { path: "/users", name: "Users", icon: "👤", category: "Management" },
+
+  // Content Management (Main route)
+  {
+    path: "/content",
+    name: "Content Manager",
+    icon: "📄",
+    category: "Content",
+  },
+
+  // Content Management - Sub Routes
+  {
+    path: "/content/privacy-policy",
+    name: "Privacy Policy",
+    icon: "🔒",
+    category: "Content",
+  },
+  {
+    path: "/content/faq",
+    name: "FAQ",
+    icon: "❓",
+    category: "Content",
+  },
+  {
+    path: "/content/our-story",
+    name: "Our Story",
+    icon: "📖",
+    category: "Content",
+  },
 ];
 
-// List of pages to exclude from search (edit pages)
+// List of pages to exclude from search (edit pages only)
 const excludedPages = [
   "/edit-product/:id",
   "/edit-blog/:id",
   "/edit-banner/:id",
-  "/edit-perfumes/:id",
-  // Add other edit pages here if needed
+  "/edit-perfume/:id",
 ];
 
 const Navbar = ({ toggle }) => {
@@ -74,7 +113,7 @@ const Navbar = ({ toggle }) => {
   const isEditProduct = useMatch("/edit-product/:id");
   const isEditBlog = useMatch("/edit-blog/:id");
   const isEditBanner = useMatch("/edit-banner/:id");
-  const isEditPerfume = useMatch("/edit-perfumes/:id");
+  const isEditPerfume = useMatch("/edit-perfume/:id");
 
   const pageTitles = {
     "/dashboard": "Dashboard",
@@ -90,10 +129,14 @@ const Navbar = ({ toggle }) => {
     "/blogs": "Blogs",
     "/add-product": "Add Product",
     "/add-blog": "Add Blog",
+    "/content": "Content Manager",
+    "/content/privacy-policy": "Content Manager",
+    "/content/faq": "Content Manager",
+    "/content/our-story": "Content Manager",
     "/edit-product/:id": "Edit Product",
     "/edit-blog/:id": "Edit Blog",
     "/edit-banner/:id": "Edit Banner",
-    "/edit-perfumes/:id": "Edit Perfume", // Added this
+    "/edit-perfume/:id": "Edit Perfume",
   };
 
   let pageTitle = pageTitles[location.pathname] || "Dashboard";
@@ -106,7 +149,7 @@ const Navbar = ({ toggle }) => {
   } else if (isEditBanner) {
     pageTitle = "Edit Banner";
   } else if (isEditPerfume) {
-    pageTitle = "Edit Perfume"; // Added this
+    pageTitle = "Edit Perfume";
   }
 
   // Filter components based on search query and exclude edit pages
@@ -224,7 +267,7 @@ const Navbar = ({ toggle }) => {
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 relative search-container flex-shrink-0">
             {/* Search Button/Bar */}
             {isSearchOpen ? (
-              <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-16 sm:top-full mt-2 w-auto sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[calc(100vh-5rem)] sm:max-h-[32rem]">
+              <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-0 sm:top-full mt-2 w-auto sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[calc(100vh-5rem)] sm:max-h-[32rem]">
                 {/* Search Input */}
                 <div className="p-2.5 sm:p-3 border-b border-gray-100 sticky top-0 bg-white z-10">
                   <div className="relative">
@@ -309,7 +352,7 @@ const Navbar = ({ toggle }) => {
                         Start typing to search for pages
                       </p>
                       <div className="mt-2 sm:mt-3 grid grid-cols-2 gap-1.5 sm:gap-2">
-                        {availableComponents.slice(0, 4).map((component) => (
+                        {availableComponents.slice(0, 6).map((component) => (
                           <div
                             key={component.path}
                             className="text-xs text-gray-500 px-2 py-1 bg-gray-50 rounded truncate"

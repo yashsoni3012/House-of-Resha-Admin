@@ -1157,178 +1157,180 @@ const GlowRituals = () => {
 
       {/* View Perfume Modal */}
       {showViewModal && selectedPerfume && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Perfume Details
-                </h2>
-                <button
-                  onClick={() => setShowViewModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+    {/* Modal Header */}
+    <div className="sticky top-0 bg-white border-b border-gray-200 p-3 sm:p-4 md:p-6 z-10">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+          Perfume Details
+        </h2>
+        <button
+          onClick={() => setShowViewModal(false)}
+          className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+      {/* Perfume Image */}
+      <div className="relative rounded-lg overflow-hidden bg-gray-900">
+        <img
+          src={selectedPerfume.image}
+          alt={selectedPerfume.name}
+          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover object-center"
+        />
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+          <span
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold ${
+              selectedPerfume.inStock
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}
+          >
+            {selectedPerfume.inStock ? "In Stock" : "Out of Stock"}
+          </span>
+        </div>
+      </div>
+
+      {/* Perfume Info */}
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
+            {selectedPerfume.name}
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Tag className="w-4 h-4" />
+                Price
+              </h4>
+              <p className="text-2xl sm:text-3xl font-bold text-indigo-600">
+                ₹{selectedPerfume.price}
+              </p>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Perfume Image */}
-              <div className="relative rounded-lg overflow-hidden bg-gray-900">
-                <img
-                  src={selectedPerfume.image}
-                  alt={selectedPerfume.name}
-                  className="w-full h-64 sm:h-96 object-cover object-center"
-                />
-                <div className="absolute top-4 right-4">
-                  <span
-                    className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
-                      selectedPerfume.inStock
-                        ? "bg-green-100 text-green-800 border border-green-200"
-                        : "bg-red-100 text-red-800 border border-red-200"
-                    }`}
-                  >
-                    {selectedPerfume.inStock ? "In Stock" : "Out of Stock"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Perfume Info */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                    {selectedPerfume.name}
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Tag className="w-4 h-4" />
-                        Price
-                      </h4>
-                      <p className="text-3xl font-bold text-indigo-600">
-                        ₹{selectedPerfume.price}
-                      </p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        Volume
-                      </h4>
-                      <p className="text-3xl font-bold text-gray-800">
-                        {selectedPerfume.volume}ml
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Additional Text with React Quill Viewer */}
-                  {selectedPerfume.text &&
-                    stripHtmlTags(selectedPerfume.text).trim() && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                          <FileText className="w-4 h-4" />
-                          Description
-                        </h4>
-                        <div className="bg-blue-50 rounded-lg p-4">
-                          {quillLoaded ? (
-                            <ReactQuill
-                              value={selectedPerfume.text}
-                              readOnly={true}
-                              theme="bubble"
-                              modules={{ toolbar: false }}
-                              className="border-0 bg-transparent"
-                            />
-                          ) : (
-                            <div
-                              className="prose max-w-none text-gray-700"
-                              dangerouslySetInnerHTML={{
-                                __html: selectedPerfume.text,
-                              }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )}
-                </div>
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Created Date */}
-                  {selectedPerfume.createdAt && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Added On
-                      </h4>
-                      <p className="text-gray-600 text-sm">
-                        {new Date(selectedPerfume.createdAt).toLocaleDateString(
-                          "en-IN",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Stock Status */}
-                  <div
-                    className={`rounded-lg p-4 ${
-                      selectedPerfume.inStock ? "bg-green-50" : "bg-red-50"
-                    }`}
-                  >
-                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      Stock Status
-                    </h4>
-                    <p
-                      className={`text-lg font-bold ${
-                        selectedPerfume.inStock
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}
-                    >
-                      {selectedPerfume.inStock
-                        ? "✓ Available for purchase"
-                        : "✗ Currently unavailable"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleEdit(selectedPerfume);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Perfume
-                </button>
-                <button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleDeleteClick(selectedPerfume);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Perfume
-                </button>
-              </div>
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Package className="w-4 h-4" />
+                Volume
+              </h4>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-800">
+                {selectedPerfume.volume}ml
+              </p>
             </div>
           </div>
+
+          {/* Additional Text with React Quill Viewer */}
+          {selectedPerfume.text &&
+            stripHtmlTags(selectedPerfume.text).trim() && (
+              <div className="mb-3 sm:mb-4">
+                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                  <FileText className="w-4 h-4" />
+                  Description
+                </h4>
+                <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+                  {quillLoaded ? (
+                    <ReactQuill
+                      value={selectedPerfume.text}
+                      readOnly={true}
+                      theme="bubble"
+                      modules={{ toolbar: false }}
+                      className="border-0 bg-transparent text-sm sm:text-base"
+                    />
+                  ) : (
+                    <div
+                      className="prose prose-sm sm:prose max-w-none text-gray-700"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedPerfume.text,
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
         </div>
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Created Date */}
+          {selectedPerfume.createdAt && (
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Calendar className="w-4 h-4" />
+                Added On
+              </h4>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                {new Date(selectedPerfume.createdAt).toLocaleDateString(
+                  "en-IN",
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Stock Status */}
+          <div
+            className={`rounded-lg p-3 sm:p-4 ${
+              selectedPerfume.inStock ? "bg-green-50" : "bg-red-50"
+            }`}
+          >
+            <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
+              <Check className="w-4 h-4" />
+              Stock Status
+            </h4>
+            <p
+              className={`text-base sm:text-lg font-bold ${
+                selectedPerfume.inStock
+                  ? "text-green-700"
+                  : "text-red-700"
+              }`}
+            >
+              {selectedPerfume.inStock
+                ? "✓ Available for purchase"
+                : "✗ Currently unavailable"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200">
+        <button
+          onClick={() => {
+            setShowViewModal(false);
+            handleEdit(selectedPerfume);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm sm:text-base"
+        >
+          <Edit2 className="w-4 h-4" />
+          <span className="hidden xs:inline">Edit Perfume</span>
+          <span className="xs:hidden">Edit</span>
+        </button>
+        <button
+          onClick={() => {
+            setShowViewModal(false);
+            handleDeleteClick(selectedPerfume);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="hidden xs:inline">Delete Perfume</span>
+          <span className="xs:hidden">Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
       )}
     </div>
   );

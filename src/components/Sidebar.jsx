@@ -13,7 +13,7 @@ import {
   Image,
   BookOpen,
   ChevronRight,
-  FileText 
+  FileText,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -34,7 +34,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/users", name: "Users", icon: Users },
 
     /* ✅ ONLY ONE CONTENT ENTRY */
-    { path: "/content", name: "Content Manager", icon: FileText  },
+    { path: "/content", name: "Content Manager", icon: FileText },
   ];
 
   const handleNavigation = (path) => {

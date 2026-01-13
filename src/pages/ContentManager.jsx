@@ -118,14 +118,14 @@ const ContentManager = () => {
             </div>
           )}
 
-          {/* Desktop Header */}
+          {/* Desktop Header - UPDATED THIS SECTION */}
           <div className="hidden md:flex md:items-center md:justify-between py-4">
             <div className="flex items-center gap-3">
               {React.createElement(activeTabInfo.icon, {
                 className: `${activeTabInfo.colorClasses.text} w-6 h-6`,
               })}
               <h1 className="text-xl font-bold text-gray-800">
-                Content Manager
+                {activeTabInfo.label} {/* Changed from "Content Manager" */}
               </h1>
             </div>
           </div>
@@ -165,7 +165,7 @@ const ContentManager = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+        <div className="">
           <Outlet />
         </div>
       </div>
