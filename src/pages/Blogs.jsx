@@ -563,11 +563,11 @@ export default function Blogs() {
             {filteredBlogs.map((blog) => (
               <div
                 key={blog._id}
-                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   {/* Cover Image */}
-                  <div className="w-full md:w-48 h-48 md:h-auto flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                  <div className="w-full sm:w-40 md:w-48 h-40 sm:h-32 md:h-auto flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                     {blog.coverImage ? (
                       <img
                         src={getImageUrl(blog.coverImage)}
@@ -580,58 +580,60 @@ export default function Blogs() {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <ImageIcon className="w-12 h-12 text-gray-400" />
+                        <ImageIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
                       </div>
                     )}
                   </div>
 
                   {/* Blog Info */}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="mb-3">
-                      <h3 className="font-bold text-gray-900 text-lg mb-1">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 line-clamp-2">
                         {blog.title || "Untitled Blog"}
                       </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(blog.createdAt)}</span>
+                      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span>{formatDate(blog.createdAt)}</span>
+                        </div>
                         {blog.content && (
-                          <span className="ml-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs font-semibold">
+                          <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 sm:py-1 rounded text-xs font-semibold whitespace-nowrap">
                             {blog.content.length} sections
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-gray-600 text-xs sm:text-sm line-clamp-2">
                         {blog.description || "No description available"}
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    {/* Action Buttons - Full Width 33% Each */}
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleViewBlog(blog)}
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-xs sm:text-sm font-medium"
                       >
-                        <Eye className="w-4 h-4" />
-                        View
+                        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">View</span>
                       </button>
                       <button
                         onClick={() => handleEditBlog(blog._id)}
-                        className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-xs sm:text-sm font-medium"
                       >
-                        <Edit className="w-4 h-4" />
-                        Edit
+                        <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
                         onClick={() => openDeleteModal(blog)}
                         disabled={deletingId === blog._id}
-                        className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
                       >
                         {deletingId === blog._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                         ) : (
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         )}
-                        Delete
+                        <span className="hidden sm:inline">Delete</span>
                       </button>
                     </div>
                   </div>
