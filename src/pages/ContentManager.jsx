@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { FileText, HelpCircle, BookOpen, Menu, X } from "lucide-react";
+import { FileText, HelpCircle, BookOpen, Menu, X, Plus } from "lucide-react";
 
-const ContentManager = () => {
+const ContentManager = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -10,6 +10,7 @@ const ContentManager = () => {
     {
       id: "privacy",
       label: "Privacy Policy",
+      description: "Manage and update your website privacy policy content",
       icon: FileText,
       color: "indigo",
       colorClasses: {
@@ -22,6 +23,7 @@ const ContentManager = () => {
     {
       id: "faq",
       label: "FAQ",
+      description: "Create, edit, and organize frequently asked questions",
       icon: HelpCircle,
       color: "green",
       colorClasses: {
@@ -34,6 +36,7 @@ const ContentManager = () => {
     {
       id: "story",
       label: "Our Story",
+      description: "Share your brand journey, mission, and values with users",
       icon: BookOpen,
       color: "purple",
       colorClasses: {
@@ -71,17 +74,33 @@ const ContentManager = () => {
                 {activeTabInfo.label}
               </h1>
             </div>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-600" />
-              ) : (
-                <Menu className="w-6 h-6 text-gray-600" />
+            <div className="flex items-center gap-2">
+              {/* Add FAQ button for mobile - only shown on FAQ page */}
+              {activeTabInfo.id === "faq" && (
+                <button
+                  onClick={() => {
+                    // This will be handled by the FAQAdmin component
+                    const event = new CustomEvent("toggle-add-faq-form");
+                    window.dispatchEvent(event);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add FAQ</span>
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6 text-gray-600" />
+                ) : (
+                  <Menu className="w-6 h-6 text-gray-600" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu Dropdown */}
@@ -118,47 +137,67 @@ const ContentManager = () => {
             </div>
           )}
 
-          {/* Desktop Header - UPDATED THIS SECTION */}
-          <div className="hidden md:flex md:items-center md:justify-between py-4">
-            <div className="flex items-center gap-3">
-              {React.createElement(activeTabInfo.icon, {
-                className: `${activeTabInfo.colorClasses.text} w-6 h-6`,
+          {/* Desktop Layout */}
+          <div className="hidden md:block">
+            {/* Desktop Tabs - Top */}
+            <div className="flex gap-2 lg:gap-4 border-b-2 border-gray-200 overflow-x-auto">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTabInfo.id === tab.id;
+                return (
+                  <NavLink
+                    key={tab.id}
+                    to={tab.path}
+                    className={({ isActive: isNavActive }) => {
+                      const active = isNavActive || activeTabInfo.id === tab.id;
+                      return `flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 font-medium transition-all relative whitespace-nowrap ${
+                        active
+                          ? tab.colorClasses.text
+                          : "text-gray-600 hover:text-gray-800"
+                      }`;
+                    }}
+                  >
+                    <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
+                    <span className="text-sm lg:text-base">{tab.label}</span>
+                    {(activeTabInfo.id === tab.id ||
+                      location.pathname.includes(tab.path)) && (
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 h-0.5 ${tab.colorClasses.bg}`}
+                      ></div>
+                    )}
+                  </NavLink>
+                );
               })}
-              <h1 className="text-xl font-bold text-gray-800">
-                {activeTabInfo.label} {/* Changed from "Content Manager" */}
-              </h1>
             </div>
-          </div>
 
-          {/* Desktop Tabs */}
-          <div className="hidden md:flex gap-2 lg:gap-4 border-b-2 border-gray-200 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTabInfo.id === tab.id;
-              return (
-                <NavLink
-                  key={tab.id}
-                  to={tab.path}
-                  className={({ isActive: isNavActive }) => {
-                    const active = isNavActive || activeTabInfo.id === tab.id;
-                    return `flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 font-medium transition-all relative whitespace-nowrap ${
-                      active
-                        ? tab.colorClasses.text
-                        : "text-gray-600 hover:text-gray-800"
-                    }`;
+            {/* Desktop Header Content - Below tabs */}
+            <div className="flex items-center justify-between py-4">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-bold text-gray-800">
+                  {activeTabInfo.label}
+                </h1>
+                {activeTabInfo.description && (
+                  <p className="text-sm text-gray-800">
+                    {activeTabInfo.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Add FAQ button for desktop - only shown on FAQ page */}
+              {activeTabInfo.id === "faq" && (
+                <button
+                  onClick={() => {
+                    // This will be handled by the FAQAdmin component
+                    const event = new CustomEvent("toggle-add-faq-form");
+                    window.dispatchEvent(event);
                   }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
-                  <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="text-sm lg:text-base">{tab.label}</span>
-                  {(activeTabInfo.id === tab.id ||
-                    location.pathname.includes(tab.path)) && (
-                    <div
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${tab.colorClasses.bg}`}
-                    ></div>
-                  )}
-                </NavLink>
-              );
-            })}
+                  <Plus className="w-4 h-4" />
+                  <span>Add New FAQ</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
