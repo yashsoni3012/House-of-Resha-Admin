@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { X, Send, Minimize2, Circle } from "lucide-react";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://api.houseofresha.com";
 
 const FloatingChatWidget = () => {
   const adminId = "69427846821bab385d46d2ce";
@@ -319,9 +319,7 @@ const FloatingChatWidget = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-bold text-xs sm:text-lg truncate">
-                  {selectedChat
-                    ? selectedChat.user.firstName
-                    : "Messages"}
+                  {selectedChat ? selectedChat.user.firstName : "Messages"}
                 </h3>
                 <p className="text-[10px] sm:text-xs text-white/80 truncate">
                   {selectedChat
@@ -562,7 +560,10 @@ const FloatingChatWidget = () => {
 
                   {/* Message Input - Compact on mobile */}
                   <div className="p-2 sm:p-4 bg-white border-t border-gray-200 flex-shrink-0">
-                    <form onSubmit={handleSendMessage} className="flex gap-1.5 sm:gap-2">
+                    <form
+                      onSubmit={handleSendMessage}
+                      className="flex gap-1.5 sm:gap-2"
+                    >
                       <input
                         type="text"
                         value={message}
