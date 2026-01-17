@@ -376,13 +376,13 @@ const Navbar = ({ toggle }) => {
             )}
 
             {/* Notification Bell */}
-            <button
+            {/* <button
               className="relative p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Notifications"
             >
               <Bell size={18} className="sm:w-5 sm:h-5 text-gray-600" />
               <span className="absolute top-0.5 sm:top-1 right-0.5 sm:right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></span>
-            </button>
+            </button> */}
 
             {/* User Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 pl-1.5 sm:pl-2 lg:pl-3 border-l border-gray-300 flex-shrink-0">
