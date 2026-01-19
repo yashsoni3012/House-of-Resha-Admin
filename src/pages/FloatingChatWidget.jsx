@@ -172,42 +172,36 @@ const FloatingChatWidget = () => {
   }, [socket, selectedChat]);
 
   /* -------------------- INFINITE SCROLL -------------------- */
-  const handleScroll = () => {
-    if (
-      messagesBoxRef.current &&
-      messagesBoxRef.current.scrollTop === 0 &&
-      hasMore &&
-      nextCursor &&
-      selectedChat &&
-      !isLoadingMessages
-    ) {
-      loadHistory(selectedChat._id, nextCursor);
-    }
-  };
+ const handleScroll = () => {
+  const el = messagesBoxRef.current;
+  if (!el) return;
+
+  // Check if user is near bottom
+  const nearBottom =
+    el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+
+  setIsAtBottom(nearBottom);
+
+  // Load older messages only when scrolling to top
+  if (el.scrollTop === 0 && hasMore && nextCursor && !isLoadingMessages) {
+    loadHistory(selectedChat._id, nextCursor);
+  }
+};
+
 
   /* -------------------- SEND MESSAGE -------------------- */
   const handleSendMessage = (e) => {
-    if (e) e.preventDefault();
+  if (e) e.preventDefault();
+  if (!message.trim() || !socket || !selectedChat) return;
 
-    if (!message.trim() || !socket || !selectedChat) return;
+  socket.emit("send-message", {
+    text: message,
+    toUser: selectedChat.user._id,
+  });
 
-    socket.emit("send-message", {
-      text: message,
-      toUser: selectedChat.user._id,
-    });
+  setMessage("");
+};
 
-    // Add message to local state immediately
-    const newMessage = {
-      _id: Date.now().toString(), // Temporary ID
-      text: message,
-      senderRole: "admin",
-      conversation: selectedChat._id,
-      createdAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-    setMessage("");
-  };
 
   /* -------------------- AUTO SCROLL -------------------- */
   useEffect(() => {
