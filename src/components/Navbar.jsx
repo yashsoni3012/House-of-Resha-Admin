@@ -137,6 +137,7 @@ const Navbar = ({ toggle }) => {
     "/edit-blog/:id": "Edit Blog",
     "/edit-banner/:id": "Edit Banner",
     "/edit-perfume/:id": "Edit Perfume",
+    "/analytics": "Analytics",
   };
 
   let pageTitle = pageTitles[location.pathname] || "Dashboard";

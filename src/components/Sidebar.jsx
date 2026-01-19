@@ -14,6 +14,7 @@ import {
   BookOpen,
   ChevronRight,
   FileText,
+  BarChart3
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -32,6 +33,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/orders", name: "Orders", icon: ShoppingCart },
     { path: "/customers", name: "Customers", icon: Users },
     { path: "/users", name: "Users", icon: Users },
+    { path: "/analytics", name: "Analytics", icon: BarChart3 },
 
     /* ✅ ONLY ONE CONTENT ENTRY */
     { path: "/content", name: "Content Manager", icon: FileText },

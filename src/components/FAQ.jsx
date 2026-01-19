@@ -856,13 +856,12 @@
 
 // export default FAQAdmin;
 
-
 import React from 'react'
 
 const FAQ = () => {
   return (
     <div>
-      faq page
+      FAQ page
     </div>
   )
 }

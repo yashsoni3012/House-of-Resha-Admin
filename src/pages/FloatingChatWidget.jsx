@@ -27,6 +27,9 @@ const FloatingChatWidget = () => {
   const messagesBoxRef = useRef(null);
   const bottomRef = useRef(null);
 
+// ✅ ADD THIS LINE
+const isLoadingOlderRef = useRef(false);
+
   // Calculate unread count
   const unreadCount = useMemo(() => {
     return conversations.reduce(
@@ -63,40 +66,41 @@ const FloatingChatWidget = () => {
   }, [isOpen]);
 
   /* -------------------- FETCH HISTORY -------------------- */
-const loadHistory = async (conversationId, before = null) => {
-  if (!conversationId) return;
+  const loadHistory = async (conversationId, before = null) => {
+    if (!conversationId) return;
 
-  const box = messagesBoxRef.current;
+    const box = messagesBoxRef.current;
 
-  // 🟡 We are loading HISTORY messages
-  if (before && box) {
-    isLoadingOlderRef.current = true;
-    prevScrollHeightRef.current = box.scrollHeight;
-  }
-
-  let url = `${BASE_URL}/history?conversationId=${conversationId}`;
-  if (before) url += `&before=${before}`;
-
-  try {
-    setIsLoadingMessages(true);
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (data.success) {
-      setMessages((prev) =>
-        before ? [...data.messages, ...prev] : data.messages
-      );
-
-      setNextCursor(data.nextCursor);
-      setHasMore(Boolean(data.nextCursor));
+    if (before && box) {
+      // We're loading older messages
+      isLoadingOlderRef.current = true;
+      previousScrollHeightRef.current = box.scrollHeight;
     }
-  } catch (err) {
-    console.error("History load failed", err);
-  } finally {
-    setIsLoadingMessages(false);
-  }
-};
 
+    let url = `${BASE_URL}/history?conversationId=${conversationId}`;
+    if (before) url += `&before=${before}`;
+
+    try {
+      setIsLoadingMessages(true);
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.success) {
+        if (before) {
+          setMessages((prev) => [...data.messages, ...prev]);
+        } else {
+          setMessages(data.messages);
+        }
+
+        setNextCursor(data.nextCursor);
+        setHasMore(Boolean(data.nextCursor));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
 
   /* -------------------- SELECT CONVERSATION -------------------- */
   const handleChatSelect = async (conv) => {
@@ -179,14 +183,14 @@ const loadHistory = async (conversationId, before = null) => {
   }, [socket, selectedChat]);
 
   /* -------------------- INFINITE SCROLL -------------------- */
+/* -------------------- INFINITE SCROLL -------------------- */
 const handleScroll = () => {
   const el = messagesBoxRef.current;
   if (!el) return;
 
+  // Just calculate if needed later — no state update
   const nearBottom =
     el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-
-  setIsAtBottom(nearBottom);
 
   // ❌ Do NOT auto-load here
   // History is loaded ONLY by button click

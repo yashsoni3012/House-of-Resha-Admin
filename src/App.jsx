@@ -289,6 +289,8 @@ import OurStory from "./components/OurStory";
 /* ✅ FLOATING CHAT WIDGET */
 import FloatingChatWidget from "./pages/FloatingChatWidget";
 
+import Analytics from "./pages/Analytics";
+
 /* ✅ React Query Client */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -337,6 +339,7 @@ const App = () => {
               <Route path="orders" element={<Orders />} />
               <Route path="customers" element={<Customers />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="analytics" element={<Analytics />} />
 
               {/* products */}
               <Route path="fashion" element={<Products />} />
