@@ -738,20 +738,19 @@ const FashionManagement = () => {
                 <button
                   onClick={handleLoadMore}
                   className="
-      inline-flex items-center justify-center gap-2
-      w-full sm:w-auto
-      px-4 sm:px-6
-      py-3
-      text-sm sm:text-base
-      bg-indigo-600 text-white
-      rounded-lg
-      hover:bg-indigo-700
-      active:scale-95
-      transition-all
-      font-medium
-      shadow-md
-      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-    "
+                        inline-flex items-center justify-center gap-2
+                        w-full sm:w-auto
+                        px-4 sm:px-6
+                        py-3
+                        text-sm sm:text-base
+                        bg-indigo-600 text-white
+                        rounded-lg
+                        hover:bg-indigo-700
+                        active:scale-95
+                        transition-all
+                        font-medium
+                        shadow-md
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                   <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="truncate">

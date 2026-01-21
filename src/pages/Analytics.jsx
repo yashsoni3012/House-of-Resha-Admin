@@ -39,7 +39,7 @@ const PAGE_NAME_MAPPING = {
   "/faq": "FAQ",
   "/privacy": "Privacy Policy",
   "/terms": "Terms of Service",
-  
+
   // Dynamic routes patterns (will be matched using regex)
   "/blog/": "Blog Post", // For /blog/*
   "/product/": "Product", // For /product/*
@@ -52,42 +52,39 @@ const PAGE_NAME_MAPPING = {
 // Function to get readable page name from URL
 const getPageName = (url) => {
   if (!url) return "Unknown Page";
-  
+
   // Clean the URL (remove query params and fragments)
-  const cleanUrl = url.split('?')[0].split('#')[0];
-  
+  const cleanUrl = url.split("?")[0].split("#")[0];
+
   // First, try exact match
   if (PAGE_NAME_MAPPING[cleanUrl]) {
     return PAGE_NAME_MAPPING[cleanUrl];
   }
-  
+
   // Then, try pattern matching for dynamic routes
   for (const [pattern, name] of Object.entries(PAGE_NAME_MAPPING)) {
-    if (pattern.endsWith('/') && cleanUrl.startsWith(pattern.slice(0, -1) + '/')) {
+    if (
+      pattern.endsWith("/") &&
+      cleanUrl.startsWith(pattern.slice(0, -1) + "/")
+    ) {
       return name;
     }
   }
-  
+
   // For nested paths, extract the first part
-  const parts = cleanUrl.split('/').filter(part => part);
+  const parts = cleanUrl.split("/").filter((part) => part);
   if (parts.length > 0) {
     const basePath = `/${parts[0]}`;
     if (PAGE_NAME_MAPPING[basePath]) {
       return PAGE_NAME_MAPPING[basePath];
     }
-    
+
     // Capitalize the first part as fallback
     return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + " Page";
   }
-  
+
   // Return the original URL if no match found
   return cleanUrl || "Unknown Page";
-};
-
-// Function to get page name with URL for display
-const getDisplayName = (url) => {
-  const pageName = getPageName(url);
-  return `${pageName} (${url})`;
 };
 
 const AnalyticsDashboard = () => {
@@ -116,6 +113,39 @@ const AnalyticsDashboard = () => {
     limit: 20,
   });
 
+  // Get unique pages for dropdown
+  const getUniquePages = () => {
+    const pagesSet = new Set();
+    const pages = [];
+
+    // Add all pages from pageStats
+    pageStats.forEach((stat) => {
+      const pageName = getPageName(stat.page);
+      if (stat.page && !pagesSet.has(pageName)) {
+        pagesSet.add(pageName);
+        pages.push({
+          value: stat.page,
+          label: pageName,
+        });
+      }
+    });
+
+    // Add all pages from analyticsData
+    analyticsData.forEach((item) => {
+      const pageName = getPageName(item.page);
+      if (item.page && !pagesSet.has(pageName)) {
+        pagesSet.add(pageName);
+        pages.push({
+          value: item.page,
+          label: pageName,
+        });
+      }
+    });
+
+    // Sort alphabetically by label
+    return pages.sort((a, b) => a.label.localeCompare(b.label));
+  };
+
   const fetchSummary = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/analytics/summary`);
@@ -135,10 +165,9 @@ const AnalyticsDashboard = () => {
       const result = await response.json();
       if (Array.isArray(result)) {
         // Transform page stats to include display names
-        const transformedStats = result.map(stat => ({
+        const transformedStats = result.map((stat) => ({
           ...stat,
-          displayName: getDisplayName(stat.page),
-          pageName: getPageName(stat.page)
+          pageName: getPageName(stat.page),
         }));
         setPageStats(transformedStats);
       } else {
@@ -164,11 +193,10 @@ const AnalyticsDashboard = () => {
 
       if (result.success) {
         // Transform analytics data to include display names
-        const transformedData = Array.isArray(result.data) 
-          ? result.data.map(item => ({
+        const transformedData = Array.isArray(result.data)
+          ? result.data.map((item) => ({
               ...item,
-              displayName: getDisplayName(item.page),
-              pageName: getPageName(item.page)
+              pageName: getPageName(item.page),
             }))
           : [];
         setAnalyticsData(transformedData);
@@ -193,11 +221,10 @@ const AnalyticsDashboard = () => {
       const result = await response.json();
       if (result.success) {
         // Transform user details to include display names
-        const transformedDetails = Array.isArray(result.data) 
-          ? result.data.map(item => ({
+        const transformedDetails = Array.isArray(result.data)
+          ? result.data.map((item) => ({
               ...item,
-              displayName: getDisplayName(item.page),
-              pageName: getPageName(item.page)
+              pageName: getPageName(item.page),
             }))
           : [];
         setUserDetails(transformedDetails);
@@ -288,6 +315,7 @@ const AnalyticsDashboard = () => {
     : [];
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const uniquePages = getUniquePages();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-8">
@@ -322,7 +350,8 @@ const AnalyticsDashboard = () => {
 
         {/* Summary Cards */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Card 1: Total Views */}
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -360,6 +389,7 @@ const AnalyticsDashboard = () => {
               </div>
             </div>
 
+            {/* Card 2: Avg Time Spent */}
             <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -385,33 +415,7 @@ const AnalyticsDashboard = () => {
               <p className="text-sm text-green-100">Per session</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-purple-100 text-sm font-medium mb-1">
-                Unique Visitors
-              </p>
-              <p className="text-4xl font-bold mb-2">
-                {summary.uniqueVisitors.toLocaleString()}
-              </p>
-              <p className="text-sm text-purple-100">Total sessions</p>
-            </div>
-
+            {/* Card 3: Logged In Users */}
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -673,14 +677,28 @@ const AnalyticsDashboard = () => {
             Advanced Filters
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <input
-              type="text"
-              name="page"
-              placeholder="Filter by page"
-              value={filters.page}
-              onChange={handleFilterChange}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
+            {/* Page Select Dropdown */}
+            <div className="relative">
+              <select
+                name="page"
+                value={filters.page}
+                onChange={handleFilterChange}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+              >
+                <option value="">All Pages</option>
+                {uniquePages.map((page, index) => (
+                  <option key={index} value={page.value}>
+                    {page.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+
             <input
               type="text"
               name="userId"

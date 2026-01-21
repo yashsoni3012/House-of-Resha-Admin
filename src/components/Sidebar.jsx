@@ -14,7 +14,7 @@ import {
   BookOpen,
   ChevronRight,
   FileText,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -82,7 +82,7 @@ const Sidebar = ({ isOpen, toggle }) => {
       <aside
         className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } w-64 lg:translate-x-0 shadow-xl lg:shadow-none`}
+        } w-64  lg:translate-x-0 shadow-xl lg:shadow-none`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Section */}

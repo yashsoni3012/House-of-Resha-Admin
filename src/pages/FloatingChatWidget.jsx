@@ -1,87 +1,85 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { X, Send, Minimize2, Circle } from "lucide-react";
+import { MessageCircle, X, Send, Paperclip, Minimize2, Image, File, Loader2 } from "lucide-react";
 
 const BASE_URL = "https://api.houseofresha.com";
 
-const FloatingChatWidget = () => {
+export default function FloatingChatWidget() {
   const adminId = "69427846821bab385d46d2ce";
   const role = "admin";
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState("");
-
-  // WebSocket states
   const [conversations, setConversations] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [msgInput, setMsgInput] = useState("");
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [totalUnread, setTotalUnread] = useState(0);
+  
+  // File upload states
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
 
   const messagesBoxRef = useRef(null);
   const bottomRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-// ✅ ADD THIS LINE
-const isLoadingOlderRef = useRef(false);
-
-  // Calculate unread count
-  const unreadCount = useMemo(() => {
-    return conversations.reduce(
+  // Recalculate unread count whenever conversations change
+  useEffect(() => {
+    const unread = conversations.reduce(
       (sum, conv) => sum + (conv.unreadCount || 0),
-      0,
+      0
     );
+    setTotalUnread(unread);
   }, [conversations]);
 
   /* -------------------- SOCKET -------------------- */
   const socket = useMemo(() => {
-    if (!selectedChat) return null;
+    if (!activeConversation) return null;
 
     return io(BASE_URL, {
       auth: {
         userId: adminId,
         role,
-        toUser: selectedChat.user._id,
+        toUser: activeConversation.user._id,
       },
     });
-  }, [selectedChat]);
+  }, [activeConversation]);
 
   /* -------------------- FETCH CONVERSATIONS -------------------- */
   useEffect(() => {
-    if (!isOpen) return;
+    const fetchConversations = () => {
+      fetch(`${BASE_URL}/conversations`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setConversations(data.conversations);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch conversations:", err));
+    };
 
-    setIsLoadingConversations(true);
-    fetch(`${BASE_URL}/conversations`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setConversations(data.conversations);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoadingConversations(false));
-  }, [isOpen]);
+    fetchConversations();
+    
+    // Refresh conversations every 10 seconds to update unread counts
+    const interval = setInterval(fetchConversations, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   /* -------------------- FETCH HISTORY -------------------- */
   const loadHistory = async (conversationId, before = null) => {
-    if (!conversationId) return;
-
-    const box = messagesBoxRef.current;
-
-    if (before && box) {
-      // We're loading older messages
-      isLoadingOlderRef.current = true;
-      previousScrollHeightRef.current = box.scrollHeight;
-    }
-
     let url = `${BASE_URL}/history?conversationId=${conversationId}`;
     if (before) url += `&before=${before}`;
 
     try {
-      setIsLoadingMessages(true);
       const res = await fetch(url);
       const data = await res.json();
 
@@ -91,66 +89,184 @@ const isLoadingOlderRef = useRef(false);
         } else {
           setMessages(data.messages);
         }
-
         setNextCursor(data.nextCursor);
         setHasMore(Boolean(data.nextCursor));
       }
     } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoadingMessages(false);
+      console.error("Failed to load history:", err);
     }
   };
 
   /* -------------------- SELECT CONVERSATION -------------------- */
-  const handleChatSelect = async (conv) => {
-    setSelectedChat(conv);
-    setIsMinimized(false);
+  const handleSelectConversation = async (conv) => {
+    setActiveConversation(conv);
     setMessages([]);
     setNextCursor(null);
     setHasMore(true);
-    setIsLoadingMessages(true);
     await loadHistory(conv._id);
-
-    // Mark as read
+    
+    // Reset file states when switching conversations
+    setSelectedFile(null);
+    setFilePreview(null);
+    setUploadError(null);
+    
+    // Mark conversation as read
     setConversations((prev) =>
-      prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c)),
+      prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c))
     );
   };
 
-  /* -------------------- HANDLE BACK -------------------- */
-  const handleBack = () => {
-    if (socket) {
-      socket.disconnect();
+  /* -------------------- FILE HANDLING -------------------- */
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file size (e.g., 10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      setUploadError("File size too large. Maximum size is 10MB.");
+      return;
     }
-    setSelectedChat(null);
-    setMessages([]);
+
+    setSelectedFile(file);
+    setUploadError(null);
+
+    // Create preview for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFilePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+
+    // Reset file input
+    event.target.value = "";
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    setUploadError(null);
+  };
+
+  const uploadFile = async () => {
+    if (!selectedFile || !activeConversation) {
+      setUploadError("No file selected or no active conversation");
+      return null;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("toUser", activeConversation.user._id);
+
+    try {
+      const response = await fetch(`${BASE_URL}/upload-file`, {
+        method: "POST",
+        body: formData,
+        // Note: Don't set Content-Type header for FormData, browser sets it automatically
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Upload failed");
+      }
+
+      if (data.success) {
+        return data.filePath; // Return the file path for the socket message
+      } else {
+        throw new Error(data.message || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadError(error.message || "Failed to upload file. Please try again.");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  /* -------------------- SEND MESSAGE -------------------- */
+  const handleSend = async (e) => {
+    if (e) e.preventDefault();
+    
+    if ((!msgInput.trim() && !selectedFile) || !socket || !activeConversation) {
+      setUploadError("Please enter a message or select a file");
+      return;
+    }
+
+    // If there's a selected file, upload it first
+    if (selectedFile) {
+      const filePath = await uploadFile();
+      if (!filePath) {
+        // Upload failed, error already set by uploadFile function
+        return;
+      }
+
+      // Send the file message via socket
+      socket.emit("send-message", {
+        text: msgInput.trim() || "",
+        toUser: activeConversation.user._id,
+        file: filePath,
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size
+      });
+
+      // Clear file states
+      setSelectedFile(null);
+      setFilePreview(null);
+      setMsgInput("");
+    } else {
+      // Send text-only message
+      socket.emit("send-message", {
+        text: msgInput,
+        toUser: activeConversation.user._id,
+      });
+
+      setMsgInput("");
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   /* -------------------- SOCKET EVENTS -------------------- */
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("connect", () => console.log("Connected to chat"));
+    socket.on("connect", () => console.log("Connected"));
 
     socket.on("new-message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      const isActive =
+        activeConversation && msg.conversation === activeConversation._id;
 
-      // Update conversations list
+      // Show message only if active conversation
+      if (isActive) {
+        setMessages((prev) => [...prev, msg]);
+      }
+
       setConversations((prev) =>
         prev.map((c) => {
           if (c._id === msg.conversation) {
             return {
               ...c,
               lastMessage: msg,
-              unreadCount:
-                selectedChat?._id === msg.conversation
-                  ? 0
-                  : (c.unreadCount || 0) + 1,
+              unreadCount: isActive ? 0 : (c.unreadCount || 0) + 1,
             };
           }
           return c;
-        }),
+        })
       );
     });
 
@@ -170,138 +286,160 @@ const isLoadingOlderRef = useRef(false);
       });
     });
 
-    socket.on("typing", ({ from, isTyping }) => {
-      setTypingUsers((p) => ({
-        ...p,
-        [from]: isTyping,
+    socket.on("typing", ({ from, isTyping, conversationId }) => {
+      if (!activeConversation || conversationId !== activeConversation._id)
+        return;
+
+      setTypingUsers((prev) => ({
+        ...prev,
+        [String(from)]: isTyping,
       }));
+
+      if (!isTyping) {
+        setTimeout(() => {
+          setTypingUsers((prev) => {
+            const copy = { ...prev };
+            delete copy[String(from)];
+            return copy;
+          });
+        }, 1000);
+      }
     });
 
-    return () => {
-      if (socket) socket.disconnect();
-    };
-  }, [socket, selectedChat]);
+    // Listen for send-message errors
+    socket.on("send-message-error", (error) => {
+      setUploadError(error.message || "Failed to send message");
+    });
+
+    return () => socket.disconnect();
+  }, [socket, activeConversation]);
 
   /* -------------------- INFINITE SCROLL -------------------- */
-/* -------------------- INFINITE SCROLL -------------------- */
-const handleScroll = () => {
-  const el = messagesBoxRef.current;
-  if (!el) return;
-
-  // Just calculate if needed later — no state update
-  const nearBottom =
-    el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-
-  // ❌ Do NOT auto-load here
-  // History is loaded ONLY by button click
-};
-
-
-  /* -------------------- SEND MESSAGE -------------------- */
-  const handleSendMessage = (e) => {
-    if (e) e.preventDefault();
-    if (!message.trim() || !socket || !selectedChat) return;
-
-    socket.emit("send-message", {
-      text: message,
-      toUser: selectedChat.user._id,
-    });
-
-    setMessage("");
+  const handleScroll = () => {
+    if (
+      messagesBoxRef.current?.scrollTop === 0 &&
+      hasMore &&
+      nextCursor &&
+      activeConversation
+    ) {
+      loadHistory(activeConversation._id, nextCursor);
+    }
   };
 
   /* -------------------- AUTO SCROLL -------------------- */
   useEffect(() => {
-    if (messagesBoxRef.current && messages.length > 0 && !isLoadingMessages) {
-      setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  /* -------------------- TYPING INDICATOR -------------------- */
+  useEffect(() => {
+    if (!socket || !activeConversation) return;
+
+    if (msgInput.trim() === "") {
+      socket.emit("typing", {
+        conversationId: activeConversation._id,
+        isTyping: false,
+      });
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      return;
     }
-  }, [messages, isLoadingMessages]);
+
+    socket.emit("typing", {
+      conversationId: activeConversation._id,
+      isTyping: true,
+    });
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing", {
+        conversationId: activeConversation._id,
+        isTyping: false,
+      });
+    }, 3000);
+
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [msgInput, socket, activeConversation]);
 
   /* -------------------- HELPERS -------------------- */
   const isOnline = (uid) => onlineUsers.has(String(uid));
   const isTyping = (uid) => typingUsers[String(uid)];
-
-  /* -------------------- FORMAT TIME -------------------- */
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  
+  const formatFileSize = (bytes) => {
+    if (!bytes) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  /* -------------------- GET AVATAR INITIAL -------------------- */
-  const getAvatar = (name) => {
-    if (!name) return "U";
-    return name.charAt(0).toUpperCase();
-  };
-
-  /* -------------------- FORMAT LAST MESSAGE TIME -------------------- */
-  const formatLastMessageTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-    return `${Math.floor(diffMins / 1440)}d ago`;
+  const getFileIcon = (fileType) => {
+    if (fileType?.startsWith("image/")) return <Image size={16} />;
+    if (fileType?.includes("pdf")) return <File size={16} />;
+    if (fileType?.includes("word") || fileType?.includes("document")) return <File size={16} />;
+    return <File size={16} />;
   };
 
   return (
-    <div className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50">
-      {/* Floating Chat Button - Smaller on mobile */}
+    <>
+      {/* Floating Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="relative bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 active:scale-95 group"
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 z-50"
         >
-          <svg
-            className="w-5 h-5 sm:w-7 sm:h-7"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-
-          {/* Unread Badge - Smaller on mobile */}
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center animate-pulse">
-              {unreadCount > 9 ? "9+" : unreadCount}
+          <MessageCircle size={28} />
+          {totalUnread > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+              {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
-
-          <span className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-30 group-hover:animate-ping"></span>
         </button>
       )}
 
-      {/* Chat Panel - Optimized for mobile */}
+      {/* Chat Window */}
       {isOpen && (
         <div
-          className={`bg-white rounded-xl sm:rounded-2xl shadow-2xl transition-all duration-300 ${
-            isMinimized
-              ? "w-64 sm:w-80 h-14 sm:h-16"
-              : "w-[90vw] sm:w-96 h-[85vh] sm:h-[600px] max-w-sm"
-          } flex flex-col overflow-hidden`}
+          className={`fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl z-50 flex flex-col transition-all duration-300 ${
+            isMinimized ? "h-16 w-80" : "h-[600px] w-96"
+          }`}
         >
-          {/* Header - Compact on mobile */}
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-2.5 sm:p-4 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-              {selectedChat && (
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle size={24} />
+              <h3 className="font-semibold">
+                {activeConversation
+                  ? activeConversation.user.firstName
+                  : "Messages"}
+              </h3>
+              {activeConversation && isOnline(activeConversation.user._id) && (
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {activeConversation && (
                 <button
-                  onClick={handleBack}
-                  className="hover:bg-white/20 rounded-full p-1 transition-colors flex-shrink-0"
+                  onClick={() => {
+                    setActiveConversation(null);
+                    setSelectedFile(null);
+                    setFilePreview(null);
+                    setUploadError(null);
+                  }}
+                  className="hover:bg-blue-800 p-1 rounded transition"
                 >
                   <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -315,280 +453,277 @@ const handleScroll = () => {
                   </svg>
                 </button>
               )}
-              <div className="w-7 h-7 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center text-base sm:text-xl flex-shrink-0">
-                💬
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-xs sm:text-lg truncate">
-                  {selectedChat ? selectedChat.user.firstName : "Messages"}
-                </h3>
-                <p className="text-[10px] sm:text-xs text-white/80 truncate">
-                  {selectedChat
-                    ? isOnline(selectedChat.user._id)
-                      ? "Online"
-                      : "Offline"
-                    : `${unreadCount} unread`}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-0.5 sm:gap-2 flex-shrink-0">
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="hover:bg-white/20 rounded-full p-1 sm:p-2 transition-colors"
+                className="hover:bg-blue-800 p-1 rounded transition"
               >
-                <Minimize2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                <Minimize2 size={20} />
               </button>
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  setSelectedChat(null);
-                  setIsMinimized(false);
-                  if (socket) socket.disconnect();
-                }}
-                className="hover:bg-white/20 rounded-full p-1 sm:p-2 transition-colors"
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-blue-800 p-1 rounded transition"
               >
-                <X className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                <X size={20} />
               </button>
             </div>
           </div>
 
+          {/* Content */}
           {!isMinimized && (
             <>
-              {/* Chat List View - Compact on mobile */}
-              {!selectedChat ? (
+              {!activeConversation ? (
+                /* Conversations List */
                 <div className="flex-1 overflow-y-auto">
-                  {isLoadingConversations ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-600"></div>
-                    </div>
-                  ) : conversations.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full p-3 sm:p-4 text-center">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 text-gray-400">
-                        <svg
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-gray-500 font-medium text-sm sm:text-base">
-                        No conversations yet
-                      </p>
-                      <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">
-                        When customers message you, they'll appear here
-                      </p>
+                  {conversations.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      No conversations yet
                     </div>
                   ) : (
                     conversations.map((conv) => (
-                      <button
+                      <div
                         key={conv._id}
-                        onClick={() => handleChatSelect(conv)}
-                        className="w-full p-2.5 sm:p-4 hover:bg-gray-50 transition-colors flex items-start gap-2 sm:gap-3 border-b border-gray-100"
+                        onClick={() => handleSelectConversation(conv)}
+                        className="p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
                       >
-                        <div className="relative flex-shrink-0">
-                          <div className="w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg">
-                            {getAvatar(conv.user.firstName)}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="relative">
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                {conv.user.firstName?.charAt(0).toUpperCase()}
+                              </div>
+                              {isOnline(conv.user._id) && (
+                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-gray-900">
+                                {conv.user.firstName}
+                              </div>
+                              <div className="text-sm text-gray-500 truncate">
+                                {conv.lastMessage?.file ? (
+                                  <span className="flex items-center gap-1">
+                                    <Paperclip size={12} />
+                                    {conv.lastMessage.fileName || "File"}
+                                  </span>
+                                ) : (
+                                  conv.lastMessage?.text || "No messages"
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          {isOnline(conv.user._id) && (
-                            <Circle className="absolute bottom-0 right-0 w-2 h-2 sm:w-3 sm:h-3 fill-green-500 text-green-500" />
+                          {conv.unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 px-2 flex items-center justify-center ml-2">
+                              {conv.unreadCount}
+                            </span>
                           )}
                         </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <div className="flex justify-between items-start mb-0.5 sm:mb-1 gap-2">
-                            <h4 className="font-semibold text-gray-900 text-xs sm:text-base truncate">
-                              {conv.user.firstName}
-                            </h4>
-                            <span className="text-[10px] sm:text-xs text-gray-500 flex-shrink-0">
-                              {formatLastMessageTime(
-                                conv.lastMessage?.createdAt,
-                              )}
-                            </span>
-                          </div>
-                          <p className="text-[11px] sm:text-sm text-gray-600 truncate">
-                            {conv.lastMessage?.text || "No messages yet"}
-                          </p>
-                        </div>
-                        {conv.unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center flex-shrink-0">
-                            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
-                          </span>
-                        )}
-                      </button>
+                      </div>
                     ))
                   )}
                 </div>
               ) : (
+                /* Chat View */
                 <>
-                  {/* Messages View - Optimized spacing */}
+                  {/* Typing Indicator */}
+                  {isTyping(activeConversation.user._id) && (
+                    <div className="px-4 py-2 bg-blue-50 text-sm text-blue-600">
+                      {activeConversation.user.firstName} is typing
+                      <span className="typing-dots">
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Messages */}
                   <div
                     ref={messagesBoxRef}
                     onScroll={handleScroll}
-                    className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50 space-y-2 sm:space-y-3"
+                    className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3"
                   >
-                    {isLoadingMessages && messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-600"></div>
-                      </div>
-                    ) : messages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full p-3 sm:p-4 text-center">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 mb-3 sm:mb-4 text-gray-300">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                            />
-                          </svg>
-                        </div>
-                        <p className="text-gray-500 font-medium text-sm sm:text-base">
-                          No messages yet
-                        </p>
-                        <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2 max-w-xs">
-                          Start the conversation by sending a message to{" "}
-                          {selectedChat?.user.firstName}
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        {hasMore && nextCursor && (
-                          <div className="text-center py-1.5 sm:py-2">
-                            <button
-                              onClick={() =>
-                                loadHistory(selectedChat._id, nextCursor)
-                              }
-                              className="text-[10px] sm:text-xs text-purple-600 hover:text-purple-800 px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-full shadow-sm border border-gray-200 hover:border-purple-300 transition-colors"
-                              disabled={isLoadingMessages}
-                            >
-                              {isLoadingMessages ? (
-                                <span className="flex items-center gap-1.5 sm:gap-2">
-                                  <div className="animate-spin rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 border-b-2 border-purple-600"></div>
-                                  Loading...
-                                </span>
-                              ) : (
-                                "Load earlier messages"
-                              )}
-                            </button>
-                          </div>
-                        )}
+                    {messages.map((msg) => {
+                      const isAdmin = msg.senderRole === "admin";
+                      const isImage = msg.fileType?.startsWith("image/") || 
+                                     (msg.file && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.file));
+                      const isFile = msg.file && !isImage;
 
-                        {messages.map((msg) => (
+                      return (
+                        <div
+                          key={msg._id}
+                          className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
+                        >
                           <div
-                            key={msg._id || msg.id}
-                            className={`flex ${
-                              msg.senderRole === "admin"
-                                ? "justify-end"
-                                : "justify-start"
+                            className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                              isAdmin
+                                ? "bg-blue-600 text-white rounded-br-sm"
+                                : "bg-white text-gray-900 rounded-bl-sm shadow-sm"
                             }`}
                           >
-                            <div
-                              className={`max-w-[80%] sm:max-w-[70%] rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 ${
-                                msg.senderRole === "admin"
-                                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-none"
-                                  : "bg-white text-gray-800 rounded-bl-none shadow-sm"
-                              }`}
-                            >
-                              {msg.text && (
-                                <p className="text-xs sm:text-sm break-words">
-                                  {msg.text}
-                                </p>
-                              )}
-
-                              {/* File attachments */}
-                              {msg.file && (
-                                <div className="mt-1.5 sm:mt-2">
-                                  {msg.file.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                            {msg.text && <div className="break-words mb-1">{msg.text}</div>}
+                            
+                            {/* File Display */}
+                            {msg.file && (
+                              <div className="mt-1">
+                                {isImage ? (
+                                  <div className="space-y-1">
                                     <img
                                       src={`${BASE_URL}/${msg.file}`}
-                                      alt="Attachment"
-                                      className="max-w-full h-auto rounded-lg"
-                                      style={{ maxWidth: "150px" }}
+                                      alt={msg.fileName || "Image"}
+                                      className="rounded-lg max-w-full h-auto max-h-64 object-cover"
                                     />
-                                  ) : (
-                                    <a
-                                      href={`${BASE_URL}/${msg.file}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm flex items-center gap-1"
-                                    >
-                                      <span>📎</span>
-                                      <span>Download file</span>
-                                    </a>
-                                  )}
-                                </div>
-                              )}
-
-                              <p
-                                className={`text-[10px] sm:text-xs mt-0.5 sm:mt-1 ${
-                                  msg.senderRole === "admin"
-                                    ? "text-white/70"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {formatTime(msg.createdAt)}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Typing indicator */}
-                        {isTyping(selectedChat.user._id) && (
-                          <div className="flex justify-start">
-                            <div className="max-w-[70%] rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 bg-white text-gray-800 rounded-bl-none shadow-sm">
-                              <div className="flex gap-1">
-                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
-                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
+                                    {msg.fileName && (
+                                      <div className="text-xs opacity-90 truncate">
+                                        {msg.fileName}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : isFile ? (
+                                  <a
+                                    href={`${BASE_URL}/${msg.file}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                      isAdmin 
+                                        ? "bg-blue-700 border-blue-800 hover:bg-blue-800" 
+                                        : "bg-gray-100 border-gray-200 hover:bg-gray-200"
+                                    } transition-colors`}
+                                  >
+                                    <div className="flex-shrink-0">
+                                      {getFileIcon(msg.fileType)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium truncate">
+                                        {msg.fileName || "Download file"}
+                                      </div>
+                                      {msg.fileSize && (
+                                        <div className="text-xs opacity-75">
+                                          {formatFileSize(msg.fileSize)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Paperclip size={16} className="flex-shrink-0" />
+                                  </a>
+                                ) : null}
                               </div>
-                            </div>
+                            )}
                           </div>
-                        )}
-
-                        <div ref={bottomRef} />
-                      </>
-                    )}
+                        </div>
+                      );
+                    })}
+                    <div ref={bottomRef} />
                   </div>
 
-                  {/* Message Input - Compact on mobile */}
-                  <div className="p-2 sm:p-4 bg-white border-t border-gray-200 flex-shrink-0">
-                    <form
-                      onSubmit={handleSendMessage}
-                      className="flex gap-1.5 sm:gap-2"
-                    >
+                  {/* Error Message */}
+                  {uploadError && (
+                    <div className="px-4 py-2 bg-red-50 text-red-600 text-sm border-t border-red-100">
+                      {uploadError}
+                      <button
+                        onClick={() => setUploadError(null)}
+                        className="float-right text-red-400 hover:text-red-600"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* File Preview Section */}
+                  {selectedFile && (
+                    <div className="px-4 py-2 bg-blue-50 border-t border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {filePreview ? (
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={filePreview}
+                                alt="Preview"
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                              <div>
+                                <div className="text-sm font-medium truncate max-w-[150px]">
+                                  {selectedFile.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {formatFileSize(selectedFile.size)}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center">
+                                {getFileIcon(selectedFile.type)}
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium truncate max-w-[150px]">
+                                  {selectedFile.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {formatFileSize(selectedFile.size)}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={removeSelectedFile}
+                          disabled={isUploading}
+                          className="text-red-500 hover:text-red-700 disabled:opacity-50"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Input Area */}
+                  <div className="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
+                    <div className="flex items-center gap-2">
+                      {/* File Attachment Button */}
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="p-2 text-gray-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Attach file"
+                      >
+                        <Paperclip size={20} />
+                      </button>
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.zip"
+                      />
+                      
                       <input
                         type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder={
-                          selectedChat
-                            ? "Type a message..."
-                            : "Select a conversation"
-                        }
-                        className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-base border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={!selectedChat}
+                        value={msgInput}
+                        onChange={(e) => setMsgInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder={selectedFile ? "Add a caption (optional)..." : "Type a message..."}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={isUploading}
                       />
+                      
                       <button
-                        type="submit"
-                        disabled={!selectedChat || !message.trim()}
-                        className={`rounded-full p-2 sm:p-2.5 transition-all duration-200 active:scale-95 flex-shrink-0 ${
-                          selectedChat && message.trim()
-                            ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
+                        onClick={handleSend}
+                        disabled={(!msgInput.trim() && !selectedFile) || isUploading || !socket}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full p-2 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        title="Send message"
                       >
-                        <Send className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        {isUploading ? (
+                          <Loader2 size={20} className="animate-spin" />
+                        ) : (
+                          <Send size={20} />
+                        )}
                       </button>
-                    </form>
+                    </div>
+                    
+                    {/* File type hint */}
+                    <div className="text-xs text-gray-400 mt-2 text-center">
+                      Supports images, documents, and files (Max 10MB)
+                    </div>
                   </div>
                 </>
               )}
@@ -596,8 +731,29 @@ const handleScroll = () => {
           )}
         </div>
       )}
-    </div>
-  );
-};
 
-export default FloatingChatWidget;
+      <style>{`
+        .typing-dots span {
+          animation: blink 1.4s infinite;
+          animation-fill-mode: both;
+        }
+        .typing-dots span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .typing-dots span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+        @keyframes blink {
+          0%,
+          80%,
+          100% {
+            opacity: 0;
+          }
+          40% {
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </>
+  );
+}

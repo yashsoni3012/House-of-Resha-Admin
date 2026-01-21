@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { exportToCSV } from "../utils/exportCSV";
 import {
   Users,
   RefreshCw,
@@ -12,11 +11,7 @@ import {
   AlertCircle,
   Download,
   Eye,
-  Filter,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-  Shield,
+  X,
   CheckCircle,
   XCircle,
   ChevronLeft,
@@ -24,10 +19,60 @@ import {
   ChevronsLeft,
   ChevronsRight,
   BarChart3,
-  Tag,
-  Package,
-  X,
 } from "lucide-react";
+
+// CSV Export Utility
+const exportToCSV = (data, filename = "export.csv") => {
+  try {
+    if (!data || data.length === 0) {
+      throw new Error("No data to export");
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row) =>
+        headers
+          .map((header) => {
+            const value = row[header];
+            if (value === null || value === undefined) return "";
+            const stringValue = String(value);
+            // Escape quotes and wrap in quotes if contains comma, quotes, or newline
+            if (
+              stringValue.includes(",") ||
+              stringValue.includes('"') ||
+              stringValue.includes("\n")
+            ) {
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+          })
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    return {
+      success: true,
+      count: data.length,
+      fileName: filename,
+    };
+  } catch (error) {
+    console.error("CSV export error:", error);
+    throw error;
+  }
+};
 
 const StatsCard = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
@@ -67,23 +112,54 @@ const UserManagement = () => {
     setSelectedUser(null);
   };
 
-  const handleExportCSV = async () => {
-    if (filteredUsers.length === 0) {
-      setError("No users to export!");
-      return;
-    }
-
-    setExporting(true);
-    setError(null);
-
+  // API fetch function
+  const fetchUsers = async (url, isActive = true) => {
     try {
-      const result = await exportToCSV(filteredUsers, activeTab, getUserField);
-      console.log(`✅ Exported ${result.count} users to ${result.fileName}`);
+      console.log(`Fetching from: ${url}`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        mode: "cors",
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const userData = await response.json();
+      let usersArray = userData;
+
+      // Handle different response formats
+      if (!Array.isArray(userData)) {
+        usersArray = userData.users || userData.data || userData.result || [];
+      }
+
+      // Return empty array if no users
+      if (!Array.isArray(usersArray) || usersArray.length === 0) {
+        return [];
+      }
+
+      // Process users
+      return usersArray.map((user, index) => ({
+        ...user,
+        id: user.id || user._id || `temp_${Date.now()}_${index}`,
+        status: isActive ? "active" : "inactive",
+      }));
     } catch (error) {
-      console.error("Export failed:", error);
-      setError(`Export failed: ${error.message}`);
-    } finally {
-      setExporting(false);
+      console.error(
+        `Error fetching ${isActive ? "active" : "inactive"} users:`,
+        error,
+      );
+      throw error;
     }
   };
 
@@ -96,17 +172,7 @@ const UserManagement = () => {
     isFetching: activeUsersFetching,
   } = useQuery({
     queryKey: ["active-users"],
-    queryFn: async () => {
-      const response = await fetch("https://api.houseofresha.com/data");
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const userData = await response.json();
-      let usersArray = userData;
-      if (!Array.isArray(userData)) {
-        usersArray = userData.users || userData.data || userData.result || [];
-      }
-      return usersArray;
-    },
+    queryFn: () => fetchUsers("https://api.houseofresha.com/data", true),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 2,
@@ -122,19 +188,8 @@ const UserManagement = () => {
     isFetching: inactiveUsersFetching,
   } = useQuery({
     queryKey: ["inactive-users"],
-    queryFn: async () => {
-      const response = await fetch(
-        "https://api.houseofresha.com/inactive-users"
-      );
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const userData = await response.json();
-      let usersArray = userData;
-      if (!Array.isArray(userData)) {
-        usersArray = userData.users || userData.data || userData.result || [];
-      }
-      return usersArray;
-    },
+    queryFn: () =>
+      fetchUsers("https://api.houseofresha.com/inactive-users", false),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 2,
@@ -142,6 +197,8 @@ const UserManagement = () => {
   });
 
   const getUserField = (user, fieldNames) => {
+    if (!user) return "N/A";
+
     for (let field of fieldNames) {
       if (
         user[field] !== undefined &&
@@ -152,6 +209,73 @@ const UserManagement = () => {
       }
     }
     return "N/A";
+  };
+
+  const handleExportCSV = async () => {
+    if (filteredUsers.length === 0) {
+      setError("No users to export!");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setExporting(true);
+    setError(null);
+
+    try {
+      // Prepare data for export
+      const exportData = filteredUsers.map((user) => ({
+        "First Name": getUserField(user, [
+          "firstname",
+          "firstName",
+          "first_name",
+          "fname",
+          "name",
+        ]),
+        "Last Name": getUserField(user, [
+          "lastname",
+          "lastName",
+          "last_name",
+          "lname",
+          "surname",
+        ]),
+        Email: getUserField(user, ["email", "emailAddress", "email_address"]),
+        Phone: getUserField(user, [
+          "phone",
+          "phoneNumber",
+          "phone_number",
+          "number",
+          "mobile",
+          "contact",
+        ]),
+        Status: activeTab === "active" ? "Active" : "Inactive",
+        "User ID": user.id || user._id || "N/A",
+        Role: getUserField(user, ["role", "roles", "userType"]),
+        "Created Date": user.createdAt
+          ? new Date(user.createdAt).toLocaleDateString()
+          : "N/A",
+        "Last Login": user.lastLogin
+          ? new Date(user.lastLogin).toLocaleDateString()
+          : "N/A",
+      }));
+
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `users_${activeTab}_${timestamp}.csv`;
+
+      const result = exportToCSV(exportData, filename);
+      console.log(`✅ Exported ${exportData.length} users to ${filename}`);
+
+      // Show success message
+      setError(`✅ Successfully exported ${exportData.length} users`);
+      setTimeout(() => setError(null), 3000);
+
+      return result;
+    } catch (error) {
+      console.error("Export failed:", error);
+      setError(`Export failed: ${error.message}`);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleRefreshAll = () => {
@@ -169,8 +293,19 @@ const UserManagement = () => {
   const isFetching = activeUsersFetching || inactiveUsersFetching;
   const hasError = activeUsersError || inactiveUsersError;
 
+  // Check for data availability based on active tab
+  const hasDataForCurrentTab =
+    activeTab === "active"
+      ? !activeUsersError &&
+        Array.isArray(activeUsers) &&
+        activeUsers.length > 0
+      : !inactiveUsersError &&
+        Array.isArray(inactiveUsers) &&
+        inactiveUsers.length > 0;
+
   const currentUsers = activeTab === "active" ? activeUsers : inactiveUsers;
 
+  // Sort users
   const sortedUsers = [...currentUsers].sort((a, b) => {
     const aName = getUserField(a, [
       "firstname",
@@ -195,7 +330,10 @@ const UserManagement = () => {
     return 0;
   });
 
+  // Filter users
   const filteredUsers = sortedUsers.filter((user) => {
+    if (!searchTerm) return true;
+
     const searchLower = searchTerm.toLowerCase();
     const firstName = getUserField(user, [
       "firstname",
@@ -233,39 +371,47 @@ const UserManagement = () => {
     );
   });
 
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  // Pagination
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredUsers.length / usersPerPage),
+  );
   const startIndex = (currentPage - 1) * usersPerPage;
   const endIndex = startIndex + usersPerPage;
   const currentUsersPage = filteredUsers.slice(startIndex, endIndex);
 
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
-    }
-    setCurrentPage(1);
-  };
-
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const goToFirstPage = () => setCurrentPage(1);
   const goToLastPage = () => setCurrentPage(totalPages);
-  const goToPreviousPage = () =>
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const goToNextPage = () =>
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPreviousPage = () => handlePageChange(currentPage - 1);
+  const goToNextPage = () => handlePageChange(currentPage + 1);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, searchTerm]);
 
-  // Stats calculations
-  const totalActiveUsers = activeUsers.length;
-  const totalInactiveUsers = inactiveUsers.length;
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  // Stats calculations - show 0 if error
+  const totalActiveUsers = activeUsersError
+    ? 0
+    : Array.isArray(activeUsers)
+      ? activeUsers.length
+      : 0;
+  const totalInactiveUsers = inactiveUsersError
+    ? 0
+    : Array.isArray(inactiveUsers)
+      ? inactiveUsers.length
+      : 0;
   const totalUsers = totalActiveUsers + totalInactiveUsers;
 
   return (
@@ -289,16 +435,16 @@ const UserManagement = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {/* <button
+              <button
                 onClick={handleRefreshAll}
                 disabled={isFetching}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors disabled:opacity-50"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
                 />
-                Refresh
-              </button> */}
+                Refresh Data
+              </button>
             </div>
           </div>
         </div>
@@ -310,25 +456,25 @@ const UserManagement = () => {
           <StatsCard
             icon={Users}
             label="Total Users"
-            value={isLoading ? "..." : totalUsers}
+            value={isLoading ? "..." : totalUsers.toLocaleString()}
             color="bg-blue-500"
           />
           <StatsCard
             icon={UserCheck}
             label="Active Users"
-            value={isLoading ? "..." : totalActiveUsers}
+            value={isLoading ? "..." : totalActiveUsers.toLocaleString()}
             color="bg-green-500"
           />
           <StatsCard
             icon={UserX}
             label="Inactive Users"
-            value={isLoading ? "..." : totalInactiveUsers}
+            value={isLoading ? "..." : totalInactiveUsers.toLocaleString()}
             color="bg-red-500"
           />
           <StatsCard
             icon={BarChart3}
             label="Search Results"
-            value={filteredUsers.length}
+            value={filteredUsers.length.toLocaleString()}
             color="bg-purple-500"
           />
         </div>
@@ -336,7 +482,7 @@ const UserManagement = () => {
         {/* Search & Tabs Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6">
           <div className="flex flex-col gap-3 sm:gap-4">
-            {/* Main Controls Row - Desktop: all in one line, Mobile: stacked */}
+            {/* Main Controls Row */}
             <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-center">
               {/* Tabs */}
               <div className="flex gap-2">
@@ -370,7 +516,7 @@ const UserManagement = () => {
                 </button>
               </div>
 
-              {/* Search - Flexible width */}
+              {/* Search */}
               <div className="flex-1 lg:min-w-[300px]">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -380,11 +526,12 @@ const UserManagement = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                    disabled={hasError || !hasDataForCurrentTab}
                   />
                   {searchTerm && (
                     <button
                       onClick={clearSearch}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -395,7 +542,13 @@ const UserManagement = () => {
               {/* Export Button */}
               <button
                 onClick={handleExportCSV}
-                disabled={isLoading || exporting || filteredUsers.length === 0}
+                disabled={
+                  isLoading ||
+                  exporting ||
+                  filteredUsers.length === 0 ||
+                  hasError ||
+                  !hasDataForCurrentTab
+                }
                 className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
               >
                 {exporting ? (
@@ -419,32 +572,45 @@ const UserManagement = () => {
             </div>
 
             {/* Results Info */}
-            <div className="text-xs sm:text-sm text-gray-600">
-              Showing{" "}
-              <span className="font-semibold text-indigo-600">
-                {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)}
-              </span>{" "}
-              of <span className="font-semibold">{filteredUsers.length}</span>{" "}
-              users
-              {searchTerm && (
-                <span className="block sm:inline mt-1 sm:mt-0">
-                  {" "}
-                  matching "
-                  <span className="font-semibold text-gray-900 break-words">
-                    {searchTerm}
+            {hasDataForCurrentTab && !hasError && (
+              <div className="text-xs sm:text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-semibold text-indigo-600">
+                  {filteredUsers.length > 0 ? startIndex + 1 : 0}-
+                  {Math.min(endIndex, filteredUsers.length)}
+                </span>{" "}
+                of <span className="font-semibold">{filteredUsers.length}</span>{" "}
+                users
+                {searchTerm && (
+                  <span className="block sm:inline mt-1 sm:mt-0">
+                    {" "}
+                    matching "
+                    <span className="font-semibold text-gray-900 break-words">
+                      {searchTerm}
+                    </span>
+                    "
                   </span>
-                  "
-                </span>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Error Alert */}
+        {/* Success/Error Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+          <div
+            className={`mb-6 p-4 rounded-lg border ${
+              error.includes("✅")
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5" />
+              {error.includes("✅") ? (
+                <CheckCircle className="w-5 h-5" />
+              ) : (
+                <AlertCircle className="w-5 h-5" />
+              )}
               <p className="font-medium">{error}</p>
             </div>
           </div>
@@ -454,35 +620,75 @@ const UserManagement = () => {
         {isLoading && (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-indigo-600"></div>
-            <p className="mt-4 text-gray-600">Loading users...</p>
+            <p className="mt-4 text-gray-600">Loading users from server...</p>
           </div>
         )}
 
-        {/* Error State */}
-        {hasError && (
+        {/* API Error State */}
+        {hasError && !isLoading && (
           <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
             <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-4">
                 <AlertCircle className="text-red-600 w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-red-800 mb-2">
-                Error Loading Users
+                Unable to Load Users
               </h3>
               <p className="text-red-600 mb-4">
-                {activeUsersError?.message || inactiveUsersError?.message}
+                {activeTab === "active"
+                  ? activeUsersError?.message || "Failed to load active users"
+                  : inactiveUsersError?.message ||
+                    "Failed to load inactive users"}
               </p>
               <button
                 onClick={handleRefreshAll}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               >
-                Try Again
+                Retry Connection
               </button>
             </div>
           </div>
         )}
 
-        {/* Users Table */}
-        {!isLoading && !hasError && (
+        {/* No Data State - Show when API succeeds but returns empty data */}
+        {!isLoading && !hasError && !hasDataForCurrentTab && (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+              {activeTab === "active" ? (
+                <UserCheck className="text-gray-400 w-8 h-8" />
+              ) : (
+                <UserX className="text-gray-400 w-8 h-8" />
+              )}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              No {activeTab === "active" ? "Active" : "Inactive"} Users Found
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {activeTab === "active"
+                ? "There are currently no active users in the system."
+                : "There are currently no inactive users in the system."}
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={handleRefreshAll}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Refresh Data
+              </button>
+              {activeTab === "inactive" && (
+                <button
+                  onClick={() => setActiveTab("active")}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  View Active Users
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Users Table - Only show when we have data */}
+        {!isLoading && !hasError && hasDataForCurrentTab && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -505,8 +711,8 @@ const UserManagement = () => {
                 <tbody className="divide-y divide-gray-200">
                   {currentUsersPage.map((user, index) => (
                     <tr
-                      key={user.id || user._id || index}
-                      className="hover:bg-gray-50"
+                      key={user.id || index}
+                      className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -558,22 +764,26 @@ const UserManagement = () => {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm text-gray-700">
                             <Mail className="w-4 h-4 text-gray-400" />
-                            {getUserField(user, [
-                              "email",
-                              "emailAddress",
-                              "email_address",
-                            ])}
+                            <span className="truncate max-w-[200px]">
+                              {getUserField(user, [
+                                "email",
+                                "emailAddress",
+                                "email_address",
+                              ])}
+                            </span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-700">
                             <Phone className="w-4 h-4 text-gray-400" />
-                            {getUserField(user, [
-                              "phone",
-                              "phoneNumber",
-                              "phone_number",
-                              "number",
-                              "mobile",
-                              "contact",
-                            ])}
+                            <span className="truncate max-w-[200px]">
+                              {getUserField(user, [
+                                "phone",
+                                "phoneNumber",
+                                "phone_number",
+                                "number",
+                                "mobile",
+                                "contact",
+                              ])}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -615,33 +825,35 @@ const UserManagement = () => {
               </table>
             </div>
 
-            {/* Empty State */}
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-12">
-                <div
-                  className={`w-16 h-16 rounded-full ${
-                    activeTab === "active" ? "bg-green-100" : "bg-red-100"
-                  } flex items-center justify-center mx-auto mb-4`}
-                >
-                  {activeTab === "active" ? (
-                    <UserCheck className="text-green-600 w-8 h-8" />
-                  ) : (
-                    <UserX className="text-red-600 w-8 h-8" />
-                  )}
+            {/* Empty Search Results */}
+            {filteredUsers.length === 0 &&
+              hasDataForCurrentTab &&
+              !hasError && (
+                <div className="text-center py-12">
+                  <div
+                    className={`w-16 h-16 rounded-full ${
+                      activeTab === "active" ? "bg-green-100" : "bg-red-100"
+                    } flex items-center justify-center mx-auto mb-4`}
+                  >
+                    {activeTab === "active" ? (
+                      <UserCheck className="text-green-600 w-8 h-8" />
+                    ) : (
+                      <UserX className="text-red-600 w-8 h-8" />
+                    )}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                    {searchTerm ? "No users found" : `No ${activeTab} users`}
+                  </h3>
+                  <p className="text-gray-500">
+                    {searchTerm
+                      ? "Try adjusting your search"
+                      : `There are no ${activeTab} users at the moment`}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  {searchTerm ? "No users found" : `No ${activeTab} users`}
-                </h3>
-                <p className="text-gray-500">
-                  {searchTerm
-                    ? "Try adjusting your search"
-                    : `There are no ${activeTab} users at the moment`}
-                </p>
-              </div>
-            )}
+              )}
 
             {/* Pagination */}
-            {filteredUsers.length > 0 && (
+            {filteredUsers.length > 0 && hasDataForCurrentTab && !hasError && (
               <div className="border-t border-gray-200 px-4 sm:px-6 py-4">
                 <div className="flex flex-col gap-4">
                   {/* Page Info - Mobile Top */}
@@ -682,8 +894,20 @@ const UserManagement = () => {
                       {/* Page Numbers */}
                       <div className="flex gap-1">
                         {Array.from(
-                          { length: totalPages },
-                          (_, i) => i + 1
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            return pageNum;
+                          },
                         ).map((page) => (
                           <button
                             key={page}
@@ -723,10 +947,9 @@ const UserManagement = () => {
                     </div>
                   </div>
 
-                  {/* Mobile Pagination Controls - Centered */}
+                  {/* Mobile Pagination Controls */}
                   <div className="flex sm:hidden justify-center">
                     <div className="flex items-center gap-2">
-                      {/* First Page */}
                       <button
                         onClick={goToFirstPage}
                         disabled={currentPage === 1}
@@ -735,7 +958,6 @@ const UserManagement = () => {
                         <ChevronsLeft className="w-4 h-4" />
                       </button>
 
-                      {/* Previous Page */}
                       <button
                         onClick={goToPreviousPage}
                         disabled={currentPage === 1}
@@ -744,11 +966,9 @@ const UserManagement = () => {
                         <ChevronLeft className="w-4 h-4" />
                       </button>
 
-                      {/* Page Numbers - Limited on Mobile */}
                       <div className="flex gap-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                           .filter((page) => {
-                            // Show current page and 1 page on each side on mobile
                             return Math.abs(page - currentPage) <= 1;
                           })
                           .map((page) => (
@@ -766,7 +986,6 @@ const UserManagement = () => {
                           ))}
                       </div>
 
-                      {/* Next Page */}
                       <button
                         onClick={goToNextPage}
                         disabled={currentPage === totalPages}
@@ -775,7 +994,6 @@ const UserManagement = () => {
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
-                      {/* Last Page */}
                       <button
                         onClick={goToLastPage}
                         disabled={currentPage === totalPages}
@@ -793,103 +1011,6 @@ const UserManagement = () => {
       </div>
 
       {/* User View Modal */}
-      {/* {viewModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={closeView}
-          ></div>
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold text-lg">
-                  {getUserField(selectedUser, [
-                    "firstname",
-                    "firstName",
-                    "name",
-                  ]).charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {getUserField(selectedUser, [
-                      "firstname",
-                      "firstName",
-                      "name",
-                    ])}{" "}
-                    {getUserField(selectedUser, ["lastname", "lastName"])}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    ID: {selectedUser.id || selectedUser._id || "N/A"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeView}
-                className="p-2 rounded-md hover:bg-gray-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-2">
-                  Contact
-                </h4>
-                <div className="text-sm text-gray-700">
-                  <strong>Email:</strong>{" "}
-                  {getUserField(selectedUser, ["email", "emailAddress"])}
-                </div>
-                <div className="text-sm text-gray-700 mt-1">
-                  <strong>Phone:</strong>{" "}
-                  {getUserField(selectedUser, [
-                    "phone",
-                    "phoneNumber",
-                    "mobile",
-                  ])}
-                </div>
-                <div className="text-sm text-gray-700 mt-1">
-                  <strong>Last Login:</strong>{" "}
-                  {selectedUser.lastLogin
-                    ? new Date(selectedUser.lastLogin).toLocaleString()
-                    : "N/A"}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-2">
-                  Profile
-                </h4>
-                <div className="text-sm text-gray-700">
-                  <strong>Role:</strong>{" "}
-                  {getUserField(selectedUser, ["role", "roles"])}
-                </div>
-                <div className="text-sm text-gray-700 mt-1">
-                  <strong>Created at:</strong>{" "}
-                  {selectedUser.createdAt
-                    ? new Date(selectedUser.createdAt).toLocaleString()
-                    : "N/A"}
-                </div>
-                <div className="text-sm text-gray-700 mt-1">
-                  <strong>Address:</strong>{" "}
-                  {getUserField(selectedUser, ["address", "location", "city"])}
-                </div>
-              </div>
-
-            </div>
-
-            <div className="p-4 border-t flex justify-end gap-2">
-              <button
-                onClick={closeView}
-                className="px-4 py-2 bg-gray-100 rounded-md"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
-
       {viewModalOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -931,7 +1052,8 @@ const UserManagement = () => {
                     </h2>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full">
-                        {getUserField(selectedUser, ["role", "roles"])}
+                        {getUserField(selectedUser, ["role", "roles"]) ||
+                          "User"}
                       </span>
                       <span className="text-white/80 text-sm">
                         ID: {selectedUser.id || selectedUser._id || "N/A"}
@@ -955,19 +1077,7 @@ const UserManagement = () => {
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
+                      <Mail className="w-5 h-5 text-blue-600" />
                     </div>
                     <h3 className="font-bold text-gray-800">
                       Contact Information
@@ -977,19 +1087,7 @@ const UserManagement = () => {
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                          />
-                        </svg>
+                        <Mail className="w-4 h-4 text-gray-500" />
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Email Address</p>
@@ -1004,19 +1102,7 @@ const UserManagement = () => {
 
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                          />
-                        </svg>
+                        <Phone className="w-4 h-4 text-gray-500" />
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Phone Number</p>
@@ -1055,11 +1141,10 @@ const UserManagement = () => {
                       <div>
                         <p className="text-sm text-gray-500">Address</p>
                         <p className="font-medium text-gray-900">
-                          {getUserField(selectedUser, [
-                            "address",
-                            "location",
-                            "city",
-                          ]) || "Not provided"}
+                          {selectedUser.address ||
+                            selectedUser.location ||
+                            selectedUser.city ||
+                            "Not provided"}
                         </p>
                       </div>
                     </div>
@@ -1070,25 +1155,7 @@ const UserManagement = () => {
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-purple-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
+                      <UserCheck className="w-5 h-5 text-purple-600" />
                     </div>
                     <h3 className="font-bold text-gray-800">
                       Account Information
@@ -1168,111 +1235,20 @@ const UserManagement = () => {
                         <p className="text-sm text-gray-500">Account Status</p>
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          Active
+                          {activeTab === "active" ? "Active" : "Inactive"}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Additional Information Section */}
-              {/* <div className="mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="font-bold text-gray-800">
-                    Additional Information
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {Object.entries(selectedUser).map(([key, value]) => {
-                    // Skip already displayed fields
-                    const skipFields = [
-                      "id",
-                      "_id",
-                      "firstname",
-                      "firstName",
-                      "name",
-                      "lastname",
-                      "lastName",
-                      "email",
-                      "emailAddress",
-                      "phone",
-                      "phoneNumber",
-                      "mobile",
-                      "address",
-                      "location",
-                      "city",
-                      "role",
-                      "roles",
-                      "lastLogin",
-                      "createdAt",
-                      "profilePicture",
-                      "avatar",
-                    ];
-
-                    if (skipFields.includes(key) || !value) return null;
-
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
-                      >
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <svg
-                            className="w-4 h-4 text-blue-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2-2h4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2H5z"
-                            />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                            {key.replace(/([A-Z])/g, " $1").trim()}
-                          </p>
-                          <p className="text-sm text-gray-900 font-medium mt-1 truncate">
-                            {typeof value === "object"
-                              ? JSON.stringify(value)
-                              : value.toString()}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div> */}
             </div>
 
             {/* Footer */}
             <div className="border-t border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Updated just now</span> */}
+                <div className="text-sm text-gray-500">
+                  User ID: {selectedUser.id || selectedUser._id || "N/A"}
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -1281,16 +1257,6 @@ const UserManagement = () => {
                   >
                     Close
                   </button>
-                  {/* <button
-              onClick={() => {
-                // Add edit functionality here
-                console.log('Edit user:', selectedUser);
-                closeView();
-              }}
-              className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              Edit Profile
-            </button> */}
                 </div>
               </div>
             </div>
