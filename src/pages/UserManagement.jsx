@@ -96,7 +96,7 @@ const UserManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
-  const usersPerPage = 5;
+  const usersPerPage = 10;
 
   // View modal state
   const [selectedUser, setSelectedUser] = useState(null);
