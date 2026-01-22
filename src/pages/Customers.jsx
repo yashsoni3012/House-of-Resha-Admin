@@ -182,7 +182,7 @@ const Customers = () => {
       avgOrderValue:
         customer.orders > 0 ? customer.totalSpent / customer.orders : 0,
       formattedAvgOrder: formatINR(
-        customer.orders > 0 ? customer.totalSpent / customer.orders : 0
+        customer.orders > 0 ? customer.totalSpent / customer.orders : 0,
       ),
     }));
   };
@@ -269,11 +269,11 @@ const Customers = () => {
   const totalCustomers = customers.length;
   const totalOrders = customers.reduce(
     (sum, customer) => sum + customer.orders,
-    0
+    0,
   );
   const totalRevenue = customers.reduce(
     (sum, customer) => sum + customer.totalSpent,
-    0
+    0,
   );
   const activeCustomers = customers.filter((c) => c.status === "active").length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -781,11 +781,11 @@ const Customers = () => {
                       const maxVisible = 5;
                       let startPage = Math.max(
                         1,
-                        currentPage - Math.floor(maxVisible / 2)
+                        currentPage - Math.floor(maxVisible / 2),
                       );
                       let endPage = Math.min(
                         totalPages,
-                        startPage + maxVisible - 1
+                        startPage + maxVisible - 1,
                       );
 
                       if (endPage - startPage + 1 < maxVisible) {
@@ -804,7 +804,7 @@ const Customers = () => {
                             }`}
                           >
                             {i}
-                          </button>
+                          </button>,
                         );
                       }
                       return pages;
@@ -1010,8 +1010,8 @@ const Customers = () => {
                             selectedCustomer.latestOrderStatus === "completed"
                               ? "bg-green-100 text-green-800"
                               : selectedCustomer.latestOrderStatus === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {selectedCustomer.latestOrderStatus}
@@ -1062,8 +1062,8 @@ const Customers = () => {
                             order.status === "completed"
                               ? "bg-green-100 text-green-800"
                               : order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {order.status}

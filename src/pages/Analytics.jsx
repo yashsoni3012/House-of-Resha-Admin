@@ -184,10 +184,16 @@ const AnalyticsDashboard = () => {
     hasFetchedAllLogsRef.current = false;
 
     try {
+      // Build URL with page filter
+      let logsUrl = `${BASE_URL}/?pageNo=${currentPage}&limit=${PAGE_SIZE}`;
+      if (selectedPage && selectedPage !== "all") {
+        logsUrl += `&page=${encodeURIComponent(selectedPage)}`;
+      }
+
       const [summaryRes, pageAnalyticsRes, logsRes] = await Promise.all([
         fetch(`${BASE_URL}/summary`),
         fetch(`${BASE_URL}/`),
-        fetch(`${BASE_URL}/?pageNo=${currentPage}&limit=${PAGE_SIZE}`),
+        fetch(logsUrl),
       ]);
 
       if (!summaryRes.ok || !pageAnalyticsRes.ok || !logsRes.ok) {
@@ -209,6 +215,44 @@ const AnalyticsDashboard = () => {
         setTotalLogsCount(logsData.total);
       }
     } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageFilterChange = (e) => {
+    const pageValue = e.target.value;
+    setSelectedPage(pageValue);
+    setCurrentPage(1);
+    setShowSearchResults(false);
+    setSearchResults([]);
+    
+    // Fetch data with the new filter
+    fetchFilteredData(pageValue);
+  };
+
+  const fetchFilteredData = async (pageFilter) => {
+    try {
+      setLoading(true);
+      
+      let url = `${BASE_URL}/?pageNo=1&limit=${PAGE_SIZE}`;
+      if (pageFilter && pageFilter !== "all") {
+        url += `&page=${encodeURIComponent(pageFilter)}`;
+      }
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch filtered data");
+      
+      const logsData = await response.json();
+      setDetailedLogs(Array.isArray(logsData.data) ? logsData.data : []);
+      
+      if (logsData.total) {
+        setTotalPages(Math.ceil(logsData.total / PAGE_SIZE));
+        setTotalLogsCount(logsData.total);
+      }
+    } catch (err) {
+      console.error("Filter fetch error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -465,48 +509,54 @@ const AnalyticsDashboard = () => {
     };
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <div className="text-sm text-gray-600 sm:text-left text-center">
-          Showing{" "}
+      <div className="grid grid-cols-1 xs:grid-cols-3 items-center gap-3 sm:gap-4 px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
+        <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left order-2 xs:order-1">
+          <span className="hidden sm:inline">Showing </span>
           <span className="font-semibold text-gray-900">
             {(currentPage - 1) * PAGE_SIZE + 1}
-          </span>{" "}
-          to{" "}
+          </span>
+          <span className="hidden sm:inline"> to </span>
+          <span className="xs:hidden">-</span>
           <span className="font-semibold text-gray-900">
             {Math.min(currentPage * PAGE_SIZE, detailedLogs.length)}
-          </span>{" "}
-          of{" "}
+          </span>
+          {" of "}
           <span className="font-semibold text-gray-900">
             {detailedLogs.length}
-          </span>{" "}
-          entries
+          </span>
+          <span className="hidden xs:inline"> entries</span>
+          {selectedPage !== "all" && !showSearchResults && (
+            <span className="ml-2 text-purple-600 text-xs font-medium">
+              (Filtered by: {getPageFriendlyName(selectedPage)})
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 order-1 xs:order-2">
           <button
             onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
-            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
             title="First Page"
           >
-            <ChevronsLeft size={16} />
+            <ChevronsLeft size={14} className="sm:w-4 sm:h-4" />
           </button>
 
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
             title="Previous Page"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
           </button>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 xs:gap-1">
             {generatePageNumbers().map((page, index) =>
               page === "..." ? (
                 <span
                   key={`ellipsis-${index}`}
-                  className="px-2 py-1 text-gray-400"
+                  className="px-1 xs:px-1.5 sm:px-2 py-0.5 text-gray-400 text-xs"
                 >
                   ...
                 </span>
@@ -514,11 +564,11 @@ const AnalyticsDashboard = () => {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`min-w-[40px] h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  className={`min-w-[28px] xs:min-w-[32px] sm:min-w-[36px] md:min-w-[40px] h-7 xs:h-8 sm:h-9 md:h-10 flex items-center justify-center rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     currentPage === page
-                      ? "bg-blue-600 text-white"
+                      ? "bg-blue-600 text-white shadow-sm"
                       : "text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
+                  } active:scale-95`}
                 >
                   {page}
                 </button>
@@ -529,23 +579,23 @@ const AnalyticsDashboard = () => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
             title="Next Page"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={14} className="sm:w-4 sm:h-4" />
           </button>
 
           <button
             onClick={() => setCurrentPage(totalPages)}
             disabled={currentPage === totalPages}
-            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
             title="Last Page"
           >
-            <ChevronsRight size={16} />
+            <ChevronsRight size={14} className="sm:w-4 sm:h-4" />
           </button>
         </div>
 
-        <div className="hidden sm:block" />
+        <div className="hidden xs:block order-3" />
       </div>
     );
   };
@@ -666,66 +716,54 @@ const AnalyticsDashboard = () => {
     })),
   ];
 
-  const displayLogs = showSearchResults ? searchResults : detailedLogs;
   const hasActiveFilters = searchTerm || selectedPage !== "all";
+  const displayLogs = showSearchResults ? searchResults : detailedLogs;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Analytics Dashboard
-              </h1>
-              <p className="text-gray-600">
-                Real-time insights into your application usage
-              </p>
-              
-            </div>
-            <div className="flex items-center gap-2">
-              {isSearching && (
-                <div className="flex items-center gap-2 text-blue-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-                  <span className="text-sm">Searching...</span>
+          <div className="bg-white shadow-sm p-4 sm:p-6 backdrop-blur-lg bg-opacity-90">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Left side */}
+              <div className="flex items-start gap-3">
+                <div className="flex w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-100 items-center justify-center flex-shrink-0">
+                  <Activity className="text-blue-600" size={20} />
                 </div>
-              )}
-              <button
-                onClick={fetchAllData}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <RefreshCw size={18} />
-                Refresh
-              </button>
+
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
+                    Analytics Dashboard
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 break-words">
+                    Real-time insights into your application usage
+                  </p>
+                </div>
+              </div>
+
+              {/* Right side actions */}
+              <div className="flex items-center gap-3 justify-end sm:justify-start flex-shrink-0">
+                {isSearching && (
+                  <div className="flex items-center gap-2 text-blue-600 text-xs sm:text-sm">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
+                    <span>Searching...</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Summary Stats */}
         {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <SearchStatsCard />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
             <StatCard
               title="Total Views"
               value={summary.totalViews}
               icon={Eye}
               color="#3b82f6"
               subtitle="All-time page views"
-            />
-            <StatCard
-              title="Unique Visitors"
-              value={summary.uniqueVisitors}
-              icon={Users}
-              color="#10b981"
-              subtitle="Distinct users"
-            />
-            <StatCard
-              title="Today's Views"
-              value={summary.todayViews}
-              icon={TrendingUp}
-              color="#f59e0b"
-              subtitle="Views in last 24h"
             />
             <StatCard
               title="Avg Time Spent"
@@ -741,15 +779,105 @@ const AnalyticsDashboard = () => {
               color="#8b5cf6"
               subtitle="Authenticated sessions"
             />
-            <StatCard
-              title="Anonymous Users"
-              value={summary.anonymousUsers}
-              icon={Users}
-              color="#ec4899"
-              subtitle="Guest sessions"
-            />
           </div>
         )}
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {pageAnalytics.length > 0 && (
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+                Page Views by Route
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={pageAnalytics.slice(0, 10).map((item) => ({
+                    ...item,
+                    friendlyName: getPageFriendlyName(item.page),
+                  }))}
+                  margin={{ top: 5, right: 5, left: -10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="friendlyName"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    fontSize={10}
+                    stroke="#6b7280"
+                    interval={0}
+                  />
+                  <YAxis fontSize={10} stroke="#6b7280" width={40} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-2 sm:p-3 border border-gray-200 rounded-lg shadow-lg max-w-[200px] sm:max-w-none">
+                            <p className="font-semibold text-gray-900 text-xs sm:text-sm break-words">
+                              {payload[0].payload.friendlyName}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-1 break-all">
+                              {payload[0].payload.page}
+                            </p>
+                            <p className="text-blue-600 font-bold mt-1 sm:mt-2 text-xs sm:text-sm">
+                              Views: {payload[0].value}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    dataKey="totalViews"
+                    fill="#3b82f6"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {userDistributionData.length > 0 && (
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+                User Distribution
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={userDistributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value, percent }) => {
+                      const isMobile = window.innerWidth < 640;
+                      return isMobile
+                        ? `${(percent * 100).toFixed(0)}%`
+                        : `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
+                    }}
+                    outerRadius={window.innerWidth < 640 ? 80 : 100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    style={{
+                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
+                    }}
+                  >
+                    {userDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      fontSize: window.innerWidth < 640 ? "12px" : "14px",
+                      padding: window.innerWidth < 640 ? "8px" : "10px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
 
         {/* Enhanced Search Input */}
         <div className="mb-8">
@@ -782,24 +910,24 @@ const AnalyticsDashboard = () => {
 
           {/* Search tips */}
           {searchTerm && (
-            <div className="mt-3 text-sm text-gray-600 flex flex-wrap items-center gap-2">
+            <div className="mt-3 text-xs sm:text-sm text-gray-600 flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="font-medium">Searching:</span>
-              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium break-all">
                 "{searchTerm}"
               </span>
-              <span>•</span>
-              <span>
+              <span className="hidden sm:inline">•</span>
+              <span className="text-xs sm:text-sm">
                 Found{" "}
                 <span className="font-bold text-blue-600">
                   {searchResults.length}
                 </span>{" "}
-                matches
+                {searchResults.length === 1 ? "match" : "matches"}
               </span>
               {searchResults.length > 0 && (
                 <>
-                  <span>•</span>
-                  <span className="text-green-600">
-                    Showing all results (not paginated)
+                  <span className="hidden sm:inline">•</span>
+                  <span className="text-green-600 text-xs sm:text-sm">
+                    Showing all results
                   </span>
                 </>
               )}
@@ -807,107 +935,28 @@ const AnalyticsDashboard = () => {
           )}
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {pageAnalytics.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Page Views by Route
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={pageAnalytics.slice(0, 10).map((item) => ({
-                    ...item,
-                    friendlyName: getPageFriendlyName(item.page),
-                  }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="friendlyName"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    fontSize={11}
-                    stroke="#6b7280"
-                  />
-                  <YAxis fontSize={11} stroke="#6b7280" />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                            <p className="font-semibold text-gray-900">
-                              {payload[0].payload.friendlyName}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {payload[0].payload.page}
-                            </p>
-                            <p className="text-blue-600 font-bold mt-2">
-                              Views: {payload[0].value}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar
-                    dataKey="totalViews"
-                    fill="#3b82f6"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {userDistributionData.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                User Distribution
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={userDistributionData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value, percent }) =>
-                      `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
-                    }
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {userDistributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-
         {/* Detailed Logs Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+          {/* Header Section */}
+          <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2 flex-wrap">
                   {showSearchResults
                     ? "Search Results"
                     : "Recent Activity Logs"}
                   {searchTerm && (
-                    <span className="ml-2 text-sm font-normal text-blue-600">
-                      ({searchResults.length} matches)
+                    <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-blue-100 text-blue-700 rounded-full">
+                      {searchResults.length} matches
+                    </span>
+                  )}
+                  {!showSearchResults && selectedPage !== "all" && (
+                    <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
+                      {getPageFriendlyName(selectedPage)}
                     </span>
                   )}
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2">
                   {showSearchResults ? (
                     <>
                       Found{" "}
@@ -921,30 +970,38 @@ const AnalyticsDashboard = () => {
                       total logs
                     </>
                   ) : (
-                    <>
-                      Showing page{" "}
-                      <span className="font-semibold text-gray-900">
+                    <span className="flex flex-wrap items-center gap-1">
+                      <span>Page</span>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
                         {currentPage}
-                      </span>{" "}
-                      of{" "}
-                      <span className="font-semibold text-gray-900">
+                      </span>
+                      <span>of</span>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
                         {totalPages}
-                      </span>{" "}
-                      •{" "}
-                      <span className="font-semibold text-gray-900">
+                      </span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs sm:text-sm">
                         {detailedLogs.length}
-                      </span>{" "}
-                      entries per page
-                    </>
+                      </span>
+                      <span className="hidden sm:inline">entries</span>
+                      {selectedPage !== "all" && (
+                        <>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-semibold text-xs sm:text-sm">
+                            Filtered by: {getPageFriendlyName(selectedPage)}
+                          </span>
+                        </>
+                      )}
+                    </span>
                   )}
                 </p>
               </div>
 
               {!showSearchResults && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <OptimizedSelect
                     value={selectedPage}
-                    onChange={(e) => setSelectedPage(e.target.value)}
+                    onChange={handlePageFilterChange}
                     options={pageOptions}
                     icon={Filter}
                     placeholder="Filter by page..."
@@ -954,42 +1011,48 @@ const AnalyticsDashboard = () => {
               )}
             </div>
 
-            {hasActiveFilters && !showSearchResults && (
-              <div className="mb-4">
+            {hasActiveFilters && (
+              <div className="mb-0">
                 <button
                   onClick={() => {
                     setSearchTerm("");
                     setSelectedPage("all");
                     setCurrentPage(1);
+                    setShowSearchResults(false);
+                    setSearchResults([]);
+                    hasFetchedAllLogsRef.current = false;
+                    fetchAllData();
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
                 >
+                  <X size={16} />
                   Clear All Filters
                 </button>
               </div>
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View - Hidden on mobile */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     User Details
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Page Visited
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Time Spent
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider hidden md:table-cell">
+                  {/* <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Session ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider hidden lg:table-cell">
+                  </th> */}
+                  {/* <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     IP Address
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  </th> */}
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -1011,46 +1074,36 @@ const AnalyticsDashboard = () => {
                     return (
                       <tr
                         key={log._id || Math.random()}
-                        className="hover:bg-blue-50 transition-colors"
+                        className="hover:bg-blue-50 transition-all duration-200 group"
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2 mb-1">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
                                   logUserId
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
                                     : "bg-gray-200 text-gray-700"
                                 }`}
                               >
                                 {highlightMatch(userName, searchTerm)}
                               </span>
                               {log.matchType && (
-                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
                                   {log.matchType.replace("_", " ")}
                                 </span>
                               )}
                             </div>
                             {userEmail && (
-                              <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                                <Mail size={10} />
+                              <div className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
+                                <Mail size={12} className="text-gray-400" />
                                 {highlightMatch(userEmail, searchTerm)}
-                              </div>
-                            )}
-                            {logUserId && (
-                              <div className="text-xs text-gray-500 mt-1 font-mono">
-                                ID:{" "}
-                                {highlightMatch(
-                                  logUserId.substring(0, 12),
-                                  searchTerm,
-                                )}
-                                {logUserId.length > 12 && "..."}
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <div className="font-semibold text-gray-900">
+                          <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
                             {highlightMatch(pageName, searchTerm)}
                           </div>
                           <div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
@@ -1058,20 +1111,20 @@ const AnalyticsDashboard = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                          <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
                             {logTimeSpent}s
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono hidden md:table-cell">
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
                           {logSessionId.substring(0, 10)}...
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono hidden lg:table-cell">
+                        </td> */}
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
                           {logIp}
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => handleViewDetails(log)}
-                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs font-medium"
+                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md text-xs font-medium"
                           >
                             View Details
                           </button>
@@ -1081,29 +1134,37 @@ const AnalyticsDashboard = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <div className="text-gray-400">
-                        <Search size={48} className="mx-auto mb-3 opacity-50" />
-                        <p className="text-gray-600 font-medium">
+                    <td colSpan="6" className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                          <Search size={32} className="text-gray-400" />
+                        </div>
+                        <p className="text-gray-900 font-semibold text-lg mb-1">
                           {searchTerm
                             ? "No matching users found"
+                            : selectedPage !== "all"
+                            ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
                             : "No activity logs found"}
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mb-4">
                           {searchTerm
-                            ? `Try searching with a different name or term`
+                            ? "Try searching with a different name or term"
+                            : selectedPage !== "all"
+                            ? "Try selecting a different page filter"
                             : "Try refreshing the page"}
                         </p>
-                        {searchTerm && (
+                        {(searchTerm || selectedPage !== "all") && (
                           <button
                             onClick={() => {
                               setSearchTerm("");
+                              setSelectedPage("all");
                               setShowSearchResults(false);
                               setSearchResults([]);
+                              fetchAllData();
                             }}
-                            className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
                           >
-                            Clear Search
+                            Clear All Filters
                           </button>
                         )}
                       </div>
@@ -1112,17 +1173,138 @@ const AnalyticsDashboard = () => {
                 )}
               </tbody>
             </table>
-
-            {/* Only show pagination when not in search mode */}
-            {!showSearchResults && <EnhancedPagination />}
           </div>
+
+          {/* Mobile/Tablet Card View - Visible on small and medium screens */}
+          <div className="lg:hidden">
+            {displayLogs.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {displayLogs.map((log) => {
+                  if (!log) return null;
+
+                  const logPage = log.page || "";
+                  const logUserId = log.userId || "";
+                  const logSessionId = log.sessionId || "";
+                  const logIp = log.ip || "";
+                  const logTimeSpent = log.timeSpent || 0;
+                  const userName = getUserName(logUserId);
+                  const userEmail = getUserEmail(logUserId);
+                  const pageName = getPageFriendlyName(logPage);
+
+                  return (
+                    <div
+                      key={log._id || Math.random()}
+                      className="p-4 sm:p-5 hover:bg-blue-50 transition-all duration-200 active:bg-blue-100"
+                    >
+                      {/* User Info */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
+                                logUserId
+                                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                                  : "bg-gray-200 text-gray-700"
+                              }`}
+                            >
+                              {highlightMatch(userName, searchTerm)}
+                            </span>
+                            {log.matchType && (
+                              <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
+                                {log.matchType.replace("_", " ")}
+                              </span>
+                            )}
+                          </div>
+                          {userEmail && (
+                            <div className="text-xs text-gray-600 flex items-center gap-1.5">
+                              <Mail
+                                size={12}
+                                className="text-gray-400 flex-shrink-0"
+                              />
+                              <span className="truncate">
+                                {highlightMatch(userEmail, searchTerm)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ml-2 flex-shrink-0">
+                          {logTimeSpent}s
+                        </span>
+                      </div>
+
+                      {/* Page Info */}
+                      <div className="mb-3 bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                          Page Visited
+                        </div>
+                        <div className="font-semibold text-gray-900 text-sm mb-1">
+                          {highlightMatch(pageName, searchTerm)}
+                        </div>
+                        <div className="text-xs text-gray-600 truncate">
+                          {highlightMatch(logPage, searchTerm)}
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <button
+                        onClick={() => handleViewDetails(log)}
+                        className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium active:scale-98"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-6 py-16 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Search size={32} className="text-gray-400" />
+                  </div>
+                  <p className="text-gray-900 font-semibold text-base sm:text-lg mb-1">
+                    {searchTerm
+                      ? "No matching users found"
+                      : selectedPage !== "all"
+                      ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
+                      : "No activity logs found"}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4 px-4">
+                    {searchTerm
+                      ? "Try searching with a different name or term"
+                      : selectedPage !== "all"
+                      ? "Try selecting a different page filter"
+                      : "Try refreshing the page"}
+                  </p>
+                  {(searchTerm || selectedPage !== "all") && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedPage("all");
+                        setShowSearchResults(false);
+                        setSearchResults([]);
+                        fetchAllData();
+                      }}
+                      className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination - Only show when not in search mode */}
+          {!showSearchResults && <EnhancedPagination />}
         </div>
       </div>
 
       {/* User Details Modal */}
       {userDetailsModalOpen && selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
