@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/analytics", name: "Analytics", icon: BarChart3 },
 
     /* ✅ ONLY ONE CONTENT ENTRY */
-    { path: "/content", name: "Content Manager", icon: FileText },
+    { path: "/content", name: "CMS", icon: FileText },
   ];
 
   const handleNavigation = (path) => {

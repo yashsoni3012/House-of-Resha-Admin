@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { MessageCircle, X, Send, Paperclip, Minimize2, Image, File, Loader2 } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Paperclip,
+  Minimize2,
+  Image,
+  File,
+  Loader2,
+} from "lucide-react";
 
 const BASE_URL = "https://api.houseofresha.com";
 
@@ -19,7 +28,7 @@ export default function FloatingChatWidget() {
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
-  
+
   // File upload states
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -35,7 +44,7 @@ export default function FloatingChatWidget() {
   useEffect(() => {
     const unread = conversations.reduce(
       (sum, conv) => sum + (conv.unreadCount || 0),
-      0
+      0,
     );
     setTotalUnread(unread);
   }, [conversations]);
@@ -67,10 +76,10 @@ export default function FloatingChatWidget() {
     };
 
     fetchConversations();
-    
+
     // Refresh conversations every 10 seconds to update unread counts
     const interval = setInterval(fetchConversations, 10000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -104,15 +113,15 @@ export default function FloatingChatWidget() {
     setNextCursor(null);
     setHasMore(true);
     await loadHistory(conv._id);
-    
+
     // Reset file states when switching conversations
     setSelectedFile(null);
     setFilePreview(null);
     setUploadError(null);
-    
+
     // Mark conversation as read
     setConversations((prev) =>
-      prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c))
+      prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c)),
     );
   };
 
@@ -173,7 +182,7 @@ export default function FloatingChatWidget() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Upload failed");
       }
@@ -185,7 +194,9 @@ export default function FloatingChatWidget() {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      setUploadError(error.message || "Failed to upload file. Please try again.");
+      setUploadError(
+        error.message || "Failed to upload file. Please try again.",
+      );
       return null;
     } finally {
       setIsUploading(false);
@@ -195,7 +206,7 @@ export default function FloatingChatWidget() {
   /* -------------------- SEND MESSAGE -------------------- */
   const handleSend = async (e) => {
     if (e) e.preventDefault();
-    
+
     if ((!msgInput.trim() && !selectedFile) || !socket || !activeConversation) {
       setUploadError("Please enter a message or select a file");
       return;
@@ -216,7 +227,7 @@ export default function FloatingChatWidget() {
         file: filePath,
         fileName: selectedFile.name,
         fileType: selectedFile.type,
-        fileSize: selectedFile.size
+        fileSize: selectedFile.size,
       });
 
       // Clear file states
@@ -266,7 +277,7 @@ export default function FloatingChatWidget() {
             };
           }
           return c;
-        })
+        }),
       );
     });
 
@@ -374,7 +385,7 @@ export default function FloatingChatWidget() {
   /* -------------------- HELPERS -------------------- */
   const isOnline = (uid) => onlineUsers.has(String(uid));
   const isTyping = (uid) => typingUsers[String(uid)];
-  
+
   const formatFileSize = (bytes) => {
     if (!bytes) return "0 Bytes";
     const k = 1024;
@@ -386,7 +397,8 @@ export default function FloatingChatWidget() {
   const getFileIcon = (fileType) => {
     if (fileType?.startsWith("image/")) return <Image size={16} />;
     if (fileType?.includes("pdf")) return <File size={16} />;
-    if (fileType?.includes("word") || fileType?.includes("document")) return <File size={16} />;
+    if (fileType?.includes("word") || fileType?.includes("document"))
+      return <File size={16} />;
     return <File size={16} />;
   };
 
@@ -544,8 +556,10 @@ export default function FloatingChatWidget() {
                   >
                     {messages.map((msg) => {
                       const isAdmin = msg.senderRole === "admin";
-                      const isImage = msg.fileType?.startsWith("image/") || 
-                                     (msg.file && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.file));
+                      const isImage =
+                        msg.fileType?.startsWith("image/") ||
+                        (msg.file &&
+                          /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.file));
                       const isFile = msg.file && !isImage;
 
                       return (
@@ -560,8 +574,10 @@ export default function FloatingChatWidget() {
                                 : "bg-white text-gray-900 rounded-bl-sm shadow-sm"
                             }`}
                           >
-                            {msg.text && <div className="break-words mb-1">{msg.text}</div>}
-                            
+                            {msg.text && (
+                              <div className="break-words mb-1">{msg.text}</div>
+                            )}
+
                             {/* File Display */}
                             {msg.file && (
                               <div className="mt-1">
@@ -584,8 +600,8 @@ export default function FloatingChatWidget() {
                                     target="_blank"
                                     rel="noreferrer"
                                     className={`flex items-center gap-3 p-3 rounded-lg border ${
-                                      isAdmin 
-                                        ? "bg-blue-700 border-blue-800 hover:bg-blue-800" 
+                                      isAdmin
+                                        ? "bg-blue-700 border-blue-800 hover:bg-blue-800"
                                         : "bg-gray-100 border-gray-200 hover:bg-gray-200"
                                     } transition-colors`}
                                   >
@@ -602,7 +618,10 @@ export default function FloatingChatWidget() {
                                         </div>
                                       )}
                                     </div>
-                                    <Paperclip size={16} className="flex-shrink-0" />
+                                    <Paperclip
+                                      size={16}
+                                      className="flex-shrink-0"
+                                    />
                                   </a>
                                 ) : null}
                               </div>
@@ -687,7 +706,7 @@ export default function FloatingChatWidget() {
                       >
                         <Paperclip size={20} />
                       </button>
-                      
+
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -695,20 +714,28 @@ export default function FloatingChatWidget() {
                         className="hidden"
                         accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.zip"
                       />
-                      
+
                       <input
                         type="text"
                         value={msgInput}
                         onChange={(e) => setMsgInput(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        placeholder={selectedFile ? "Add a caption (optional)..." : "Type a message..."}
+                        placeholder={
+                          selectedFile
+                            ? "Add a caption (optional)..."
+                            : "Type a message..."
+                        }
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={isUploading}
                       />
-                      
+
                       <button
                         onClick={handleSend}
-                        disabled={(!msgInput.trim() && !selectedFile) || isUploading || !socket}
+                        disabled={
+                          (!msgInput.trim() && !selectedFile) ||
+                          isUploading ||
+                          !socket
+                        }
                         className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full p-2 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
                         title="Send message"
                       >
@@ -719,7 +746,7 @@ export default function FloatingChatWidget() {
                         )}
                       </button>
                     </div>
-                    
+
                     {/* File type hint */}
                     <div className="text-xs text-gray-400 mt-2 text-center">
                       Supports images, documents, and files (Max 10MB)

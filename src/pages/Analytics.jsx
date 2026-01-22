@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -12,1084 +12,1283 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
-const API_BASE_URL = "https://api.houseofresha.com";
-
-// Page name mapping configuration
-const PAGE_NAME_MAPPING = {
-  // Exact path matches
-  "/": "Home Page",
-  "/home": "Home Page",
-  "/blogs": "Blogs Page",
-  "/blog": "Blog Details",
-  "/products": "Products Page",
-  "/product": "Product Details",
-  "/services": "Services Page",
-  "/about": "About Us",
-  "/contact": "Contact Us",
-  "/login": "Login Page",
-  "/register": "Register Page",
-  "/dashboard": "User Dashboard",
-  "/profile": "User Profile",
-  "/cart": "Shopping Cart",
-  "/checkout": "Checkout",
-  "/wishlist": "Wishlist",
-  "/account": "My Account",
-  "/settings": "Settings",
-  "/faq": "FAQ",
-  "/privacy": "Privacy Policy",
-  "/terms": "Terms of Service",
-
-  // Dynamic routes patterns (will be matched using regex)
-  "/blog/": "Blog Post", // For /blog/*
-  "/product/": "Product", // For /product/*
-  "/category/": "Category", // For /category/*
-  "/user/": "User Profile", // For /user/*
-  "/admin/": "Admin Panel", // For /admin/*
-  "/api/": "API Endpoint", // For /api/*
-};
-
-// Function to get readable page name from URL
-const getPageName = (url) => {
-  if (!url) return "Unknown Page";
-
-  // Clean the URL (remove query params and fragments)
-  const cleanUrl = url.split("?")[0].split("#")[0];
-
-  // First, try exact match
-  if (PAGE_NAME_MAPPING[cleanUrl]) {
-    return PAGE_NAME_MAPPING[cleanUrl];
-  }
-
-  // Then, try pattern matching for dynamic routes
-  for (const [pattern, name] of Object.entries(PAGE_NAME_MAPPING)) {
-    if (
-      pattern.endsWith("/") &&
-      cleanUrl.startsWith(pattern.slice(0, -1) + "/")
-    ) {
-      return name;
-    }
-  }
-
-  // For nested paths, extract the first part
-  const parts = cleanUrl.split("/").filter((part) => part);
-  if (parts.length > 0) {
-    const basePath = `/${parts[0]}`;
-    if (PAGE_NAME_MAPPING[basePath]) {
-      return PAGE_NAME_MAPPING[basePath];
-    }
-
-    // Capitalize the first part as fallback
-    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + " Page";
-  }
-
-  // Return the original URL if no match found
-  return cleanUrl || "Unknown Page";
-};
+import {
+  Activity,
+  Users,
+  Clock,
+  Eye,
+  TrendingUp,
+  Search,
+  X,
+  Filter,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  RefreshCw,
+  User,
+  Mail,
+  Calendar,
+  Loader,
+} from "lucide-react";
 
 const AnalyticsDashboard = () => {
   const [summary, setSummary] = useState(null);
-  const [pageStats, setPageStats] = useState([]);
-  const [analyticsData, setAnalyticsData] = useState([]);
+  const [pageAnalytics, setPageAnalytics] = useState([]);
+  const [detailedLogs, setDetailedLogs] = useState([]);
+  const [userData, setUserData] = useState({});
+  const [allLogs, setAllLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [userDetails, setUserDetails] = useState([]);
-  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPage, setSelectedPage] = useState("all");
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [userDetailsModalOpen, setUserDetailsModalOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [totalLogsCount, setTotalLogsCount] = useState(0);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
-  const [filters, setFilters] = useState({
-    page: "",
-    userId: "",
-    startDate: "",
-    endDate: "",
-    pageNo: 1,
-    limit: 20,
-  });
+  const PAGE_SIZE = 20;
+  const BASE_URL = "https://api.houseofresha.com/analytics";
+  const USER_API_URL = "https://api.houseofresha.com/data";
 
-  const [pagination, setPagination] = useState({
-    total: 0,
-    pageNo: 1,
-    limit: 20,
-  });
+  const searchTimeoutRef = useRef(null);
+  const hasFetchedAllLogsRef = useRef(false);
 
-  // Get unique pages for dropdown
-  const getUniquePages = () => {
-    const pagesSet = new Set();
-    const pages = [];
-
-    // Add all pages from pageStats
-    pageStats.forEach((stat) => {
-      const pageName = getPageName(stat.page);
-      if (stat.page && !pagesSet.has(pageName)) {
-        pagesSet.add(pageName);
-        pages.push({
-          value: stat.page,
-          label: pageName,
-        });
-      }
-    });
-
-    // Add all pages from analyticsData
-    analyticsData.forEach((item) => {
-      const pageName = getPageName(item.page);
-      if (item.page && !pagesSet.has(pageName)) {
-        pagesSet.add(pageName);
-        pages.push({
-          value: item.page,
-          label: pageName,
-        });
-      }
-    });
-
-    // Sort alphabetically by label
-    return pages.sort((a, b) => a.label.localeCompare(b.label));
-  };
-
-  const fetchSummary = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/analytics/summary`);
-      const result = await response.json();
-      if (result.success) {
-        setSummary(result.data);
-      }
-    } catch (err) {
-      console.error("Error fetching summary:", err);
-      setError("Failed to load summary data");
+  const getPageFriendlyName = useCallback((url) => {
+    if (!url || typeof url !== "string") {
+      return "Unknown Page";
     }
-  };
 
-  const fetchPageStats = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/analytics/pages`);
-      const result = await response.json();
-      if (Array.isArray(result)) {
-        // Transform page stats to include display names
-        const transformedStats = result.map((stat) => ({
-          ...stat,
-          pageName: getPageName(stat.page),
-        }));
-        setPageStats(transformedStats);
-      } else {
-        setPageStats([]);
-      }
-    } catch (err) {
-      console.error("Error fetching page stats:", err);
-      setPageStats([]);
-    }
-  };
-
-  const fetchAnalytics = async () => {
-    try {
-      const queryParams = new URLSearchParams();
-      Object.keys(filters).forEach((key) => {
-        if (filters[key]) {
-          queryParams.append(key, filters[key]);
-        }
-      });
-
-      const response = await fetch(`${API_BASE_URL}/analytics?${queryParams}`);
-      const result = await response.json();
-
-      if (result.success) {
-        // Transform analytics data to include display names
-        const transformedData = Array.isArray(result.data)
-          ? result.data.map((item) => ({
-              ...item,
-              pageName: getPageName(item.page),
-            }))
-          : [];
-        setAnalyticsData(transformedData);
-        setPagination({
-          total: result.total || 0,
-          pageNo: result.pageNo || 1,
-          limit: result.limit || 20,
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching analytics:", err);
-      setAnalyticsData([]);
-    }
-  };
-
-  const fetchUserDetails = async (userId) => {
-    setLoadingUserDetails(true);
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/analytics?userId=${userId}&limit=100`,
-      );
-      const result = await response.json();
-      if (result.success) {
-        // Transform user details to include display names
-        const transformedDetails = Array.isArray(result.data)
-          ? result.data.map((item) => ({
-              ...item,
-              pageName: getPageName(item.page),
-            }))
-          : [];
-        setUserDetails(transformedDetails);
-      }
-    } catch (err) {
-      console.error("Error fetching user details:", err);
-      setUserDetails([]);
-    } finally {
-      setLoadingUserDetails(false);
-    }
-  };
-
-  const handleViewUser = (userId) => {
-    setSelectedUser(userId);
-    setShowModal(true);
-    fetchUserDetails(userId);
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      await Promise.all([fetchSummary(), fetchPageStats(), fetchAnalytics()]);
-      setLoading(false);
+    const pageNames = {
+      "/": "Home Page",
+      "/home": "Home Page",
+      "/app/home": "App Home",
+      "/app": "App",
+      "/blogs": "Blogs Page",
+      "/blog": "Blog Page",
+      "/about": "About Us",
+      "/contact": "Contact Page",
+      "/products": "Products",
+      "/services": "Services",
+      "/pricing": "Pricing",
+      "/login": "Login Page",
+      "/signup": "Sign Up",
+      "/register": "Registration",
+      "/dashboard": "Dashboard",
+      "/profile": "User Profile",
+      "/settings": "Settings",
+      "/cart": "Shopping Cart",
+      "/checkout": "Checkout",
+      "/orders": "Orders",
+      "/account": "My Account",
+      "/search": "Search",
+      "/help": "Help Center",
+      "/faq": "FAQ",
+      "/support": "Support",
+      "/terms": "Terms & Conditions",
+      "/privacy": "Privacy Policy",
     };
-    loadData();
+
+    if (pageNames[url]) {
+      return pageNames[url];
+    }
+
+    if (url.includes("/app/detailpage/")) return "Detail Page";
+    if (url.includes("/product/")) return "Product Details";
+    if (url.includes("/blog/")) return "Blog Post";
+    if (url.includes("/user/")) return "User Profile";
+    if (url.includes("/category/")) return "Category Page";
+
+    return (
+      url
+        .split("/")
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" > ") || "Unknown Page"
+    );
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      fetchAnalytics();
+    fetchAllData();
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(USER_API_URL);
+      if (!response.ok) throw new Error("Failed to fetch user data");
+
+      const result = await response.json();
+      const users = result.data || result;
+
+      const userMap = {};
+
+      users.forEach((user) => {
+        const id = user._id || user.id || user.userId;
+        const firstName = user.firstName?.trim();
+        const lastName = user.lastName?.trim();
+        const email = user.email?.trim();
+
+        const fullName =
+          firstName && lastName
+            ? `${firstName} ${lastName}`
+            : firstName || lastName || null;
+
+        if (id) {
+          userMap[id] = {
+            name: fullName || "Anonymous User",
+            email: email || null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            rawData: user,
+          };
+        }
+      });
+
+      setUserData(userMap);
+    } catch (err) {
+      console.error("User fetch error:", err);
     }
-  }, [
-    filters.page,
-    filters.userId,
-    filters.startDate,
-    filters.endDate,
-    filters.pageNo,
-    filters.limit,
-  ]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-      pageNo: name !== "pageNo" ? 1 : value,
-    }));
   };
 
-  const handlePageChange = (newPage) => {
-    setFilters((prev) => ({ ...prev, pageNo: newPage }));
+  const fetchAllLogs = async () => {
+    try {
+      setIsSearching(true);
+      const response = await fetch(`${BASE_URL}/?limit=1000`);
+      if (!response.ok) throw new Error("Failed to fetch all logs");
+
+      const logsData = await response.json();
+      if (Array.isArray(logsData.data)) {
+        setAllLogs(logsData.data);
+        setTotalLogsCount(logsData.total || logsData.data.length);
+        hasFetchedAllLogsRef.current = true;
+      }
+    } catch (err) {
+      console.error("Error fetching all logs:", err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const clearFilters = () => {
-    setFilters({
-      page: "",
-      userId: "",
-      startDate: "",
-      endDate: "",
-      pageNo: 1,
-      limit: 20,
-    });
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    hasFetchedAllLogsRef.current = false;
+
+    try {
+      const [summaryRes, pageAnalyticsRes, logsRes] = await Promise.all([
+        fetch(`${BASE_URL}/summary`),
+        fetch(`${BASE_URL}/`),
+        fetch(`${BASE_URL}/?pageNo=${currentPage}&limit=${PAGE_SIZE}`),
+      ]);
+
+      if (!summaryRes.ok || !pageAnalyticsRes.ok || !logsRes.ok) {
+        throw new Error("Failed to fetch data from one or more endpoints");
+      }
+
+      const summaryData = await summaryRes.json();
+      const pageAnalyticsData = await pageAnalyticsRes.json();
+      const logsData = await logsRes.json();
+
+      setSummary(summaryData.data);
+      setPageAnalytics(
+        Array.isArray(pageAnalyticsData.data) ? pageAnalyticsData.data : [],
+      );
+      setDetailedLogs(Array.isArray(logsData.data) ? logsData.data : []);
+
+      if (logsData.total) {
+        setTotalPages(Math.ceil(logsData.total / PAGE_SIZE));
+        setTotalLogsCount(logsData.total);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) {
+  const searchUsers = useCallback(
+    (term) => {
+      if (!term.trim()) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+        return [];
+      }
+
+      const searchTermLower = term.toLowerCase().trim();
+      const logsToSearch = allLogs.length > 0 ? allLogs : detailedLogs;
+      const results = [];
+
+      logsToSearch.forEach((log) => {
+        if (!log) return;
+
+        const userInfo = userData[log.userId];
+        const userName = userInfo?.name || "Anonymous User";
+        const userEmail = userInfo?.email || "";
+        const userFirstName = userInfo?.firstName || "";
+        const userLastName = userInfo?.lastName || "";
+        const userId = log.userId || "";
+        const pageName = getPageFriendlyName(log.page);
+        const pageUrl = log.page || "";
+        const sessionId = log.sessionId || "";
+        const ip = log.ip || "";
+
+        // Check all possible matches
+        const matches =
+          userName.toLowerCase().includes(searchTermLower) ||
+          userEmail.toLowerCase().includes(searchTermLower) ||
+          userFirstName.toLowerCase().includes(searchTermLower) ||
+          userLastName.toLowerCase().includes(searchTermLower) ||
+          userId.toLowerCase().includes(searchTermLower) ||
+          pageName.toLowerCase().includes(searchTermLower) ||
+          pageUrl.toLowerCase().includes(searchTermLower) ||
+          sessionId.toLowerCase().includes(searchTermLower) ||
+          ip.toLowerCase().includes(searchTermLower);
+
+        if (matches) {
+          results.push({
+            ...log,
+            userName,
+            userEmail,
+            userFirstName,
+            userLastName,
+            pageName,
+            matchType: getMatchType(
+              searchTermLower,
+              userName,
+              userEmail,
+              userFirstName,
+              userLastName,
+              userId,
+              pageName,
+            ),
+          });
+        }
+      });
+
+      // Remove duplicates by userId + sessionId + timestamp
+      const uniqueResults = Array.from(
+        new Map(
+          results.map((item) => [
+            `${item.userId}-${item.sessionId}-${item.createdAt}`,
+            item,
+          ]),
+        ).values(),
+      );
+
+      setSearchResults(uniqueResults);
+      setShowSearchResults(true);
+      return uniqueResults;
+    },
+    [allLogs, detailedLogs, userData, getPageFriendlyName],
+  );
+
+  const getMatchType = (
+    searchTerm,
+    userName,
+    userEmail,
+    firstName,
+    lastName,
+    userId,
+    pageName,
+  ) => {
+    if (userName.toLowerCase().includes(searchTerm)) return "name";
+    if (userEmail.toLowerCase().includes(searchTerm)) return "email";
+    if (firstName?.toLowerCase().includes(searchTerm)) return "first_name";
+    if (lastName?.toLowerCase().includes(searchTerm)) return "last_name";
+    if (userId.toLowerCase().includes(searchTerm)) return "user_id";
+    if (pageName.toLowerCase().includes(searchTerm)) return "page";
+    return "other";
+  };
+
+  useEffect(() => {
+    if (searchTerm.trim() && !hasFetchedAllLogsRef.current) {
+      fetchAllLogs();
+    }
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchTerm.trim()) {
+        searchUsers(searchTerm);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, searchUsers]);
+
+  const handleViewDetails = (log) => {
+    setSelectedLog(log);
+    setUserDetailsModalOpen(true);
+  };
+
+  const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
+            {title}
+          </p>
+          <h3 className="text-3xl font-bold mt-2 text-gray-900">
+            {value?.toLocaleString() || 0}
+          </h3>
+          {subtitle && <p className="text-gray-400 text-xs mt-2">{subtitle}</p>}
+        </div>
+        <div
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: `${color}15` }}
+        >
+          <Icon size={24} style={{ color }} strokeWidth={2.5} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const SearchStatsCard = () => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
+            Search Results
+          </p>
+          <h3 className="text-3xl font-bold mt-2 text-gray-900">
+            {searchTerm ? searchResults.length.toLocaleString() : "All"}
+          </h3>
+          <p className="text-gray-400 text-xs mt-2">
+            {searchTerm
+              ? `Found ${searchResults.length} matches in ${totalLogsCount} logs`
+              : `Total logs: ${totalLogsCount}`}
+          </p>
+        </div>
+        <div
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: "#3b82f615" }}
+        >
+          <Search size={24} style={{ color: "#3b82f6" }} strokeWidth={2.5} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const OptimizedSelect = ({
+    value,
+    onChange,
+    options,
+    icon: Icon,
+    placeholder,
+    label,
+  }) => (
+    <div className="relative">
+      {label && (
+        <label className="block text-xs font-semibold text-gray-700 mb-2">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        {Icon && (
+          <Icon
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+            size={18}
+          />
+        )}
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm cursor-pointer appearance-none hover:border-gray-400 transition-colors"
+        >
+          {placeholder && <option value="">{placeholder}</option>}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+          size={16}
+        />
+      </div>
+    </div>
+  );
+
+  const EnhancedPagination = () => {
+    const generatePageNumbers = () => {
+      const pages = [];
+      const maxVisiblePages = 7;
+
+      if (totalPages <= maxVisiblePages) {
+        for (let i = 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        if (currentPage <= 4) {
+          for (let i = 1; i <= 5; i++) {
+            pages.push(i);
+          }
+          pages.push("...");
+          pages.push(totalPages);
+        } else if (currentPage >= totalPages - 3) {
+          pages.push(1);
+          pages.push("...");
+          for (let i = totalPages - 4; i <= totalPages; i++) {
+            pages.push(i);
+          }
+        } else {
+          pages.push(1);
+          pages.push("...");
+          for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+            pages.push(i);
+          }
+          pages.push("...");
+          pages.push(totalPages);
+        }
+      }
+
+      return pages;
+    };
+
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 mx-auto"></div>
-            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-blue-600 mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div className="text-sm text-gray-600 sm:text-left text-center">
+          Showing{" "}
+          <span className="font-semibold text-gray-900">
+            {(currentPage - 1) * PAGE_SIZE + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-semibold text-gray-900">
+            {Math.min(currentPage * PAGE_SIZE, detailedLogs.length)}
+          </span>{" "}
+          of{" "}
+          <span className="font-semibold text-gray-900">
+            {detailedLogs.length}
+          </span>{" "}
+          entries
+        </div>
+
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            title="First Page"
+          >
+            <ChevronsLeft size={16} />
+          </button>
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            title="Previous Page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <div className="flex items-center gap-1">
+            {generatePageNumbers().map((page, index) =>
+              page === "..." ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="px-2 py-1 text-gray-400"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-[40px] h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === page
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ),
+            )}
           </div>
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            title="Next Page"
+          >
+            <ChevronRight size={16} />
+          </button>
+
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+            title="Last Page"
+          >
+            <ChevronsRight size={16} />
+          </button>
+        </div>
+
+        <div className="hidden sm:block" />
+      </div>
+    );
+  };
+
+  const getUserName = (userId) => {
+    if (!userId) return "Anonymous User";
+    return userData[userId]?.name || "Anonymous User";
+  };
+
+  const getUserEmail = (userId) => {
+    if (!userId) return null;
+    return userData[userId]?.email || null;
+  };
+
+  const highlightMatch = (text, searchTerm) => {
+    if (!searchTerm || !text) return text;
+
+    const lowerText = text.toLowerCase();
+    const lowerSearch = searchTerm.toLowerCase();
+
+    if (lowerText.includes(lowerSearch)) {
+      const index = lowerText.indexOf(lowerSearch);
+      const before = text.substring(0, index);
+      const match = text.substring(index, index + searchTerm.length);
+      const after = text.substring(index + searchTerm.length);
+
+      return (
+        <span>
+          {before}
+          <span className="bg-yellow-200 font-bold px-0.5 rounded">
+            {match}
+          </span>
+          {after}
+        </span>
+      );
+    }
+    return text;
+  };
+
+  if (loading && !summary) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
           <p className="mt-6 text-gray-700 font-semibold text-lg">
-            Loading Analytics Dashboard...
+            Loading analytics data...
           </p>
         </div>
       </div>
     );
   }
 
-  const COLORS = ["#6366F1", "#8B5CF6", "#EC4899", "#F59E0B"];
-  const userTypeData = summary
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white border-l-4 border-red-500 rounded-xl shadow-xl p-8 max-w-md w-full">
+          <h3 className="text-red-800 font-bold text-xl mb-3">
+            Error Loading Data
+          </h3>
+          <p className="text-red-600 mb-6">{error}</p>
+          <button
+            onClick={fetchAllData}
+            className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={18} />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const userDistributionData = summary
     ? [
-        { name: "Logged In", value: summary.loggedInUsers },
-        { name: "Anonymous", value: summary.anonymousUsers },
+        { name: "Logged In", value: summary.loggedInUsers, color: "#3b82f6" },
+        { name: "Anonymous", value: summary.anonymousUsers, color: "#8b5cf6" },
       ]
     : [];
 
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
-  const uniquePages = getUniquePages();
+  const uniquePagesMap = new Map();
+  pageAnalytics.forEach((item) => {
+    if (item && item.page) {
+      const friendlyName = getPageFriendlyName(item.page);
+      uniquePagesMap.set(item.page, friendlyName);
+    }
+  });
+
+  detailedLogs.forEach((log) => {
+    if (log && log.page && !uniquePagesMap.has(log.page)) {
+      const friendlyName = getPageFriendlyName(log.page);
+      uniquePagesMap.set(log.page, friendlyName);
+    }
+  });
+
+  const seenFriendlyNames = new Set();
+  const uniquePages = Array.from(uniquePagesMap.entries())
+    .map(([page, friendlyName]) => ({
+      page,
+      friendlyName,
+    }))
+    .filter(({ friendlyName }) => {
+      if (seenFriendlyNames.has(friendlyName)) {
+        return false;
+      }
+      seenFriendlyNames.add(friendlyName);
+      return true;
+    })
+    .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName));
+
+  const pageOptions = [
+    { value: "all", label: "All Pages" },
+    ...uniquePages.map(({ page, friendlyName }) => ({
+      value: page,
+      label:
+        friendlyName.length > 50
+          ? `${friendlyName.slice(0, 50)}...`
+          : friendlyName,
+    })),
+  ];
+
+  const displayLogs = showSearchResults ? searchResults : detailedLogs;
+  const hasActiveFilters = searchTerm || selectedPage !== "all";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Analytics Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Track your website performance and user engagement
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Analytics Dashboard
+              </h1>
+              <p className="text-gray-600">
+                Real-time insights into your application usage
+              </p>
+              
+            </div>
+            <div className="flex items-center gap-2">
+              {isSearching && (
+                <div className="flex items-center gap-2 text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                  <span className="text-sm">Searching...</span>
+                </div>
+              )}
+              <button
+                onClick={fetchAllData}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <RefreshCw size={18} />
+                Refresh
+              </button>
+            </div>
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 shadow-sm">
-            <div className="flex items-center">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                />
-              </svg>
-              {error}
-            </div>
-          </div>
-        )}
-
-        {/* Summary Cards */}
+        {/* Summary Stats */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Card 1: Total Views */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-blue-100 text-sm font-medium mb-1">
-                Total Views
-              </p>
-              <p className="text-4xl font-bold mb-2">
-                {summary.totalViews.toLocaleString()}
-              </p>
-              <div className="flex items-center text-sm">
-                <span className="bg-white bg-opacity-20 px-2 py-1 rounded-lg">
-                  Today: {summary.todayViews}
-                </span>
-              </div>
-            </div>
-
-            {/* Card 2: Avg Time Spent */}
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-green-100 text-sm font-medium mb-1">
-                Avg Time Spent
-              </p>
-              <p className="text-4xl font-bold mb-2">{summary.avgTimeSpent}s</p>
-              <p className="text-sm text-green-100">Per session</p>
-            </div>
-
-            {/* Card 3: Logged In Users */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-orange-100 text-sm font-medium mb-1">
-                Logged In Users
-              </p>
-              <p className="text-4xl font-bold mb-2">
-                {summary.loggedInUsers.toLocaleString()}
-              </p>
-              <p className="text-sm text-orange-100">
-                Anonymous: {summary.anonymousUsers}
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <SearchStatsCard />
+            <StatCard
+              title="Total Views"
+              value={summary.totalViews}
+              icon={Eye}
+              color="#3b82f6"
+              subtitle="All-time page views"
+            />
+            <StatCard
+              title="Unique Visitors"
+              value={summary.uniqueVisitors}
+              icon={Users}
+              color="#10b981"
+              subtitle="Distinct users"
+            />
+            <StatCard
+              title="Today's Views"
+              value={summary.todayViews}
+              icon={TrendingUp}
+              color="#f59e0b"
+              subtitle="Views in last 24h"
+            />
+            <StatCard
+              title="Avg Time Spent"
+              value={summary.avgTimeSpent}
+              icon={Clock}
+              color="#ef4444"
+              subtitle="Seconds per session"
+            />
+            <StatCard
+              title="Logged In Users"
+              value={summary.loggedInUsers}
+              icon={Activity}
+              color="#8b5cf6"
+              subtitle="Authenticated sessions"
+            />
+            <StatCard
+              title="Anonymous Users"
+              value={summary.anonymousUsers}
+              icon={Users}
+              color="#ec4899"
+              subtitle="Guest sessions"
+            />
           </div>
         )}
 
-        {/* Charts */}
+        {/* Enhanced Search Input */}
+        <div className="mb-8">
+          <div className="relative">
+            <Search
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search users by name, email, user ID, or page... (e.g., 'john', 'example@email.com', 'user123')"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-blue-500 outline-none text-base hover:border-gray-400 transition-colors"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setShowSearchResults(false);
+                  setSearchResults([]);
+                  hasFetchedAllLogsRef.current = false;
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+
+          {/* Search tips */}
+          {searchTerm && (
+            <div className="mt-3 text-sm text-gray-600 flex flex-wrap items-center gap-2">
+              <span className="font-medium">Searching:</span>
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                "{searchTerm}"
+              </span>
+              <span>•</span>
+              <span>
+                Found{" "}
+                <span className="font-bold text-blue-600">
+                  {searchResults.length}
+                </span>{" "}
+                matches
+              </span>
+              {searchResults.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="text-green-600">
+                    Showing all results (not paginated)
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-xl p-6 backdrop-blur-lg bg-opacity-90">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-              <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full mr-3"></div>
-              Top Pages Performance
-            </h2>
-            {pageStats && pageStats.length > 0 ? (
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={pageStats.slice(0, 10)}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
-                      <stop
-                        offset="95%"
-                        stopColor="#8B5CF6"
-                        stopOpacity={0.6}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          {pageAnalytics.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Page Views by Route
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={pageAnalytics.slice(0, 10).map((item) => ({
+                    ...item,
+                    friendlyName: getPageFriendlyName(item.page),
+                  }))}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
-                    dataKey="pageName"
+                    dataKey="friendlyName"
                     angle={-45}
                     textAnchor="end"
-                    height={120}
-                    tick={{ fill: "#6B7280", fontSize: 12 }}
+                    height={100}
+                    fontSize={11}
+                    stroke="#6b7280"
                   />
-                  <YAxis tick={{ fill: "#6B7280" }} />
+                  <YAxis fontSize={11} stroke="#6b7280" />
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                    }}
-                    formatter={(value, name, props) => {
-                      if (name === "totalViews") {
-                        return [value, "Total Views"];
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                            <p className="font-semibold text-gray-900">
+                              {payload[0].payload.friendlyName}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {payload[0].payload.page}
+                            </p>
+                            <p className="text-blue-600 font-bold mt-2">
+                              Views: {payload[0].value}
+                            </p>
+                          </div>
+                        );
                       }
-                      return value;
-                    }}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload[0]) {
-                        return `${label} (${payload[0].payload.page})`;
-                      }
-                      return label;
+                      return null;
                     }}
                   />
                   <Bar
                     dataKey="totalViews"
-                    fill="url(#colorViews)"
+                    fill="#3b82f6"
                     radius={[8, 8, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-80 text-gray-400">
-                <div className="text-center">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-4 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="font-medium">No page statistics available</p>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 backdrop-blur-lg bg-opacity-90">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-              <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full mr-3"></div>
-              User Distribution
-            </h2>
-            {userTypeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={320}>
+          {userDistributionData.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                User Distribution
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={userTypeData}
+                    data={userDistributionData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent, value }) =>
+                    label={({ name, value, percent }) =>
                       `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
                     }
-                    outerRadius={110}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {userTypeData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                    {userDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                    }}
-                  />
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-80 text-gray-400">
-                <div className="text-center">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-4 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
-                    />
-                  </svg>
-                  <p className="font-medium">No user distribution data</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Page Statistics Table */}
-        {pageStats && pageStats.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl mb-8 overflow-hidden backdrop-blur-lg bg-opacity-90">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-              <h2 className="text-2xl font-bold text-white">
-                Detailed Page Statistics
-              </h2>
-              <p className="text-blue-100 mt-1">
-                Comprehensive overview of all pages
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Page Name & URL
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Total Views
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Avg Time
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Unique Sessions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {pageStats.map((stat, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-blue-50 transition-colors duration-150"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 mb-1">
-                            {stat.pageName}
-                          </p>
-                          <p className="text-xs text-gray-500 font-mono truncate max-w-xs">
-                            {stat.page}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {stat.totalViews}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          {stat.avgTimeSpent ? stat.avgTimeSpent.toFixed(1) : 0}
-                          s
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                          {stat.uniqueSessionsCount}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 backdrop-blur-lg bg-opacity-90">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-            <svg
-              className="w-6 h-6 mr-2 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-              />
-            </svg>
-            Advanced Filters
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            {/* Page Select Dropdown */}
-            <div className="relative">
-              <select
-                name="page"
-                value={filters.page}
-                onChange={handleFilterChange}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
-              >
-                <option value="">All Pages</option>
-                {uniquePages.map((page, index) => (
-                  <option key={index} value={page.value}>
-                    {page.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
-            </div>
-
-            <input
-              type="text"
-              name="userId"
-              placeholder="User ID"
-              value={filters.userId}
-              onChange={handleFilterChange}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-            <input
-              type="date"
-              name="startDate"
-              value={filters.startDate}
-              onChange={handleFilterChange}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-            <input
-              type="date"
-              name="endDate"
-              value={filters.endDate}
-              onChange={handleFilterChange}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-            <select
-              name="limit"
-              value={filters.limit}
-              onChange={handleFilterChange}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            >
-              <option value="10">10 per page</option>
-              <option value="20">20 per page</option>
-              <option value="50">50 per page</option>
-              <option value="100">100 per page</option>
-            </select>
-            <button
-              onClick={clearFilters}
-              className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              Clear All
-            </button>
-          </div>
-        </div>
-
-        {/* Detailed Analytics Table */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden backdrop-blur-lg bg-opacity-90">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-            <h2 className="text-2xl font-bold text-white">User Activity Log</h2>
-            <p className="text-indigo-100 mt-1">
-              {pagination.total} total records found
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            {analyticsData && analyticsData.length > 0 ? (
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Page
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Session
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      IP Address
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Timestamp
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {analyticsData.map((item) => (
-                    <tr
-                      key={item._id}
-                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-150"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 mb-1">
-                            {item.pageName}
-                          </p>
-                          <p className="text-xs text-gray-500 font-mono truncate max-w-xs">
-                            {item.page}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.userId ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {item.userId
-                              ? `${item.userId.substring(0, 8)}...`
-                              : "Anonymous"}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                            Anonymous
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-gray-600">
-                        {item.sessionId
-                          ? `${item.sessionId.substring(0, 10)}...`
-                          : "N/A"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {item.timeSpent}s
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {item.ip}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(item.createdAt).toLocaleDateString()}{" "}
-                        {new Date(item.createdAt).toLocaleTimeString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.userId && (
-                          <button
-                            onClick={() => handleViewUser(item.userId)}
-                            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
-                            </svg>
-                            View Details
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="flex items-center justify-center h-96 text-gray-400">
-                <div className="text-center">
-                  <svg
-                    className="w-20 h-20 mx-auto mb-4 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <p className="text-xl font-semibold mb-2">
-                    No analytics data available
-                  </p>
-                  <p className="text-sm">
-                    Try adjusting your filters or check back later
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {analyticsData && analyticsData.length > 0 && (
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700 font-medium">
-                Page{" "}
-                <span className="font-bold text-indigo-600">
-                  {pagination.pageNo}
-                </span>{" "}
-                of{" "}
-                <span className="font-bold text-indigo-600">{totalPages}</span>
-                <span className="text-gray-500 ml-2">
-                  ({pagination.total} total records)
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() =>
-                    handlePageChange(Math.max(1, pagination.pageNo - 1))
-                  }
-                  disabled={pagination.pageNo === 1}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() =>
-                    handlePageChange(
-                      Math.min(totalPages, pagination.pageNo + 1),
-                    )
-                  }
-                  disabled={pagination.pageNo === totalPages}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
-                >
-                  Next
-                </button>
-              </div>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Modal for User Details */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex justify-between items-center">
+
+        {/* Detailed Logs Table */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-2xl font-bold text-white">
-                  User Activity Details
-                </h3>
-                <p className="text-blue-100 mt-1">
-                  User ID: {selectedUser?.substring(0, 16)}...
+                <h2 className="text-xl font-bold text-gray-900">
+                  {showSearchResults
+                    ? "Search Results"
+                    : "Recent Activity Logs"}
+                  {searchTerm && (
+                    <span className="ml-2 text-sm font-normal text-blue-600">
+                      ({searchResults.length} matches)
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {showSearchResults ? (
+                    <>
+                      Found{" "}
+                      <span className="font-semibold text-gray-900">
+                        {searchResults.length}
+                      </span>{" "}
+                      matches in{" "}
+                      <span className="font-semibold text-gray-900">
+                        {totalLogsCount}
+                      </span>{" "}
+                      total logs
+                    </>
+                  ) : (
+                    <>
+                      Showing page{" "}
+                      <span className="font-semibold text-gray-900">
+                        {currentPage}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold text-gray-900">
+                        {totalPages}
+                      </span>{" "}
+                      •{" "}
+                      <span className="font-semibold text-gray-900">
+                        {detailedLogs.length}
+                      </span>{" "}
+                      entries per page
+                    </>
+                  )}
                 </p>
               </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
+
+              {!showSearchResults && (
+                <div className="flex items-center gap-2">
+                  <OptimizedSelect
+                    value={selectedPage}
+                    onChange={(e) => setSelectedPage(e.target.value)}
+                    options={pageOptions}
+                    icon={Filter}
+                    placeholder="Filter by page..."
+                    label="Filter Pages"
                   />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {loadingUserDetails ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600 font-medium">
-                      Loading user activities...
-                    </p>
-                  </div>
-                </div>
-              ) : userDetails.length > 0 ? (
-                <div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
-                      <p className="text-sm text-blue-600 font-semibold mb-1">
-                        Total Activities
-                      </p>
-                      <p className="text-3xl font-bold text-blue-900">
-                        {userDetails.length}
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
-                      <p className="text-sm text-green-600 font-semibold mb-1">
-                        Total Time
-                      </p>
-                      <p className="text-3xl font-bold text-green-900">
-                        {userDetails.reduce(
-                          (acc, item) => acc + item.timeSpent,
-                          0,
-                        )}
-                        s
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
-                      <p className="text-sm text-purple-600 font-semibold mb-1">
-                        Unique Pages
-                      </p>
-                      <p className="text-3xl font-bold text-purple-900">
-                        {new Set(userDetails.map((item) => item.pageName)).size}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-lg font-bold text-gray-800 mb-4">
-                      Activity Timeline
-                    </h4>
-                    {userDetails.map((activity, index) => (
-                      <div
-                        key={activity._id}
-                        className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-200"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm mr-3">
-                                {index + 1}
-                              </span>
-                              <div>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {activity.pageName}
-                                </p>
-                                <p className="text-xs text-gray-500 font-mono truncate">
-                                  {activity.page}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="ml-11 grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Session ID
-                                </p>
-                                <p className="text-sm font-mono text-gray-700">
-                                  {activity.sessionId
-                                    ? `${activity.sessionId.substring(0, 20)}...`
-                                    : "N/A"}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Time Spent
-                                </p>
-                                <p className="text-sm font-semibold text-green-600">
-                                  {activity.timeSpent} seconds
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  IP Address
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {activity.ip}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Date & Time
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {new Date(
-                                    activity.createdAt,
-                                  ).toLocaleString()}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 text-gray-400">
-                  <div className="text-center">
-                    <svg
-                      className="w-16 h-16 mx-auto mb-4 opacity-50"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <p className="font-medium">
-                      No activities found for this user
-                    </p>
-                  </div>
                 </div>
               )}
+            </div>
+
+            {hasActiveFilters && !showSearchResults && (
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedPage("all");
+                    setCurrentPage(1);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    User Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Page Visited
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Time Spent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider hidden md:table-cell">
+                    Session ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider hidden lg:table-cell">
+                    IP Address
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {displayLogs.length > 0 ? (
+                  displayLogs.map((log) => {
+                    if (!log) return null;
+
+                    const logPage = log.page || "";
+                    const logUserId = log.userId || "";
+                    const logSessionId = log.sessionId || "";
+                    const logIp = log.ip || "";
+                    const logTimeSpent = log.timeSpent || 0;
+                    const userName = getUserName(logUserId);
+                    const userEmail = getUserEmail(logUserId);
+                    const pageName = getPageFriendlyName(logPage);
+
+                    return (
+                      <tr
+                        key={log._id || Math.random()}
+                        className="hover:bg-blue-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  logUserId
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-200 text-gray-700"
+                                }`}
+                              >
+                                {highlightMatch(userName, searchTerm)}
+                              </span>
+                              {log.matchType && (
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                  {log.matchType.replace("_", " ")}
+                                </span>
+                              )}
+                            </div>
+                            {userEmail && (
+                              <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                                <Mail size={10} />
+                                {highlightMatch(userEmail, searchTerm)}
+                              </div>
+                            )}
+                            {logUserId && (
+                              <div className="text-xs text-gray-500 mt-1 font-mono">
+                                ID:{" "}
+                                {highlightMatch(
+                                  logUserId.substring(0, 12),
+                                  searchTerm,
+                                )}
+                                {logUserId.length > 12 && "..."}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="font-semibold text-gray-900">
+                            {highlightMatch(pageName, searchTerm)}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
+                            {highlightMatch(logPage, searchTerm)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+                            {logTimeSpent}s
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono hidden md:table-cell">
+                          {logSessionId.substring(0, 10)}...
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono hidden lg:table-cell">
+                          {logIp}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => handleViewDetails(log)}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs font-medium"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="text-gray-400">
+                        <Search size={48} className="mx-auto mb-3 opacity-50" />
+                        <p className="text-gray-600 font-medium">
+                          {searchTerm
+                            ? "No matching users found"
+                            : "No activity logs found"}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {searchTerm
+                            ? `Try searching with a different name or term`
+                            : "Try refreshing the page"}
+                        </p>
+                        {searchTerm && (
+                          <button
+                            onClick={() => {
+                              setSearchTerm("");
+                              setShowSearchResults(false);
+                              setSearchResults([]);
+                            }}
+                            className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                          >
+                            Clear Search
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Only show pagination when not in search mode */}
+            {!showSearchResults && <EnhancedPagination />}
+          </div>
+        </div>
+      </div>
+
+      {/* User Details Modal */}
+      {userDetailsModalOpen && selectedLog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  User Activity Details
+                </h2>
+                <button
+                  onClick={() => setUserDetailsModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* User Information */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <User size={20} />
+                    User Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">User Name</p>
+                      <p className="font-medium text-gray-900">
+                        {getUserName(selectedLog.userId)}
+                      </p>
+                    </div>
+                    {selectedLog.userId &&
+                      userData[selectedLog.userId]?.email && (
+                        <div>
+                          <p className="text-sm text-gray-600">Email</p>
+                          <p className="font-medium text-gray-900">
+                            {userData[selectedLog.userId].email}
+                          </p>
+                        </div>
+                      )}
+                    <div>
+                      <p className="text-sm text-gray-600">User ID</p>
+                      <p className="font-medium text-gray-900 font-mono text-sm">
+                        {selectedLog.userId || "Anonymous"}
+                      </p>
+                    </div>
+                    {selectedLog.userId &&
+                      userData[selectedLog.userId]?.rawData && (
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            Account Status
+                          </p>
+                          <p className="font-medium text-gray-900">
+                            {userData[selectedLog.userId].rawData.status ||
+                              "Active"}
+                          </p>
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                {/* Activity Details */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Activity Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Page Visited</p>
+                      <p className="font-medium text-gray-900">
+                        {getPageFriendlyName(selectedLog.page)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {selectedLog.page}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Time Spent</p>
+                      <p className="font-medium text-gray-900">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                          {selectedLog.timeSpent || 0} seconds
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Session ID</p>
+                      <p className="font-medium text-gray-900 font-mono text-sm">
+                        {selectedLog.sessionId}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">IP Address</p>
+                      <p className="font-medium text-gray-900">
+                        {selectedLog.ip}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Timestamp</p>
+                      <p className="font-medium text-gray-900">
+                        {selectedLog.createdAt
+                          ? new Date(selectedLog.createdAt).toLocaleString()
+                          : "N/A"}
+                      </p>
+                    </div>
+                    {selectedLog.matchType && (
+                      <div>
+                        <p className="text-sm text-gray-600">Matched By</p>
+                        <p className="font-medium text-gray-900 capitalize">
+                          {selectedLog.matchType.replace("_", " ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* User Profile Information */}
+                {selectedLog.userId && userData[selectedLog.userId] && (
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <User size={20} />
+                      User Profile Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {userData[selectedLog.userId].firstName && (
+                        <div>
+                          <p className="text-sm text-gray-600">First Name</p>
+                          <p className="font-medium text-gray-900">
+                            {userData[selectedLog.userId].firstName}
+                          </p>
+                        </div>
+                      )}
+                      {userData[selectedLog.userId].lastName && (
+                        <div>
+                          <p className="text-sm text-gray-600">Last Name</p>
+                          <p className="font-medium text-gray-900">
+                            {userData[selectedLog.userId].lastName}
+                          </p>
+                        </div>
+                      )}
+                      {userData[selectedLog.userId].email && (
+                        <div>
+                          <p className="text-sm text-gray-600">Email</p>
+                          <p className="font-medium text-gray-900">
+                            {userData[selectedLog.userId].email}
+                          </p>
+                        </div>
+                      )}
+                      {userData[selectedLog.userId].rawData?.createdAt && (
+                        <div>
+                          <p className="text-sm text-gray-600">Member Since</p>
+                          <p className="font-medium text-gray-900">
+                            {new Date(
+                              userData[selectedLog.userId].rawData.createdAt,
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  onClick={() => setUserDetailsModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
