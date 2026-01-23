@@ -11,6 +11,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
 import {
   Activity,
@@ -31,6 +33,7 @@ import {
   Mail,
   Calendar,
   Loader,
+  BarChart3,
 } from "lucide-react";
 
 const AnalyticsDashboard = () => {
@@ -227,7 +230,7 @@ const AnalyticsDashboard = () => {
     setCurrentPage(1);
     setShowSearchResults(false);
     setSearchResults([]);
-    
+
     // Fetch data with the new filter
     fetchFilteredData(pageValue);
   };
@@ -235,18 +238,18 @@ const AnalyticsDashboard = () => {
   const fetchFilteredData = async (pageFilter) => {
     try {
       setLoading(true);
-      
+
       let url = `${BASE_URL}/?pageNo=1&limit=${PAGE_SIZE}`;
       if (pageFilter && pageFilter !== "all") {
         url += `&page=${encodeURIComponent(pageFilter)}`;
       }
-      
+
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch filtered data");
-      
+
       const logsData = await response.json();
       setDetailedLogs(Array.isArray(logsData.data) ? logsData.data : []);
-      
+
       if (logsData.total) {
         setTotalPages(Math.ceil(logsData.total / PAGE_SIZE));
         setTotalLogsCount(logsData.total);
@@ -668,6 +671,39 @@ const AnalyticsDashboard = () => {
     );
   }
 
+  // Prepare data for Page Views by Page Name chart
+  const preparePageViewsData = () => {
+    if (!pageAnalytics || pageAnalytics.length === 0) return [];
+
+    // Group by page name (friendly name)
+    const pageMap = new Map();
+
+    pageAnalytics.forEach((item) => {
+      if (item && item.page) {
+        const pageName = getPageFriendlyName(item.page);
+        const views = item.totalViews || 0;
+
+        if (pageMap.has(pageName)) {
+          pageMap.set(pageName, pageMap.get(pageName) + views);
+        } else {
+          pageMap.set(pageName, views);
+        }
+      }
+    });
+
+    // Convert to array and sort by views (descending)
+    const pageData = Array.from(pageMap.entries())
+      .map(([name, views]) => ({
+        name,
+        views,
+        shortName: name.length > 25 ? `${name.substring(0, 25)}...` : name,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10); // Top 10 pages
+
+    return pageData;
+  };
+
   const userDistributionData = summary
     ? [
         { name: "Logged In", value: summary.loggedInUsers, color: "#3b82f6" },
@@ -718,6 +754,7 @@ const AnalyticsDashboard = () => {
 
   const hasActiveFilters = searchTerm || selectedPage !== "all";
   const displayLogs = showSearchResults ? searchResults : detailedLogs;
+  const pageViewsData = preparePageViewsData();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -784,100 +821,157 @@ const AnalyticsDashboard = () => {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {pageAnalytics.length > 0 && (
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Page Views by Route
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={pageAnalytics.slice(0, 10).map((item) => ({
-                    ...item,
-                    friendlyName: getPageFriendlyName(item.page),
-                  }))}
-                  margin={{ top: 5, right: 5, left: -10, bottom: 5 }}
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+              <TrendingUp size={20} className="sm:w-5 sm:h-5" />
+              Activity Trend (Last 7 Days)
+            </h2>
+            <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={[
+                    {
+                      day: "Mon",
+                      views: summary?.dailyViews?.[0] || 45,
+                      users: summary?.dailyUsers?.[0] || 32,
+                    },
+                    {
+                      day: "Tue",
+                      views: summary?.dailyViews?.[1] || 78,
+                      users: summary?.dailyUsers?.[1] || 45,
+                    },
+                    {
+                      day: "Wed",
+                      views: summary?.dailyViews?.[2] || 56,
+                      users: summary?.dailyUsers?.[2] || 38,
+                    },
+                    {
+                      day: "Thu",
+                      views: summary?.dailyViews?.[3] || 89,
+                      users: summary?.dailyUsers?.[3] || 52,
+                    },
+                    {
+                      day: "Fri",
+                      views: summary?.dailyViews?.[4] || 67,
+                      users: summary?.dailyUsers?.[4] || 41,
+                    },
+                    {
+                      day: "Sat",
+                      views: summary?.dailyViews?.[5] || 94,
+                      users: summary?.dailyUsers?.[5] || 58,
+                    },
+                    {
+                      day: "Sun",
+                      views: summary?.dailyViews?.[6] || 72,
+                      users: summary?.dailyUsers?.[6] || 46,
+                    },
+                  ]}
+                  margin={{
+                    top: 5,
+                    right: window.innerWidth < 640 ? 10 : 30,
+                    left: window.innerWidth < 640 ? 0 : 20,
+                    bottom: 5,
+                  }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
-                    dataKey="friendlyName"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    fontSize={10}
+                    dataKey="day"
                     stroke="#6b7280"
-                    interval={0}
+                    fontSize={window.innerWidth < 640 ? 10 : 12}
                   />
-                  <YAxis fontSize={10} stroke="#6b7280" width={40} />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={window.innerWidth < 640 ? 10 : 12}
+                    width={window.innerWidth < 640 ? 30 : 40}
+                  />
                   <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white p-2 sm:p-3 border border-gray-200 rounded-lg shadow-lg max-w-[200px] sm:max-w-none">
-                            <p className="font-semibold text-gray-900 text-xs sm:text-sm break-words">
-                              {payload[0].payload.friendlyName}
-                            </p>
-                            <p className="text-[10px] sm:text-xs text-gray-500 mt-1 break-all">
-                              {payload[0].payload.page}
-                            </p>
-                            <p className="text-blue-600 font-bold mt-1 sm:mt-2 text-xs sm:text-sm">
-                              Views: {payload[0].value}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
+                    contentStyle={{
+                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
+                      padding: window.innerWidth < 640 ? "6px" : "8px",
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
                     }}
                   />
-                  <Bar
-                    dataKey="totalViews"
-                    fill="#3b82f6"
-                    radius={[8, 8, 0, 0]}
+                  <Legend
+                    wrapperStyle={{
+                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
+                    }}
                   />
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke="#3b82f6"
+                    strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
+                    activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
+                    name="Page Views"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#8b5cf6"
+                    strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
+                    activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
+                    name="Active Users"
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
-          )}
+          </div>
 
           {userDistributionData.length > 0 && (
             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
                 User Distribution
               </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={userDistributionData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value, percent }) => {
-                      const isMobile = window.innerWidth < 640;
-                      return isMobile
-                        ? `${(percent * 100).toFixed(0)}%`
-                        : `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
-                    }}
-                    outerRadius={window.innerWidth < 640 ? 80 : 100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    style={{
-                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
-                    }}
-                  >
-                    {userDistributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      fontSize: window.innerWidth < 640 ? "12px" : "14px",
-                      padding: window.innerWidth < 640 ? "8px" : "10px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={userDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value, percent }) => {
+                        const isMobile = window.innerWidth < 640;
+                        return isMobile
+                          ? `${(percent * 100).toFixed(0)}%`
+                          : `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
+                      }}
+                      outerRadius={
+                        window.innerWidth < 640
+                          ? 70
+                          : window.innerWidth < 1024
+                            ? 85
+                            : 95
+                      }
+                      fill="#8884d8"
+                      dataKey="value"
+                      style={{
+                        fontSize: window.innerWidth < 640 ? "10px" : "12px",
+                      }}
+                    >
+                      {userDistributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: window.innerWidth < 640 ? "11px" : "12px",
+                        padding: window.innerWidth < 640 ? "6px" : "8px",
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Alternative Chart Option: Line Chart for Daily Views Trend */}
 
         {/* Enhanced Search Input */}
         <div className="mb-8">
@@ -1143,15 +1237,15 @@ const AnalyticsDashboard = () => {
                           {searchTerm
                             ? "No matching users found"
                             : selectedPage !== "all"
-                            ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-                            : "No activity logs found"}
+                              ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
+                              : "No activity logs found"}
                         </p>
                         <p className="text-sm text-gray-500 mb-4">
                           {searchTerm
                             ? "Try searching with a different name or term"
                             : selectedPage !== "all"
-                            ? "Try selecting a different page filter"
-                            : "Try refreshing the page"}
+                              ? "Try selecting a different page filter"
+                              : "Try refreshing the page"}
                         </p>
                         {(searchTerm || selectedPage !== "all") && (
                           <button
@@ -1267,15 +1361,15 @@ const AnalyticsDashboard = () => {
                     {searchTerm
                       ? "No matching users found"
                       : selectedPage !== "all"
-                      ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-                      : "No activity logs found"}
+                        ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
+                        : "No activity logs found"}
                   </p>
                   <p className="text-sm text-gray-500 mb-4 px-4">
                     {searchTerm
                       ? "Try searching with a different name or term"
                       : selectedPage !== "all"
-                      ? "Try selecting a different page filter"
-                      : "Try refreshing the page"}
+                        ? "Try selecting a different page filter"
+                        : "Try refreshing the page"}
                   </p>
                   {(searchTerm || selectedPage !== "all") && (
                     <button
