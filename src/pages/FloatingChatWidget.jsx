@@ -408,11 +408,11 @@ export default function FloatingChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 z-50"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full p-3 sm:p-4 shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 z-50"
         >
-          <MessageCircle size={28} />
+          <MessageCircle size={24} className="sm:w-7 sm:h-7" />
           {totalUnread > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+            <span className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center animate-pulse">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
@@ -422,24 +422,30 @@ export default function FloatingChatWidget() {
       {/* Chat Window */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl z-50 flex flex-col transition-all duration-300 ${
-            isMinimized ? "h-16 w-80" : "h-[600px] w-96"
-          }`}
+          className={`fixed z-50 flex flex-col transition-all duration-300 bg-white shadow-2xl
+      ${
+        isMinimized
+          ? "bottom-4 right-4 sm:bottom-6 sm:right-6 h-14 sm:h-16 w-72 sm:w-80 rounded-xl sm:rounded-2xl"
+          : "bottom-0 right-0 left-0 top-0 sm:bottom-4 sm:right-4 sm:left-auto sm:top-auto sm:h-[600px] sm:w-96 sm:max-h-[90vh] sm:rounded-2xl"
+      }`}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={24} />
-              <h3 className="font-semibold">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-4 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <MessageCircle
+                size={20}
+                className="sm:w-6 sm:h-6 flex-shrink-0"
+              />
+              <h3 className="font-semibold text-sm sm:text-base truncate">
                 {activeConversation
                   ? activeConversation.user.firstName
                   : "Messages"}
               </h3>
               {activeConversation && isOnline(activeConversation.user._id) && (
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {activeConversation && (
                 <button
                   onClick={() => {
@@ -451,7 +457,7 @@ export default function FloatingChatWidget() {
                   className="hover:bg-blue-800 p-1 rounded transition"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -467,7 +473,7 @@ export default function FloatingChatWidget() {
               )}
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="hover:bg-blue-800 p-1 rounded transition"
+                className="hover:bg-blue-800 p-1 rounded transition hidden sm:block"
               >
                 <Minimize2 size={20} />
               </button>
@@ -475,7 +481,7 @@ export default function FloatingChatWidget() {
                 onClick={() => setIsOpen(false)}
                 className="hover:bg-blue-800 p-1 rounded transition"
               >
-                <X size={20} />
+                <X size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
@@ -487,7 +493,7 @@ export default function FloatingChatWidget() {
                 /* Conversations List */
                 <div className="flex-1 overflow-y-auto">
                   {conversations.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="flex items-center justify-center h-full text-gray-500 text-sm sm:text-base px-4">
                       No conversations yet
                     </div>
                   ) : (
@@ -495,23 +501,23 @@ export default function FloatingChatWidget() {
                       <div
                         key={conv._id}
                         onClick={() => handleSelectConversation(conv)}
-                        className="p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+                        className="p-3 sm:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors active:bg-blue-100"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="relative">
-                              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                            <div className="relative flex-shrink-0">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg">
                                 {conv.user.firstName?.charAt(0).toUpperCase()}
                               </div>
                               {isOnline(conv.user._id) && (
-                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 border-2 border-white rounded-full"></span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-gray-900">
+                              <div className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                                 {conv.user.firstName}
                               </div>
-                              <div className="text-sm text-gray-500 truncate">
+                              <div className="text-xs sm:text-sm text-gray-500 truncate">
                                 {conv.lastMessage?.file ? (
                                   <span className="flex items-center gap-1">
                                     <Paperclip size={12} />
@@ -524,7 +530,7 @@ export default function FloatingChatWidget() {
                             </div>
                           </div>
                           {conv.unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 px-2 flex items-center justify-center ml-2">
+                            <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 px-2 flex items-center justify-center ml-2 flex-shrink-0">
                               {conv.unreadCount}
                             </span>
                           )}
@@ -538,7 +544,7 @@ export default function FloatingChatWidget() {
                 <>
                   {/* Typing Indicator */}
                   {isTyping(activeConversation.user._id) && (
-                    <div className="px-4 py-2 bg-blue-50 text-sm text-blue-600">
+                    <div className="px-3 sm:px-4 py-2 bg-blue-50 text-xs sm:text-sm text-blue-600 flex-shrink-0">
                       {activeConversation.user.firstName} is typing
                       <span className="typing-dots">
                         <span>.</span>
@@ -552,7 +558,7 @@ export default function FloatingChatWidget() {
                   <div
                     ref={messagesBoxRef}
                     onScroll={handleScroll}
-                    className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3"
+                    className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gray-50 space-y-2 sm:space-y-3"
                   >
                     {messages.map((msg) => {
                       const isAdmin = msg.senderRole === "admin";
@@ -568,7 +574,7 @@ export default function FloatingChatWidget() {
                           className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                            className={`max-w-[85%] sm:max-w-[75%] rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 text-sm sm:text-base ${
                               isAdmin
                                 ? "bg-blue-600 text-white rounded-br-sm"
                                 : "bg-white text-gray-900 rounded-bl-sm shadow-sm"
@@ -586,7 +592,7 @@ export default function FloatingChatWidget() {
                                     <img
                                       src={`${BASE_URL}/${msg.file}`}
                                       alt={msg.fileName || "Image"}
-                                      className="rounded-lg max-w-full h-auto max-h-64 object-cover"
+                                      className="rounded-lg max-w-full h-auto max-h-48 sm:max-h-64 object-cover"
                                     />
                                     {msg.fileName && (
                                       <div className="text-xs opacity-90 truncate">
@@ -599,17 +605,17 @@ export default function FloatingChatWidget() {
                                     href={`${BASE_URL}/${msg.file}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                    className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border ${
                                       isAdmin
                                         ? "bg-blue-700 border-blue-800 hover:bg-blue-800"
                                         : "bg-gray-100 border-gray-200 hover:bg-gray-200"
-                                    } transition-colors`}
+                                    } transition-colors active:scale-95`}
                                   >
                                     <div className="flex-shrink-0">
                                       {getFileIcon(msg.fileType)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="font-medium truncate">
+                                      <div className="font-medium truncate text-xs sm:text-sm">
                                         {msg.fileName || "Download file"}
                                       </div>
                                       {msg.fileSize && (
@@ -619,8 +625,8 @@ export default function FloatingChatWidget() {
                                       )}
                                     </div>
                                     <Paperclip
-                                      size={16}
-                                      className="flex-shrink-0"
+                                      size={14}
+                                      className="sm:w-4 sm:h-4 flex-shrink-0"
                                     />
                                   </a>
                                 ) : null}
@@ -635,7 +641,7 @@ export default function FloatingChatWidget() {
 
                   {/* Error Message */}
                   {uploadError && (
-                    <div className="px-4 py-2 bg-red-50 text-red-600 text-sm border-t border-red-100">
+                    <div className="px-3 sm:px-4 py-2 bg-red-50 text-red-600 text-xs sm:text-sm border-t border-red-100 flex-shrink-0">
                       {uploadError}
                       <button
                         onClick={() => setUploadError(null)}
@@ -648,63 +654,63 @@ export default function FloatingChatWidget() {
 
                   {/* File Preview Section */}
                   {selectedFile && (
-                    <div className="px-4 py-2 bg-blue-50 border-t border-blue-100">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                    <div className="px-3 sm:px-4 py-2 bg-blue-50 border-t border-blue-100 flex-shrink-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                           {filePreview ? (
-                            <div className="flex items-center gap-3">
+                            <>
                               <img
                                 src={filePreview}
                                 alt="Preview"
-                                className="w-12 h-12 object-cover rounded"
+                                className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
                               />
-                              <div>
-                                <div className="text-sm font-medium truncate max-w-[150px]">
+                              <div className="min-w-0">
+                                <div className="text-xs sm:text-sm font-medium truncate">
                                   {selectedFile.name}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {formatFileSize(selectedFile.size)}
                                 </div>
                               </div>
-                            </div>
+                            </>
                           ) : (
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center">
+                            <>
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
                                 {getFileIcon(selectedFile.type)}
                               </div>
-                              <div>
-                                <div className="text-sm font-medium truncate max-w-[150px]">
+                              <div className="min-w-0">
+                                <div className="text-xs sm:text-sm font-medium truncate">
                                   {selectedFile.name}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {formatFileSize(selectedFile.size)}
                                 </div>
                               </div>
-                            </div>
+                            </>
                           )}
                         </div>
                         <button
                           onClick={removeSelectedFile}
                           disabled={isUploading}
-                          className="text-red-500 hover:text-red-700 disabled:opacity-50"
+                          className="text-red-500 hover:text-red-700 disabled:opacity-50 flex-shrink-0"
                         >
-                          <X size={18} />
+                          <X size={16} className="sm:w-[18px] sm:h-[18px]" />
                         </button>
                       </div>
                     </div>
                   )}
 
                   {/* Input Area */}
-                  <div className="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
-                    <div className="flex items-center gap-2">
+                  <div className="p-3 sm:p-4 bg-white border-t border-gray-200 rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {/* File Attachment Button */}
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="p-2 text-gray-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="p-2 text-gray-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 flex-shrink-0"
                         title="Attach file"
                       >
-                        <Paperclip size={20} />
+                        <Paperclip size={18} className="sm:w-5 sm:h-5" />
                       </button>
 
                       <input
@@ -722,10 +728,10 @@ export default function FloatingChatWidget() {
                         onKeyPress={handleKeyPress}
                         placeholder={
                           selectedFile
-                            ? "Add a caption (optional)..."
+                            ? "Add a caption..."
                             : "Type a message..."
                         }
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={isUploading}
                       />
 
@@ -736,19 +742,22 @@ export default function FloatingChatWidget() {
                           isUploading ||
                           !socket
                         }
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full p-2 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full p-2 transition-colors min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center active:scale-95 flex-shrink-0"
                         title="Send message"
                       >
                         {isUploading ? (
-                          <Loader2 size={20} className="animate-spin" />
+                          <Loader2
+                            size={18}
+                            className="sm:w-5 sm:h-5 animate-spin"
+                          />
                         ) : (
-                          <Send size={20} />
+                          <Send size={18} className="sm:w-5 sm:h-5" />
                         )}
                       </button>
                     </div>
 
                     {/* File type hint */}
-                    <div className="text-xs text-gray-400 mt-2 text-center">
+                    <div className="text-[10px] sm:text-xs text-gray-400 mt-2 text-center">
                       Supports images, documents, and files (Max 10MB)
                     </div>
                   </div>
