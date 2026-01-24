@@ -27,6 +27,8 @@ import {
   Info, // Added for the modal
 } from "lucide-react";
 
+const BASE_URL = "https://api.houseofresha.com"; // Define base URL
+
 const StatsCard = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
     <div className="flex items-center justify-between">
@@ -64,6 +66,23 @@ const EditPerfumes = () => {
     text: "",
     inStock: true,
   });
+
+  // Function to construct proper image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) {
+      return "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&auto=format&fit=crop";
+    }
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+    
+    // Construct full URL from base URL and path
+    // Remove leading slash if present to avoid double slash
+    const cleanPath = imagePath.startsWith("/") ? imagePath.substring(1) : imagePath;
+    return `${BASE_URL}/${cleanPath}`;
+  };
 
   // SweetAlert function for perfume update success
   const showPerfumeUpdated = async () => {
@@ -121,7 +140,7 @@ const EditPerfumes = () => {
       console.log("Fetching perfume with ID:", id);
 
       const response = await axios.get(
-        `https://api.houseofresha.com/perfume/${id}`
+        `${BASE_URL}/perfume/${id}`
       );
       console.log("API Response:", response.data);
 
@@ -153,11 +172,11 @@ const EditPerfumes = () => {
       const imagePath =
         perfumeData.image || perfumeData.images || perfumeData.imageUrl || "";
       if (imagePath) {
-        const fullImagePath = imagePath.startsWith("http")
-          ? imagePath
-          : `https://api.houseofresha.com/${imagePath}`;
+        const fullImagePath = getImageUrl(imagePath); // Use the helper function
         setPreviewImage(fullImagePath);
         setExistingImage(imagePath);
+      } else {
+        setPreviewImage(getImageUrl("")); // Use default image if none exists
       }
 
       setLoading(false);
@@ -231,10 +250,8 @@ const EditPerfumes = () => {
       setSelectedFile(null);
       setPreviewImage(
         existingImage
-          ? existingImage.startsWith("http")
-            ? existingImage
-            : `https://api.houseofresha.com/${existingImage}`
-          : null
+          ? getImageUrl(existingImage) // Use helper function
+          : getImageUrl("") // Use default image
       );
       setRemovedImage(false);
     } else if (existingImage) {
@@ -244,7 +261,7 @@ const EditPerfumes = () => {
         } catch (e) {}
       }
       setSelectedFile(null);
-      setPreviewImage(null);
+      setPreviewImage(getImageUrl("")); // Set to default image
       setRemovedImage(true);
       setExistingImage(null);
     } else {
@@ -254,7 +271,7 @@ const EditPerfumes = () => {
         } catch (e) {}
       }
       setSelectedFile(null);
-      setPreviewImage(null);
+      setPreviewImage(getImageUrl("")); // Set to default image
       setRemovedImage(false);
     }
     if (fileInputRef.current) {
@@ -398,7 +415,7 @@ const handleSubmit = async (e) => {
 
     // Update data using PATCH method
     const response = await axios.patch(
-      `https://api.houseofresha.com/perfume/${id}`,
+      `${BASE_URL}/perfume/${id}`,
       updateData,
       {
         headers: {
@@ -804,6 +821,10 @@ const handleSubmit = async (e) => {
                       src={previewImage}
                       alt="Perfume preview"
                       className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover object-center rounded-lg"
+                      onError={(e) => {
+                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.src = getImageUrl(""); // Use default image
+                      }}
                     />
                     <button
                       type="button"
@@ -1120,10 +1141,14 @@ const handleSubmit = async (e) => {
                 <img
                   src={
                     previewImage ||
-                    "https://via.placeholder.com/800x400?text=No+Image"
+                    getImageUrl("") // Use default image
                   }
                   alt={formData.name}
                   className="w-full h-64 sm:h-96 object-cover object-top"
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = getImageUrl(""); // Use default image
+                  }}
                 />
                 <div className="absolute top-4 right-4">
                   <span
