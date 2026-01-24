@@ -28,7 +28,7 @@ const FAQAdmin = () => {
     setNotification({ show: true, type, message });
     setTimeout(
       () => setNotification({ show: false, type: "", message: "" }),
-      3000
+      3000,
     );
   };
 
@@ -67,7 +67,7 @@ const FAQAdmin = () => {
       // Handle your specific API response format
       if (data && Array.isArray(data.data)) {
         const sortedFaqs = [...data.data].sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
         );
         setFaqs(sortedFaqs);
       }
@@ -249,7 +249,9 @@ const FAQAdmin = () => {
   // Update FAQ field while editing
   const updateFAQField = (id, field, value) => {
     setFaqs((prevFaqs) =>
-      prevFaqs.map((faq) => (faq._id === id ? { ...faq, [field]: value } : faq))
+      prevFaqs.map((faq) =>
+        faq._id === id ? { ...faq, [field]: value } : faq,
+      ),
     );
   };
 
@@ -647,7 +649,7 @@ const FAQAdmin = () => {
                                     updateFAQField(
                                       faq._id,
                                       "question",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-semibold"
@@ -673,7 +675,7 @@ const FAQAdmin = () => {
                                     updateFAQField(
                                       faq._id,
                                       "answer",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   rows={4}
