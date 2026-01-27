@@ -1,1580 +1,3 @@
-// import React, { useState, useEffect, useCallback, useRef } from "react";
-// import {
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   Legend,
-//   ResponsiveContainer,
-//   PieChart,
-//   Pie,
-//   Cell,
-//   LineChart,
-//   Line,
-// } from "recharts";
-// import {
-//   Activity,
-//   Users,
-//   Clock,
-//   Eye,
-//   TrendingUp,
-//   Search,
-//   X,
-//   Filter,
-//   ChevronDown,
-//   ChevronLeft,
-//   ChevronRight,
-//   ChevronsLeft,
-//   ChevronsRight,
-//   RefreshCw,
-//   User,
-//   Mail,
-//   Calendar,
-//   Loader,
-//   BarChart3,
-// } from "lucide-react";
-
-// const AnalyticsDashboard = () => {
-//   const [summary, setSummary] = useState(null);
-//   const [pageAnalytics, setPageAnalytics] = useState([]);
-//   const [detailedLogs, setDetailedLogs] = useState([]);
-//   const [userData, setUserData] = useState({});
-//   const [allLogs, setAllLogs] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [totalPages, setTotalPages] = useState(1);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [selectedPage, setSelectedPage] = useState("all");
-//   const [selectedLog, setSelectedLog] = useState(null);
-//   const [userDetailsModalOpen, setUserDetailsModalOpen] = useState(false);
-//   const [isSearching, setIsSearching] = useState(false);
-//   const [totalLogsCount, setTotalLogsCount] = useState(0);
-//   const [searchResults, setSearchResults] = useState([]);
-//   const [showSearchResults, setShowSearchResults] = useState(false);
-
-//   const PAGE_SIZE = 20;
-//   const BASE_URL = "https://api.houseofresha.com/analytics";
-//   const USER_API_URL = "https://api.houseofresha.com/data";
-
-//   const searchTimeoutRef = useRef(null);
-//   const hasFetchedAllLogsRef = useRef(false);
-
-//   const getPageFriendlyName = useCallback((url) => {
-//     if (!url || typeof url !== "string") {
-//       return "Unknown Page";
-//     }
-
-//     const pageNames = {
-//       "/": "Home Page",
-//       "/home": "Home Page",
-//       "/app/home": "App Home",
-//       "/app": "App",
-//       "/blogs": "Blogs Page",
-//       "/blog": "Blog Page",
-//       "/about": "About Us",
-//       "/contact": "Contact Page",
-//       "/products": "Products",
-//       "/services": "Services",
-//       "/pricing": "Pricing",
-//       "/login": "Login Page",
-//       "/signup": "Sign Up",
-//       "/register": "Registration",
-//       "/dashboard": "Dashboard",
-//       "/profile": "User Profile",
-//       "/settings": "Settings",
-//       "/cart": "Shopping Cart",
-//       "/checkout": "Checkout",
-//       "/orders": "Orders",
-//       "/account": "My Account",
-//       "/search": "Search",
-//       "/help": "Help Center",
-//       "/faq": "FAQ",
-//       "/support": "Support",
-//       "/terms": "Terms & Conditions",
-//       "/privacy": "Privacy Policy",
-//     };
-
-//     if (pageNames[url]) {
-//       return pageNames[url];
-//     }
-
-//     if (url.includes("/app/detailpage/")) return "Detail Page";
-//     if (url.includes("/product/")) return "Product Details";
-//     if (url.includes("/blog/")) return "Blog Post";
-//     if (url.includes("/user/")) return "User Profile";
-//     if (url.includes("/category/")) return "Category Page";
-
-//     return (
-//       url
-//         .split("/")
-//         .filter(Boolean)
-//         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-//         .join(" > ") || "Unknown Page"
-//     );
-//   }, []);
-
-//   useEffect(() => {
-//     fetchAllData();
-//   }, [currentPage]);
-
-//   useEffect(() => {
-//     fetchUserData();
-//   }, []);
-
-//   const fetchUserData = async () => {
-//     try {
-//       const response = await fetch(USER_API_URL);
-//       if (!response.ok) throw new Error("Failed to fetch user data");
-
-//       const result = await response.json();
-//       const users = result.data || result;
-
-//       const userMap = {};
-
-//       users.forEach((user) => {
-//         const id = user._id || user.id || user.userId;
-//         const firstName = user.firstName?.trim();
-//         const lastName = user.lastName?.trim();
-//         const email = user.email?.trim();
-
-//         const fullName =
-//           firstName && lastName
-//             ? `${firstName} ${lastName}`
-//             : firstName || lastName || null;
-
-//         if (id) {
-//           userMap[id] = {
-//             name: fullName || "Anonymous User",
-//             email: email || null,
-//             firstName: firstName || null,
-//             lastName: lastName || null,
-//             rawData: user,
-//           };
-//         }
-//       });
-
-//       setUserData(userMap);
-//     } catch (err) {
-//       console.error("User fetch error:", err);
-//     }
-//   };
-
-//   const fetchAllLogs = async () => {
-//     try {
-//       setIsSearching(true);
-//       const response = await fetch(`${BASE_URL}/?limit=1000`);
-//       if (!response.ok) throw new Error("Failed to fetch all logs");
-
-//       const logsData = await response.json();
-//       if (Array.isArray(logsData.data)) {
-//         setAllLogs(logsData.data);
-//         setTotalLogsCount(logsData.total || logsData.data.length);
-//         hasFetchedAllLogsRef.current = true;
-//       }
-//     } catch (err) {
-//       console.error("Error fetching all logs:", err);
-//     } finally {
-//       setIsSearching(false);
-//     }
-//   };
-
-//   const fetchAllData = async () => {
-//     setLoading(true);
-//     setError(null);
-//     hasFetchedAllLogsRef.current = false;
-
-//     try {
-//       // Build URL with page filter
-//       let logsUrl = `${BASE_URL}/?pageNo=${currentPage}&limit=${PAGE_SIZE}`;
-//       if (selectedPage && selectedPage !== "all") {
-//         logsUrl += `&page=${encodeURIComponent(selectedPage)}`;
-//       }
-
-//       const [summaryRes, pageAnalyticsRes, logsRes] = await Promise.all([
-//         fetch(`${BASE_URL}/summary`),
-//         fetch(`${BASE_URL}/`),
-//         fetch(logsUrl),
-//       ]);
-
-//       if (!summaryRes.ok || !pageAnalyticsRes.ok || !logsRes.ok) {
-//         throw new Error("Failed to fetch data from one or more endpoints");
-//       }
-
-//       const summaryData = await summaryRes.json();
-//       const pageAnalyticsData = await pageAnalyticsRes.json();
-//       const logsData = await logsRes.json();
-
-//       setSummary(summaryData.data);
-//       setPageAnalytics(
-//         Array.isArray(pageAnalyticsData.data) ? pageAnalyticsData.data : [],
-//       );
-//       setDetailedLogs(Array.isArray(logsData.data) ? logsData.data : []);
-
-//       if (logsData.total) {
-//         setTotalPages(Math.ceil(logsData.total / PAGE_SIZE));
-//         setTotalLogsCount(logsData.total);
-//       }
-//     } catch (err) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handlePageFilterChange = (e) => {
-//     const pageValue = e.target.value;
-//     setSelectedPage(pageValue);
-//     setCurrentPage(1);
-//     setShowSearchResults(false);
-//     setSearchResults([]);
-
-//     // Fetch data with the new filter
-//     fetchFilteredData(pageValue);
-//   };
-
-//   const fetchFilteredData = async (pageFilter) => {
-//     try {
-//       setLoading(true);
-
-//       let url = `${BASE_URL}/?pageNo=1&limit=${PAGE_SIZE}`;
-//       if (pageFilter && pageFilter !== "all") {
-//         url += `&page=${encodeURIComponent(pageFilter)}`;
-//       }
-
-//       const response = await fetch(url);
-//       if (!response.ok) throw new Error("Failed to fetch filtered data");
-
-//       const logsData = await response.json();
-//       setDetailedLogs(Array.isArray(logsData.data) ? logsData.data : []);
-
-//       if (logsData.total) {
-//         setTotalPages(Math.ceil(logsData.total / PAGE_SIZE));
-//         setTotalLogsCount(logsData.total);
-//       }
-//     } catch (err) {
-//       console.error("Filter fetch error:", err);
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const searchUsers = useCallback(
-//     (term) => {
-//       if (!term.trim()) {
-//         setSearchResults([]);
-//         setShowSearchResults(false);
-//         return [];
-//       }
-
-//       const searchTermLower = term.toLowerCase().trim();
-//       const logsToSearch = allLogs.length > 0 ? allLogs : detailedLogs;
-//       const results = [];
-
-//       logsToSearch.forEach((log) => {
-//         if (!log) return;
-
-//         const userInfo = userData[log.userId];
-//         const userName = userInfo?.name || "Anonymous User";
-//         const userEmail = userInfo?.email || "";
-//         const userFirstName = userInfo?.firstName || "";
-//         const userLastName = userInfo?.lastName || "";
-//         const userId = log.userId || "";
-//         const pageName = getPageFriendlyName(log.page);
-//         const pageUrl = log.page || "";
-//         const sessionId = log.sessionId || "";
-//         const ip = log.ip || "";
-
-//         // Check all possible matches
-//         const matches =
-//           userName.toLowerCase().includes(searchTermLower) ||
-//           userEmail.toLowerCase().includes(searchTermLower) ||
-//           userFirstName.toLowerCase().includes(searchTermLower) ||
-//           userLastName.toLowerCase().includes(searchTermLower) ||
-//           userId.toLowerCase().includes(searchTermLower) ||
-//           pageName.toLowerCase().includes(searchTermLower) ||
-//           pageUrl.toLowerCase().includes(searchTermLower) ||
-//           sessionId.toLowerCase().includes(searchTermLower) ||
-//           ip.toLowerCase().includes(searchTermLower);
-
-//         if (matches) {
-//           results.push({
-//             ...log,
-//             userName,
-//             userEmail,
-//             userFirstName,
-//             userLastName,
-//             pageName,
-//             matchType: getMatchType(
-//               searchTermLower,
-//               userName,
-//               userEmail,
-//               userFirstName,
-//               userLastName,
-//               userId,
-//               pageName,
-//             ),
-//           });
-//         }
-//       });
-
-//       // Remove duplicates by userId + sessionId + timestamp
-//       const uniqueResults = Array.from(
-//         new Map(
-//           results.map((item) => [
-//             `${item.userId}-${item.sessionId}-${item.createdAt}`,
-//             item,
-//           ]),
-//         ).values(),
-//       );
-
-//       setSearchResults(uniqueResults);
-//       setShowSearchResults(true);
-//       return uniqueResults;
-//     },
-//     [allLogs, detailedLogs, userData, getPageFriendlyName],
-//   );
-
-//   const getMatchType = (
-//     searchTerm,
-//     userName,
-//     userEmail,
-//     firstName,
-//     lastName,
-//     userId,
-//     pageName,
-//   ) => {
-//     if (userName.toLowerCase().includes(searchTerm)) return "name";
-//     if (userEmail.toLowerCase().includes(searchTerm)) return "email";
-//     if (firstName?.toLowerCase().includes(searchTerm)) return "first_name";
-//     if (lastName?.toLowerCase().includes(searchTerm)) return "last_name";
-//     if (userId.toLowerCase().includes(searchTerm)) return "user_id";
-//     if (pageName.toLowerCase().includes(searchTerm)) return "page";
-//     return "other";
-//   };
-
-//   useEffect(() => {
-//     if (searchTerm.trim() && !hasFetchedAllLogsRef.current) {
-//       fetchAllLogs();
-//     }
-
-//     if (searchTimeoutRef.current) {
-//       clearTimeout(searchTimeoutRef.current);
-//     }
-
-//     searchTimeoutRef.current = setTimeout(() => {
-//       if (searchTerm.trim()) {
-//         searchUsers(searchTerm);
-//       } else {
-//         setSearchResults([]);
-//         setShowSearchResults(false);
-//       }
-//     }, 300);
-
-//     return () => {
-//       if (searchTimeoutRef.current) {
-//         clearTimeout(searchTimeoutRef.current);
-//       }
-//     };
-//   }, [searchTerm, searchUsers]);
-
-//   const handleViewDetails = (log) => {
-//     setSelectedLog(log);
-//     setUserDetailsModalOpen(true);
-//   };
-
-//   const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
-//     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
-//       <div className="flex items-center justify-between">
-//         <div className="flex-1">
-//           <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-//             {title}
-//           </p>
-//           <h3 className="text-3xl font-bold mt-2 text-gray-900">
-//             {value?.toLocaleString() || 0}
-//           </h3>
-//           {subtitle && <p className="text-gray-400 text-xs mt-2">{subtitle}</p>}
-//         </div>
-//         <div
-//           className="p-3 rounded-lg"
-//           style={{ backgroundColor: `${color}15` }}
-//         >
-//           <Icon size={24} style={{ color }} strokeWidth={2.5} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-
-//   const SearchStatsCard = () => (
-//     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
-//       <div className="flex items-center justify-between">
-//         <div className="flex-1">
-//           <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-//             Search Results
-//           </p>
-//           <h3 className="text-3xl font-bold mt-2 text-gray-900">
-//             {searchTerm ? searchResults.length.toLocaleString() : "All"}
-//           </h3>
-//           <p className="text-gray-400 text-xs mt-2">
-//             {searchTerm
-//               ? `Found ${searchResults.length} matches in ${totalLogsCount} logs`
-//               : `Total logs: ${totalLogsCount}`}
-//           </p>
-//         </div>
-//         <div
-//           className="p-3 rounded-lg"
-//           style={{ backgroundColor: "#3b82f615" }}
-//         >
-//           <Search size={24} style={{ color: "#3b82f6" }} strokeWidth={2.5} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-
-//   const OptimizedSelect = ({
-//     value,
-//     onChange,
-//     options,
-//     icon: Icon,
-//     placeholder,
-//     label,
-//   }) => (
-//     <div className="relative">
-//       {label && (
-//         <label className="block text-xs font-semibold text-gray-700 mb-2">
-//           {label}
-//         </label>
-//       )}
-//       <div className="relative">
-//         {Icon && (
-//           <Icon
-//             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-//             size={18}
-//           />
-//         )}
-//         <select
-//           value={value}
-//           onChange={onChange}
-//           className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm cursor-pointer appearance-none hover:border-gray-400 transition-colors"
-//         >
-//           {placeholder && <option value="">{placeholder}</option>}
-//           {options.map((option) => (
-//             <option key={option.value} value={option.value}>
-//               {option.label}
-//             </option>
-//           ))}
-//         </select>
-//         <ChevronDown
-//           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-//           size={16}
-//         />
-//       </div>
-//     </div>
-//   );
-
-//   const EnhancedPagination = () => {
-//     const generatePageNumbers = () => {
-//       const pages = [];
-//       const maxVisiblePages = 7;
-
-//       if (totalPages <= maxVisiblePages) {
-//         for (let i = 1; i <= totalPages; i++) {
-//           pages.push(i);
-//         }
-//       } else {
-//         if (currentPage <= 4) {
-//           for (let i = 1; i <= 5; i++) {
-//             pages.push(i);
-//           }
-//           pages.push("...");
-//           pages.push(totalPages);
-//         } else if (currentPage >= totalPages - 3) {
-//           pages.push(1);
-//           pages.push("...");
-//           for (let i = totalPages - 4; i <= totalPages; i++) {
-//             pages.push(i);
-//           }
-//         } else {
-//           pages.push(1);
-//           pages.push("...");
-//           for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-//             pages.push(i);
-//           }
-//           pages.push("...");
-//           pages.push(totalPages);
-//         }
-//       }
-
-//       return pages;
-//     };
-
-//     return (
-//       <div className="grid grid-cols-1 xs:grid-cols-3 items-center gap-3 sm:gap-4 px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
-//         <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left order-2 xs:order-1">
-//           <span className="hidden sm:inline">Showing </span>
-//           <span className="font-semibold text-gray-900">
-//             {(currentPage - 1) * PAGE_SIZE + 1}
-//           </span>
-//           <span className="hidden sm:inline"> to </span>
-//           <span className="xs:hidden">-</span>
-//           <span className="font-semibold text-gray-900">
-//             {Math.min(currentPage * PAGE_SIZE, detailedLogs.length)}
-//           </span>
-//           {" of "}
-//           <span className="font-semibold text-gray-900">
-//             {detailedLogs.length}
-//           </span>
-//           <span className="hidden xs:inline"> entries</span>
-//           {selectedPage !== "all" && !showSearchResults && (
-//             <span className="ml-2 text-purple-600 text-xs font-medium">
-//               (Filtered by: {getPageFriendlyName(selectedPage)})
-//             </span>
-//           )}
-//         </div>
-
-//         <div className="flex items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 order-1 xs:order-2">
-//           <button
-//             onClick={() => setCurrentPage(1)}
-//             disabled={currentPage === 1}
-//             className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-//             title="First Page"
-//           >
-//             <ChevronsLeft size={14} className="sm:w-4 sm:h-4" />
-//           </button>
-
-//           <button
-//             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-//             disabled={currentPage === 1}
-//             className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-//             title="Previous Page"
-//           >
-//             <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
-//           </button>
-
-//           <div className="flex items-center gap-0.5 xs:gap-1">
-//             {generatePageNumbers().map((page, index) =>
-//               page === "..." ? (
-//                 <span
-//                   key={`ellipsis-${index}`}
-//                   className="px-1 xs:px-1.5 sm:px-2 py-0.5 text-gray-400 text-xs"
-//                 >
-//                   ...
-//                 </span>
-//               ) : (
-//                 <button
-//                   key={page}
-//                   onClick={() => setCurrentPage(page)}
-//                   className={`min-w-[28px] xs:min-w-[32px] sm:min-w-[36px] md:min-w-[40px] h-7 xs:h-8 sm:h-9 md:h-10 flex items-center justify-center rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all ${
-//                     currentPage === page
-//                       ? "bg-blue-600 text-white shadow-sm"
-//                       : "text-gray-700 border border-gray-300 hover:bg-gray-50"
-//                   } active:scale-95`}
-//                 >
-//                   {page}
-//                 </button>
-//               ),
-//             )}
-//           </div>
-
-//           <button
-//             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-//             disabled={currentPage === totalPages}
-//             className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-//             title="Next Page"
-//           >
-//             <ChevronRight size={14} className="sm:w-4 sm:h-4" />
-//           </button>
-
-//           <button
-//             onClick={() => setCurrentPage(totalPages)}
-//             disabled={currentPage === totalPages}
-//             className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-//             title="Last Page"
-//           >
-//             <ChevronsRight size={14} className="sm:w-4 sm:h-4" />
-//           </button>
-//         </div>
-
-//         <div className="hidden xs:block order-3" />
-//       </div>
-//     );
-//   };
-
-//   const getUserName = (userId) => {
-//     if (!userId) return "Anonymous User";
-//     return userData[userId]?.name || "Anonymous User";
-//   };
-
-//   const getUserEmail = (userId) => {
-//     if (!userId) return null;
-//     return userData[userId]?.email || null;
-//   };
-
-//   const highlightMatch = (text, searchTerm) => {
-//     if (!searchTerm || !text) return text;
-
-//     const lowerText = text.toLowerCase();
-//     const lowerSearch = searchTerm.toLowerCase();
-
-//     if (lowerText.includes(lowerSearch)) {
-//       const index = lowerText.indexOf(lowerSearch);
-//       const before = text.substring(0, index);
-//       const match = text.substring(index, index + searchTerm.length);
-//       const after = text.substring(index + searchTerm.length);
-
-//       return (
-//         <span>
-//           {before}
-//           <span className="bg-yellow-200 font-bold px-0.5 rounded">
-//             {match}
-//           </span>
-//           {after}
-//         </span>
-//       );
-//     }
-//     return text;
-//   };
-
-//   if (loading && !summary) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
-//           <p className="mt-6 text-gray-700 font-semibold text-lg">
-//             Loading analytics data...
-//           </p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-//         <div className="bg-white border-l-4 border-red-500 rounded-xl shadow-xl p-8 max-w-md w-full">
-//           <h3 className="text-red-800 font-bold text-xl mb-3">
-//             Error Loading Data
-//           </h3>
-//           <p className="text-red-600 mb-6">{error}</p>
-//           <button
-//             onClick={fetchAllData}
-//             className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold flex items-center justify-center gap-2"
-//           >
-//             <RefreshCw size={18} />
-//             Retry
-//           </button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // Prepare data for Page Views by Page Name chart
-//   const preparePageViewsData = () => {
-//     if (!pageAnalytics || pageAnalytics.length === 0) return [];
-
-//     // Group by page name (friendly name)
-//     const pageMap = new Map();
-
-//     pageAnalytics.forEach((item) => {
-//       if (item && item.page) {
-//         const pageName = getPageFriendlyName(item.page);
-//         const views = item.totalViews || 0;
-
-//         if (pageMap.has(pageName)) {
-//           pageMap.set(pageName, pageMap.get(pageName) + views);
-//         } else {
-//           pageMap.set(pageName, views);
-//         }
-//       }
-//     });
-
-//     // Convert to array and sort by views (descending)
-//     const pageData = Array.from(pageMap.entries())
-//       .map(([name, views]) => ({
-//         name,
-//         views,
-//         shortName: name.length > 25 ? `${name.substring(0, 25)}...` : name,
-//       }))
-//       .sort((a, b) => b.views - a.views)
-//       .slice(0, 10); // Top 10 pages
-
-//     return pageData;
-//   };
-
-//   const userDistributionData = summary
-//     ? [
-//         { name: "Logged In", value: summary.loggedInUsers, color: "#3b82f6" },
-//         { name: "Anonymous", value: summary.anonymousUsers, color: "#8b5cf6" },
-//       ]
-//     : [];
-
-//   const uniquePagesMap = new Map();
-//   pageAnalytics.forEach((item) => {
-//     if (item && item.page) {
-//       const friendlyName = getPageFriendlyName(item.page);
-//       uniquePagesMap.set(item.page, friendlyName);
-//     }
-//   });
-
-//   detailedLogs.forEach((log) => {
-//     if (log && log.page && !uniquePagesMap.has(log.page)) {
-//       const friendlyName = getPageFriendlyName(log.page);
-//       uniquePagesMap.set(log.page, friendlyName);
-//     }
-//   });
-
-//   const seenFriendlyNames = new Set();
-//   const uniquePages = Array.from(uniquePagesMap.entries())
-//     .map(([page, friendlyName]) => ({
-//       page,
-//       friendlyName,
-//     }))
-//     .filter(({ friendlyName }) => {
-//       if (seenFriendlyNames.has(friendlyName)) {
-//         return false;
-//       }
-//       seenFriendlyNames.add(friendlyName);
-//       return true;
-//     })
-//     .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName));
-
-//   const pageOptions = [
-//     { value: "all", label: "All Pages" },
-//     ...uniquePages.map(({ page, friendlyName }) => ({
-//       value: page,
-//       label:
-//         friendlyName.length > 50
-//           ? `${friendlyName.slice(0, 50)}...`
-//           : friendlyName,
-//     })),
-//   ];
-
-//   const hasActiveFilters = searchTerm || selectedPage !== "all";
-//   const displayLogs = showSearchResults ? searchResults : detailedLogs;
-//   const pageViewsData = preparePageViewsData();
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="bg-white shadow-sm p-4 sm:p-6 backdrop-blur-lg bg-opacity-90">
-//             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-//               {/* Left side */}
-//               <div className="flex items-start gap-3">
-//                 <div className="flex w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-100 items-center justify-center flex-shrink-0">
-//                   <Activity className="text-blue-600" size={20} />
-//                 </div>
-
-//                 <div className="min-w-0 flex-1">
-//                   <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
-//                     Analytics Dashboard
-//                   </h1>
-//                   <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 break-words">
-//                     Real-time insights into your application usage
-//                   </p>
-//                 </div>
-//               </div>
-
-//               {/* Right side actions */}
-//               <div className="flex items-center gap-3 justify-end sm:justify-start flex-shrink-0">
-//                 {isSearching && (
-//                   <div className="flex items-center gap-2 text-blue-600 text-xs sm:text-sm">
-//                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
-//                     <span>Searching...</span>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Summary Stats */}
-//         {summary && (
-//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
-//             <StatCard
-//               title="Total Views"
-//               value={summary.totalViews}
-//               icon={Eye}
-//               color="#3b82f6"
-//               subtitle="All-time page views"
-//             />
-//             <StatCard
-//               title="Avg Time Spent"
-//               value={summary.avgTimeSpent}
-//               icon={Clock}
-//               color="#ef4444"
-//               subtitle="Seconds per session"
-//             />
-//             <StatCard
-//               title="Logged In Users"
-//               value={summary.loggedInUsers}
-//               icon={Activity}
-//               color="#8b5cf6"
-//               subtitle="Authenticated sessions"
-//             />
-//           </div>
-//         )}
-
-//         {/* Charts Section */}
-//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-//           <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-//             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-//               <TrendingUp size={20} className="sm:w-5 sm:h-5" />
-//               Activity Trend (Last 7 Days)
-//             </h2>
-//             <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
-//               <ResponsiveContainer width="100%" height="100%">
-//                 <LineChart
-//                   data={[
-//                     {
-//                       day: "Mon",
-//                       views: summary?.dailyViews?.[0] || 45,
-//                       users: summary?.dailyUsers?.[0] || 32,
-//                     },
-//                     {
-//                       day: "Tue",
-//                       views: summary?.dailyViews?.[1] || 78,
-//                       users: summary?.dailyUsers?.[1] || 45,
-//                     },
-//                     {
-//                       day: "Wed",
-//                       views: summary?.dailyViews?.[2] || 56,
-//                       users: summary?.dailyUsers?.[2] || 38,
-//                     },
-//                     {
-//                       day: "Thu",
-//                       views: summary?.dailyViews?.[3] || 89,
-//                       users: summary?.dailyUsers?.[3] || 52,
-//                     },
-//                     {
-//                       day: "Fri",
-//                       views: summary?.dailyViews?.[4] || 67,
-//                       users: summary?.dailyUsers?.[4] || 41,
-//                     },
-//                     {
-//                       day: "Sat",
-//                       views: summary?.dailyViews?.[5] || 94,
-//                       users: summary?.dailyUsers?.[5] || 58,
-//                     },
-//                     {
-//                       day: "Sun",
-//                       views: summary?.dailyViews?.[6] || 72,
-//                       users: summary?.dailyUsers?.[6] || 46,
-//                     },
-//                   ]}
-//                   margin={{
-//                     top: 5,
-//                     right: window.innerWidth < 640 ? 10 : 30,
-//                     left: window.innerWidth < 640 ? 0 : 20,
-//                     bottom: 5,
-//                   }}
-//                 >
-//                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-//                   <XAxis
-//                     dataKey="day"
-//                     stroke="#6b7280"
-//                     fontSize={window.innerWidth < 640 ? 10 : 12}
-//                   />
-//                   <YAxis
-//                     stroke="#6b7280"
-//                     fontSize={window.innerWidth < 640 ? 10 : 12}
-//                     width={window.innerWidth < 640 ? 30 : 40}
-//                   />
-//                   <Tooltip
-//                     contentStyle={{
-//                       fontSize: window.innerWidth < 640 ? "11px" : "12px",
-//                       padding: window.innerWidth < 640 ? "6px" : "8px",
-//                       backgroundColor: "white",
-//                       border: "1px solid #e5e7eb",
-//                       borderRadius: "8px",
-//                     }}
-//                   />
-//                   <Legend
-//                     wrapperStyle={{
-//                       fontSize: window.innerWidth < 640 ? "11px" : "12px",
-//                     }}
-//                   />
-//                   <Line
-//                     type="monotone"
-//                     dataKey="views"
-//                     stroke="#3b82f6"
-//                     strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
-//                     activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
-//                     name="Page Views"
-//                   />
-//                   <Line
-//                     type="monotone"
-//                     dataKey="users"
-//                     stroke="#8b5cf6"
-//                     strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
-//                     activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
-//                     name="Active Users"
-//                   />
-//                 </LineChart>
-//               </ResponsiveContainer>
-//             </div>
-//           </div>
-
-//           {userDistributionData.length > 0 && (
-//             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-//               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-//                 User Distribution
-//               </h2>
-//               <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
-//                 <ResponsiveContainer width="100%" height="100%">
-//                   <PieChart>
-//                     <Pie
-//                       data={userDistributionData}
-//                       cx="50%"
-//                       cy="50%"
-//                       labelLine={false}
-//                       label={({ name, value, percent }) => {
-//                         const isMobile = window.innerWidth < 640;
-//                         return isMobile
-//                           ? `${(percent * 100).toFixed(0)}%`
-//                           : `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
-//                       }}
-//                       outerRadius={
-//                         window.innerWidth < 640
-//                           ? 70
-//                           : window.innerWidth < 1024
-//                             ? 85
-//                             : 95
-//                       }
-//                       fill="#8884d8"
-//                       dataKey="value"
-//                       style={{
-//                         fontSize: window.innerWidth < 640 ? "10px" : "12px",
-//                       }}
-//                     >
-//                       {userDistributionData.map((entry, index) => (
-//                         <Cell key={`cell-${index}`} fill={entry.color} />
-//                       ))}
-//                     </Pie>
-//                     <Tooltip
-//                       contentStyle={{
-//                         fontSize: window.innerWidth < 640 ? "11px" : "12px",
-//                         padding: window.innerWidth < 640 ? "6px" : "8px",
-//                         backgroundColor: "white",
-//                         border: "1px solid #e5e7eb",
-//                         borderRadius: "8px",
-//                       }}
-//                     />
-//                   </PieChart>
-//                 </ResponsiveContainer>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-
-//         {/* Alternative Chart Option: Line Chart for Daily Views Trend */}
-
-//         {/* Enhanced Search Input */}
-//         <div className="mb-8">
-//           <div className="relative">
-//             <Search
-//               className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-//               size={20}
-//             />
-//             <input
-//               type="text"
-//               placeholder="Search users by name, email, user ID, or page... (e.g., 'john', 'example@email.com', 'user123')"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//               className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-blue-500 outline-none text-base hover:border-gray-400 transition-colors"
-//             />
-//             {searchTerm && (
-//               <button
-//                 onClick={() => {
-//                   setSearchTerm("");
-//                   setShowSearchResults(false);
-//                   setSearchResults([]);
-//                   hasFetchedAllLogsRef.current = false;
-//                 }}
-//                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-//               >
-//                 <X size={20} />
-//               </button>
-//             )}
-//           </div>
-
-//           {/* Search tips */}
-//           {searchTerm && (
-//             <div className="mt-3 text-xs sm:text-sm text-gray-600 flex flex-wrap items-center gap-1.5 sm:gap-2">
-//               <span className="font-medium">Searching:</span>
-//               <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium break-all">
-//                 "{searchTerm}"
-//               </span>
-//               <span className="hidden sm:inline">•</span>
-//               <span className="text-xs sm:text-sm">
-//                 Found{" "}
-//                 <span className="font-bold text-blue-600">
-//                   {searchResults.length}
-//                 </span>{" "}
-//                 {searchResults.length === 1 ? "match" : "matches"}
-//               </span>
-//               {searchResults.length > 0 && (
-//                 <>
-//                   <span className="hidden sm:inline">•</span>
-//                   <span className="text-green-600 text-xs sm:text-sm">
-//                     Showing all results
-//                   </span>
-//                 </>
-//               )}
-//             </div>
-//           )}
-//         </div>
-
-//         {/* Detailed Logs Table */}
-//         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-//           {/* Header Section */}
-//           <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-//             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
-//               <div>
-//                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2 flex-wrap">
-//                   {showSearchResults
-//                     ? "Search Results"
-//                     : "Recent Activity Logs"}
-//                   {searchTerm && (
-//                     <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-blue-100 text-blue-700 rounded-full">
-//                       {searchResults.length} matches
-//                     </span>
-//                   )}
-//                   {!showSearchResults && selectedPage !== "all" && (
-//                     <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
-//                       {getPageFriendlyName(selectedPage)}
-//                     </span>
-//                   )}
-//                 </h2>
-//                 <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2">
-//                   {showSearchResults ? (
-//                     <>
-//                       Found{" "}
-//                       <span className="font-semibold text-gray-900">
-//                         {searchResults.length}
-//                       </span>{" "}
-//                       matches in{" "}
-//                       <span className="font-semibold text-gray-900">
-//                         {totalLogsCount}
-//                       </span>{" "}
-//                       total logs
-//                     </>
-//                   ) : (
-//                     <span className="flex flex-wrap items-center gap-1">
-//                       <span>Page</span>
-//                       <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
-//                         {currentPage}
-//                       </span>
-//                       <span>of</span>
-//                       <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
-//                         {totalPages}
-//                       </span>
-//                       <span className="hidden sm:inline">•</span>
-//                       <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs sm:text-sm">
-//                         {detailedLogs.length}
-//                       </span>
-//                       <span className="hidden sm:inline">entries</span>
-//                       {selectedPage !== "all" && (
-//                         <>
-//                           <span className="hidden sm:inline">•</span>
-//                           <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-semibold text-xs sm:text-sm">
-//                             Filtered by: {getPageFriendlyName(selectedPage)}
-//                           </span>
-//                         </>
-//                       )}
-//                     </span>
-//                   )}
-//                 </p>
-//               </div>
-
-//               {!showSearchResults && (
-//                 <div className="flex items-center gap-2 w-full sm:w-auto">
-//                   <OptimizedSelect
-//                     value={selectedPage}
-//                     onChange={handlePageFilterChange}
-//                     options={pageOptions}
-//                     icon={Filter}
-//                     placeholder="Filter by page..."
-//                     label="Filter Pages"
-//                   />
-//                 </div>
-//               )}
-//             </div>
-
-//             {hasActiveFilters && (
-//               <div className="mb-0">
-//                 <button
-//                   onClick={() => {
-//                     setSearchTerm("");
-//                     setSelectedPage("all");
-//                     setCurrentPage(1);
-//                     setShowSearchResults(false);
-//                     setSearchResults([]);
-//                     hasFetchedAllLogsRef.current = false;
-//                     fetchAllData();
-//                   }}
-//                   className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
-//                 >
-//                   <X size={16} />
-//                   Clear All Filters
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-
-//           {/* Desktop Table View - Hidden on mobile */}
-//           <div className="hidden lg:block overflow-x-auto">
-//             <table className="min-w-full divide-y divide-gray-200">
-//               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-//                 <tr>
-//                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     User Details
-//                   </th>
-//                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     Page Visited
-//                   </th>
-//                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     Time Spent
-//                   </th>
-//                   {/* <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     Session ID
-//                   </th> */}
-//                   {/* <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     IP Address
-//                   </th> */}
-//                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-//                     Actions
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody className="bg-white divide-y divide-gray-200">
-//                 {displayLogs.length > 0 ? (
-//                   displayLogs.map((log) => {
-//                     if (!log) return null;
-
-//                     const logPage = log.page || "";
-//                     const logUserId = log.userId || "";
-//                     const logSessionId = log.sessionId || "";
-//                     const logIp = log.ip || "";
-//                     const logTimeSpent = log.timeSpent || 0;
-//                     const userName = getUserName(logUserId);
-//                     const userEmail = getUserEmail(logUserId);
-//                     const pageName = getPageFriendlyName(logPage);
-
-//                     return (
-//                       <tr
-//                         key={log._id || Math.random()}
-//                         className="hover:bg-blue-50 transition-all duration-200 group"
-//                       >
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-//                           <div className="flex flex-col">
-//                             <div className="flex items-center gap-2 mb-1">
-//                               <span
-//                                 className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
-//                                   logUserId
-//                                     ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-//                                     : "bg-gray-200 text-gray-700"
-//                                 }`}
-//                               >
-//                                 {highlightMatch(userName, searchTerm)}
-//                               </span>
-//                               {log.matchType && (
-//                                 <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
-//                                   {log.matchType.replace("_", " ")}
-//                                 </span>
-//                               )}
-//                             </div>
-//                             {userEmail && (
-//                               <div className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
-//                                 <Mail size={12} className="text-gray-400" />
-//                                 {highlightMatch(userEmail, searchTerm)}
-//                               </div>
-//                             )}
-//                           </div>
-//                         </td>
-//                         <td className="px-6 py-4 text-sm">
-//                           <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-//                             {highlightMatch(pageName, searchTerm)}
-//                           </div>
-//                           <div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
-//                             {highlightMatch(logPage, searchTerm)}
-//                           </div>
-//                         </td>
-//                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-//                           <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
-//                             {logTimeSpent}s
-//                           </span>
-//                         </td>
-//                         {/* <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
-//                           {logSessionId.substring(0, 10)}...
-//                         </td> */}
-//                         {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-//                           {logIp}
-//                         </td> */}
-//                         <td className="px-6 py-4 whitespace-nowrap">
-//                           <button
-//                             onClick={() => handleViewDetails(log)}
-//                             className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md text-xs font-medium"
-//                           >
-//                             View Details
-//                           </button>
-//                         </td>
-//                       </tr>
-//                     );
-//                   })
-//                 ) : (
-//                   <tr>
-//                     <td colSpan="6" className="px-6 py-16 text-center">
-//                       <div className="flex flex-col items-center justify-center">
-//                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-//                           <Search size={32} className="text-gray-400" />
-//                         </div>
-//                         <p className="text-gray-900 font-semibold text-lg mb-1">
-//                           {searchTerm
-//                             ? "No matching users found"
-//                             : selectedPage !== "all"
-//                               ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-//                               : "No activity logs found"}
-//                         </p>
-//                         <p className="text-sm text-gray-500 mb-4">
-//                           {searchTerm
-//                             ? "Try searching with a different name or term"
-//                             : selectedPage !== "all"
-//                               ? "Try selecting a different page filter"
-//                               : "Try refreshing the page"}
-//                         </p>
-//                         {(searchTerm || selectedPage !== "all") && (
-//                           <button
-//                             onClick={() => {
-//                               setSearchTerm("");
-//                               setSelectedPage("all");
-//                               setShowSearchResults(false);
-//                               setSearchResults([]);
-//                               fetchAllData();
-//                             }}
-//                             className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
-//                           >
-//                             Clear All Filters
-//                           </button>
-//                         )}
-//                       </div>
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-
-//           {/* Mobile/Tablet Card View - Visible on small and medium screens */}
-//           <div className="lg:hidden">
-//             {displayLogs.length > 0 ? (
-//               <div className="divide-y divide-gray-200">
-//                 {displayLogs.map((log) => {
-//                   if (!log) return null;
-
-//                   const logPage = log.page || "";
-//                   const logUserId = log.userId || "";
-//                   const logSessionId = log.sessionId || "";
-//                   const logIp = log.ip || "";
-//                   const logTimeSpent = log.timeSpent || 0;
-//                   const userName = getUserName(logUserId);
-//                   const userEmail = getUserEmail(logUserId);
-//                   const pageName = getPageFriendlyName(logPage);
-
-//                   return (
-//                     <div
-//                       key={log._id || Math.random()}
-//                       className="p-4 sm:p-5 hover:bg-blue-50 transition-all duration-200 active:bg-blue-100"
-//                     >
-//                       {/* User Info */}
-//                       <div className="flex items-start justify-between mb-3">
-//                         <div className="flex-1">
-//                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-//                             <span
-//                               className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
-//                                 logUserId
-//                                   ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-//                                   : "bg-gray-200 text-gray-700"
-//                               }`}
-//                             >
-//                               {highlightMatch(userName, searchTerm)}
-//                             </span>
-//                             {log.matchType && (
-//                               <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
-//                                 {log.matchType.replace("_", " ")}
-//                               </span>
-//                             )}
-//                           </div>
-//                           {userEmail && (
-//                             <div className="text-xs text-gray-600 flex items-center gap-1.5">
-//                               <Mail
-//                                 size={12}
-//                                 className="text-gray-400 flex-shrink-0"
-//                               />
-//                               <span className="truncate">
-//                                 {highlightMatch(userEmail, searchTerm)}
-//                               </span>
-//                             </div>
-//                           )}
-//                         </div>
-
-//                         <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ml-2 flex-shrink-0">
-//                           {logTimeSpent}s
-//                         </span>
-//                       </div>
-
-//                       {/* Page Info */}
-//                       <div className="mb-3 bg-gray-50 rounded-lg p-3">
-//                         <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">
-//                           Page Visited
-//                         </div>
-//                         <div className="font-semibold text-gray-900 text-sm mb-1">
-//                           {highlightMatch(pageName, searchTerm)}
-//                         </div>
-//                         <div className="text-xs text-gray-600 truncate">
-//                           {highlightMatch(logPage, searchTerm)}
-//                         </div>
-//                       </div>
-
-//                       {/* Action Button */}
-//                       <button
-//                         onClick={() => handleViewDetails(log)}
-//                         className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium active:scale-98"
-//                       >
-//                         View Details
-//                       </button>
-//                     </div>
-//                   );
-//                 })}
-//               </div>
-//             ) : (
-//               <div className="px-6 py-16 text-center">
-//                 <div className="flex flex-col items-center justify-center">
-//                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-//                     <Search size={32} className="text-gray-400" />
-//                   </div>
-//                   <p className="text-gray-900 font-semibold text-base sm:text-lg mb-1">
-//                     {searchTerm
-//                       ? "No matching users found"
-//                       : selectedPage !== "all"
-//                         ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-//                         : "No activity logs found"}
-//                   </p>
-//                   <p className="text-sm text-gray-500 mb-4 px-4">
-//                     {searchTerm
-//                       ? "Try searching with a different name or term"
-//                       : selectedPage !== "all"
-//                         ? "Try selecting a different page filter"
-//                         : "Try refreshing the page"}
-//                   </p>
-//                   {(searchTerm || selectedPage !== "all") && (
-//                     <button
-//                       onClick={() => {
-//                         setSearchTerm("");
-//                         setSelectedPage("all");
-//                         setShowSearchResults(false);
-//                         setSearchResults([]);
-//                         fetchAllData();
-//                       }}
-//                       className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
-//                     >
-//                       Clear All Filters
-//                     </button>
-//                   )}
-//                 </div>
-//               </div>
-//             )}
-//           </div>
-
-//           {/* Pagination - Only show when not in search mode */}
-//           {!showSearchResults && <EnhancedPagination />}
-//         </div>
-//       </div>
-
-//       {/* User Details Modal */}
-//       {userDetailsModalOpen && selectedLog && (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-//           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-//             <div className="p-6">
-//               <div className="flex items-center justify-between mb-6">
-//                 <h2 className="text-2xl font-bold text-gray-900">
-//                   User Activity Details
-//                 </h2>
-//                 <button
-//                   onClick={() => setUserDetailsModalOpen(false)}
-//                   className="text-gray-400 hover:text-gray-600 transition-colors"
-//                 >
-//                   <X size={24} />
-//                 </button>
-//               </div>
-
-//               <div className="space-y-6">
-//                 {/* User Information */}
-//                 <div className="bg-blue-50 rounded-lg p-4">
-//                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-//                     <User size={20} />
-//                     User Information
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div>
-//                       <p className="text-sm text-gray-600">User Name</p>
-//                       <p className="font-medium text-gray-900">
-//                         {getUserName(selectedLog.userId)}
-//                       </p>
-//                     </div>
-//                     {selectedLog.userId &&
-//                       userData[selectedLog.userId]?.email && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">Email</p>
-//                           <p className="font-medium text-gray-900">
-//                             {userData[selectedLog.userId].email}
-//                           </p>
-//                         </div>
-//                       )}
-//                     <div>
-//                       <p className="text-sm text-gray-600">User ID</p>
-//                       <p className="font-medium text-gray-900 font-mono text-sm">
-//                         {selectedLog.userId || "Anonymous"}
-//                       </p>
-//                     </div>
-//                     {selectedLog.userId &&
-//                       userData[selectedLog.userId]?.rawData && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">
-//                             Account Status
-//                           </p>
-//                           <p className="font-medium text-gray-900">
-//                             {userData[selectedLog.userId].rawData.status ||
-//                               "Active"}
-//                           </p>
-//                         </div>
-//                       )}
-//                   </div>
-//                 </div>
-
-//                 {/* Activity Details */}
-//                 <div className="bg-gray-50 rounded-lg p-4">
-//                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                     Activity Details
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div>
-//                       <p className="text-sm text-gray-600">Page Visited</p>
-//                       <p className="font-medium text-gray-900">
-//                         {getPageFriendlyName(selectedLog.page)}
-//                       </p>
-//                       <p className="text-xs text-gray-500 mt-1">
-//                         {selectedLog.page}
-//                       </p>
-//                     </div>
-//                     <div>
-//                       <p className="text-sm text-gray-600">Time Spent</p>
-//                       <p className="font-medium text-gray-900">
-//                         <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
-//                           {selectedLog.timeSpent || 0} seconds
-//                         </span>
-//                       </p>
-//                     </div>
-//                     <div>
-//                       <p className="text-sm text-gray-600">Session ID</p>
-//                       <p className="font-medium text-gray-900 font-mono text-sm">
-//                         {selectedLog.sessionId}
-//                       </p>
-//                     </div>
-//                     <div>
-//                       <p className="text-sm text-gray-600">IP Address</p>
-//                       <p className="font-medium text-gray-900">
-//                         {selectedLog.ip}
-//                       </p>
-//                     </div>
-//                     <div>
-//                       <p className="text-sm text-gray-600">Timestamp</p>
-//                       <p className="font-medium text-gray-900">
-//                         {selectedLog.createdAt
-//                           ? new Date(selectedLog.createdAt).toLocaleString()
-//                           : "N/A"}
-//                       </p>
-//                     </div>
-//                     {selectedLog.matchType && (
-//                       <div>
-//                         <p className="text-sm text-gray-600">Matched By</p>
-//                         <p className="font-medium text-gray-900 capitalize">
-//                           {selectedLog.matchType.replace("_", " ")}
-//                         </p>
-//                       </div>
-//                     )}
-//                   </div>
-//                 </div>
-
-//                 {/* User Profile Information */}
-//                 {selectedLog.userId && userData[selectedLog.userId] && (
-//                   <div className="bg-green-50 rounded-lg p-4">
-//                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-//                       <User size={20} />
-//                       User Profile Information
-//                     </h3>
-//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                       {userData[selectedLog.userId].firstName && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">First Name</p>
-//                           <p className="font-medium text-gray-900">
-//                             {userData[selectedLog.userId].firstName}
-//                           </p>
-//                         </div>
-//                       )}
-//                       {userData[selectedLog.userId].lastName && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">Last Name</p>
-//                           <p className="font-medium text-gray-900">
-//                             {userData[selectedLog.userId].lastName}
-//                           </p>
-//                         </div>
-//                       )}
-//                       {userData[selectedLog.userId].email && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">Email</p>
-//                           <p className="font-medium text-gray-900">
-//                             {userData[selectedLog.userId].email}
-//                           </p>
-//                         </div>
-//                       )}
-//                       {userData[selectedLog.userId].rawData?.createdAt && (
-//                         <div>
-//                           <p className="text-sm text-gray-600">Member Since</p>
-//                           <p className="font-medium text-gray-900">
-//                             {new Date(
-//                               userData[selectedLog.userId].rawData.createdAt,
-//                             ).toLocaleDateString()}
-//                           </p>
-//                         </div>
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-
-//               <div className="mt-8 flex justify-end gap-3">
-//                 <button
-//                   onClick={() => setUserDetailsModalOpen(false)}
-//                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-//                 >
-//                   Close
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default AnalyticsDashboard;
-
 import React, {
   useState,
   useEffect,
@@ -1614,9 +37,16 @@ import {
   RefreshCw,
   User,
   Mail,
-  Calendar,
-  Loader,
+  Calculator,
+  Timer,
+  Target,
+  TrendingDown,
   BarChart3,
+  Home,
+  FileText,
+  ShoppingCart,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import {
   useQuery,
@@ -1630,11 +60,96 @@ const PAGE_SIZE = 20;
 const BASE_URL = "https://api.houseofresha.com/analytics";
 const USER_API_URL = "https://api.houseofresha.com/data";
 
+// API fetch functions with error handling
+const fetchWithRetry = async (url, options = {}, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data.data || data;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, i)),
+      ); // Exponential backoff
+    }
+  }
+};
+
+const fetchSummary = async () => {
+  return fetchWithRetry(`${BASE_URL}/summary`);
+};
+
+const fetchPageAnalytics = async () => {
+  return fetchWithRetry(`${BASE_URL}/`);
+};
+
+const fetchPageAnalyticsDetails = async () => {
+  return fetchWithRetry(`${BASE_URL}/pages`);
+};
+
+const fetchDetailedLogs = async ({ pageNo = 1, selectedPage = "all" }) => {
+  let url = `${BASE_URL}/?pageNo=${pageNo}&limit=${PAGE_SIZE}`;
+  if (selectedPage && selectedPage !== "all") {
+    url += `&page=${encodeURIComponent(selectedPage)}`;
+  }
+
+  const data = await fetchWithRetry(url);
+  return {
+    logs: data.data || [],
+    total: data.total || 0,
+    page: pageNo,
+    totalPages: Math.ceil((data.total || 0) / PAGE_SIZE),
+  };
+};
+
+const fetchAllLogs = async () => {
+  const data = await fetchWithRetry(`${BASE_URL}/?limit=1000`);
+  return data.data || [];
+};
+
+const fetchUserData = async () => {
+  const users = await fetchWithRetry(USER_API_URL);
+  const userMap = {};
+
+  (Array.isArray(users) ? users : []).forEach((user) => {
+    if (!user) return;
+
+    const id = user._id || user.id || user.userId;
+    const firstName = user.firstName?.trim();
+    const lastName = user.lastName?.trim();
+    const email = user.email?.trim();
+
+    const fullName =
+      firstName && lastName
+        ? `${firstName} ${lastName}`
+        : firstName || lastName || "Anonymous User";
+
+    if (id) {
+      userMap[id] = {
+        name: fullName,
+        email: email || null,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        rawData: user,
+      };
+    }
+  });
+
+  return userMap;
+};
+
 // Utility function for page friendly names
 const getPageFriendlyName = (url) => {
   if (!url || typeof url !== "string") {
     return "Unknown Page";
   }
+
+  // Remove query parameters and hash
+  const cleanUrl = url.split("?")[0].split("#")[0];
 
   const pageNames = {
     "/": "Home Page",
@@ -1666,95 +181,91 @@ const getPageFriendlyName = (url) => {
     "/privacy": "Privacy Policy",
   };
 
-  if (pageNames[url]) {
-    return pageNames[url];
+  if (pageNames[cleanUrl]) {
+    return pageNames[cleanUrl];
   }
 
-  if (url.includes("/app/detailpage/")) return "Detail Page";
-  if (url.includes("/product/")) return "Product Details";
-  if (url.includes("/blog/")) return "Blog Post";
-  if (url.includes("/user/")) return "User Profile";
-  if (url.includes("/category/")) return "Category Page";
+  if (cleanUrl.includes("/app/detailpage/")) return "Product Detail";
+  if (cleanUrl.includes("/product/")) return "Product Details";
+  if (cleanUrl.includes("/blog/")) return "Blog Post";
+  if (cleanUrl.includes("/user/")) return "User Profile";
+  if (cleanUrl.includes("/category/")) return "Category Page";
 
+  // Extract last meaningful part of the URL
+  const parts = cleanUrl.split("/").filter(Boolean);
+  if (parts.length === 0) return "Home Page";
+
+  const lastPart = parts[parts.length - 1];
   return (
-    url
-      .split("/")
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" > ") || "Unknown Page"
+    lastPart
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ") + " Page"
   );
 };
 
-// API fetch functions
-const fetchSummary = async () => {
-  const response = await fetch(`${BASE_URL}/summary`);
-  if (!response.ok) throw new Error("Failed to fetch summary");
-  const data = await response.json();
-  return data.data;
+// Helper to get page icon
+const getPageIcon = (pageName) => {
+  if (pageName.includes("Home")) return Home;
+  if (pageName.includes("Blog")) return FileText;
+  if (
+    pageName.includes("Cart") ||
+    pageName.includes("Product") ||
+    pageName.includes("Shop")
+  )
+    return ShoppingCart;
+  if (pageName.includes("Profile") || pageName.includes("Account")) return User;
+  return FileText;
 };
 
-const fetchPageAnalytics = async () => {
-  const response = await fetch(`${BASE_URL}/`);
-  if (!response.ok) throw new Error("Failed to fetch page analytics");
-  const data = await response.json();
-  return data.data || [];
-};
-
-const fetchDetailedLogs = async ({ pageNo = 1, selectedPage = "all" }) => {
-  let url = `${BASE_URL}/?pageNo=${pageNo}&limit=${PAGE_SIZE}`;
-  if (selectedPage && selectedPage !== "all") {
-    url += `&page=${encodeURIComponent(selectedPage)}`;
+// Custom Tooltip component for charts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 border border-gray-200 shadow-lg rounded-lg">
+        <p className="font-semibold text-gray-900">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}:{" "}
+            <span className="font-bold">{entry.value.toFixed(2)}s</span>
+          </p>
+        ))}
+      </div>
+    );
   }
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Failed to fetch logs");
-  const data = await response.json();
-  return {
-    logs: data.data || [],
-    total: data.total || 0,
-    page: pageNo,
-    totalPages: Math.ceil((data.total || 0) / PAGE_SIZE),
-  };
+  return null;
 };
 
-const fetchAllLogs = async () => {
-  const response = await fetch(`${BASE_URL}/?limit=1000`);
-  if (!response.ok) throw new Error("Failed to fetch all logs");
-  const data = await response.json();
-  return data.data || [];
-};
+// Loading spinner component
+const LoadingSpinner = ({ text = "Loading..." }) => (
+  <div className="flex items-center justify-center p-8">
+    <div className="text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
+      <p className="mt-2 text-gray-600">{text}</p>
+    </div>
+  </div>
+);
 
-const fetchUserData = async () => {
-  const response = await fetch(USER_API_URL);
-  if (!response.ok) throw new Error("Failed to fetch user data");
-  const result = await response.json();
-  const users = result.data || result;
-
-  const userMap = {};
-  users.forEach((user) => {
-    const id = user._id || user.id || user.userId;
-    const firstName = user.firstName?.trim();
-    const lastName = user.lastName?.trim();
-    const email = user.email?.trim();
-
-    const fullName =
-      firstName && lastName
-        ? `${firstName} ${lastName}`
-        : firstName || lastName || null;
-
-    if (id) {
-      userMap[id] = {
-        name: fullName || "Anonymous User",
-        email: email || null,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        rawData: user,
-      };
-    }
-  });
-
-  return userMap;
-};
+// Error display component
+const ErrorDisplay = ({ error, onRetry }) => (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div className="flex items-center">
+      <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+      <div className="flex-1">
+        <h3 className="text-sm font-medium text-red-800">Error Loading Data</h3>
+        <p className="text-sm text-red-700 mt-1">{error.message}</p>
+      </div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="ml-4 text-sm font-medium text-red-800 hover:text-red-900"
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  </div>
+);
 
 // React component
 const AnalyticsDashboard = () => {
@@ -1765,54 +276,66 @@ const AnalyticsDashboard = () => {
   const [userDetailsModalOpen, setUserDetailsModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [pageTimeAnalysis, setPageTimeAnalysis] = useState(null);
+  const [showPageTimeModal, setShowPageTimeModal] = useState(false);
 
   const searchTimeoutRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // TanStack Query hooks
+  // TanStack Query hooks with proper error handling
   const {
     data: summary,
     isLoading: summaryLoading,
     error: summaryError,
-    refetch: refetchSummary,
   } = useQuery({
     queryKey: ["summary"],
     queryFn: fetchSummary,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   const {
     data: pageAnalytics,
     isLoading: pageAnalyticsLoading,
     error: pageAnalyticsError,
-    refetch: refetchPageAnalytics,
   } = useQuery({
     queryKey: ["pageAnalytics"],
     queryFn: fetchPageAnalytics,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+
+  const {
+    data: pageAnalyticsDetails,
+    isLoading: pageAnalyticsDetailsLoading,
+    error: pageAnalyticsDetailsError,
+  } = useQuery({
+    queryKey: ["pageAnalyticsDetails"],
+    queryFn: fetchPageAnalyticsDetails,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   const {
     data: userData,
     isLoading: userDataLoading,
     error: userDataError,
-    refetch: refetchUserData,
   } = useQuery({
     queryKey: ["userData"],
     queryFn: fetchUserData,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const {
     data: allLogs,
     isLoading: allLogsLoading,
     error: allLogsError,
-    refetch: refetchAllLogs,
   } = useQuery({
     queryKey: ["allLogs"],
     queryFn: fetchAllLogs,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: false, // Don't fetch automatically, only when needed
+    staleTime: 2 * 60 * 1000,
+    enabled: false, // Only fetch when needed
   });
 
   const {
@@ -1820,17 +343,94 @@ const AnalyticsDashboard = () => {
     isLoading: logsLoading,
     error: logsError,
     isPlaceholderData,
-    refetch: refetchLogs,
   } = useQuery({
     queryKey: ["detailedLogs", currentPage, selectedPage],
     queryFn: () => fetchDetailedLogs({ pageNo: currentPage, selectedPage }),
     placeholderData: keepPreviousData,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
+    retry: 2,
   });
 
-  // Combined loading states
-  const isLoading = summaryLoading || pageAnalyticsLoading || logsLoading;
-  const error = summaryError || pageAnalyticsError || logsError;
+  // Calculate page time analysis with proper validation
+  useEffect(() => {
+    if (pageAnalyticsDetails && Array.isArray(pageAnalyticsDetails)) {
+      const validPages = pageAnalyticsDetails.filter(
+        (page) =>
+          page &&
+          page.page &&
+          typeof page.avgTimeSpent === "number" &&
+          !isNaN(page.avgTimeSpent) &&
+          page.avgTimeSpent > 0,
+      );
+
+      if (validPages.length > 0) {
+        // Calculate averages
+        const totalTime = validPages.reduce(
+          (sum, page) => sum + page.avgTimeSpent,
+          0,
+        );
+        const simpleAverage = totalTime / validPages.length;
+
+        // Calculate weighted average
+        const totalWeightedTime = validPages.reduce(
+          (sum, page) => sum + page.avgTimeSpent * (page.totalViews || 1),
+          0,
+        );
+        const totalViews = validPages.reduce(
+          (sum, page) => sum + (page.totalViews || 1),
+          0,
+        );
+        const weightedAverage =
+          totalViews > 0 ? totalWeightedTime / totalViews : simpleAverage;
+
+        // Find extremes
+        let highestPage = validPages[0];
+        let lowestPage = validPages[0];
+
+        validPages.forEach((page) => {
+          if (page.avgTimeSpent > highestPage.avgTimeSpent) {
+            highestPage = page;
+          }
+          if (page.avgTimeSpent < lowestPage.avgTimeSpent) {
+            lowestPage = page;
+          }
+        });
+
+        // Prepare data for charts
+        const allPages = validPages
+          .map((page) => ({
+            name: getPageFriendlyName(page.page),
+            url: page.page,
+            avgTimeSpent: Number(page.avgTimeSpent.toFixed(2)),
+            totalViews: page.totalViews || 0,
+            uniqueSessionsCount: page.uniqueSessionsCount || 0,
+          }))
+          .sort((a, b) => b.avgTimeSpent - a.avgTimeSpent);
+
+        setPageTimeAnalysis({
+          simpleAverage: Number(simpleAverage.toFixed(2)),
+          weightedAverage: Number(weightedAverage.toFixed(2)),
+          totalValidPages: validPages.length,
+          totalViews,
+          highestPage: {
+            name: getPageFriendlyName(highestPage.page),
+            url: highestPage.page,
+            avgTimeSpent: Number(highestPage.avgTimeSpent.toFixed(2)),
+            totalViews: highestPage.totalViews || 0,
+          },
+          lowestPage: {
+            name: getPageFriendlyName(lowestPage.page),
+            url: lowestPage.page,
+            avgTimeSpent: Number(lowestPage.avgTimeSpent.toFixed(2)),
+            totalViews: lowestPage.totalViews || 0,
+          },
+          allPages: allPages.slice(0, 10),
+        });
+      } else {
+        setPageTimeAnalysis(null);
+      }
+    }
+  }, [pageAnalyticsDetails]);
 
   // Derived data
   const detailedLogs = logsData?.logs || [];
@@ -1857,7 +457,7 @@ const AnalyticsDashboard = () => {
     setSearchResults([]);
   };
 
-  // Search function with memoization
+  // Enhanced search function
   const searchUsers = useCallback(
     (term) => {
       if (!term.trim()) {
@@ -1866,68 +466,51 @@ const AnalyticsDashboard = () => {
         return [];
       }
 
-      // Fetch all logs if not already available
-      if (!allLogs) {
-        refetchAllLogs();
-        return [];
-      }
-
       const searchTermLower = term.toLowerCase().trim();
       const logsToSearch = allLogs || [];
       const results = [];
 
-      for (let i = 0; i < logsToSearch.length; i++) {
-        const log = logsToSearch[i];
-        if (!log) continue;
+      logsToSearch.forEach((log) => {
+        if (!log) return;
 
         const userInfo = userData?.[log.userId];
         const userName = userInfo?.name || "Anonymous User";
         const userEmail = userInfo?.email || "";
-        const userFirstName = userInfo?.firstName || "";
-        const userLastName = userInfo?.lastName || "";
-        const userId = log.userId || "";
         const pageName = getPageFriendlyName(log.page);
-        const pageUrl = log.page || "";
-        const sessionId = log.sessionId || "";
-        const ip = log.ip || "";
+        const userId = log.userId || "";
 
-        // Check for matches
-        if (
-          userName.toLowerCase().includes(searchTermLower) ||
-          userEmail.toLowerCase().includes(searchTermLower) ||
-          pageName.toLowerCase().includes(searchTermLower) ||
-          userId.toLowerCase().includes(searchTermLower) ||
-          userFirstName.toLowerCase().includes(searchTermLower) ||
-          userLastName.toLowerCase().includes(searchTermLower) ||
-          pageUrl.toLowerCase().includes(searchTermLower) ||
-          sessionId.toLowerCase().includes(searchTermLower) ||
-          ip.toLowerCase().includes(searchTermLower)
-        ) {
+        // Check for matches in relevant fields
+        const searchFields = [
+          userName.toLowerCase(),
+          userEmail.toLowerCase(),
+          pageName.toLowerCase(),
+          userId.toLowerCase(),
+          log.page?.toLowerCase() || "",
+          log.sessionId?.toLowerCase() || "",
+          log.ip?.toLowerCase() || "",
+        ];
+
+        if (searchFields.some((field) => field.includes(searchTermLower))) {
           results.push({
             ...log,
             userName,
             userEmail,
-            userFirstName,
-            userLastName,
             pageName,
-            matchType: getMatchType(
-              searchTermLower,
+            matchType: getMatchType(searchTermLower, {
               userName,
               userEmail,
-              userFirstName,
-              userLastName,
-              userId,
               pageName,
-            ),
+              userId,
+            }),
           });
         }
-      }
+      });
 
-      // Remove duplicates
+      // Remove duplicates based on unique combination
       const uniqueResults = Array.from(
         new Map(
           results.map((item) => [
-            `${item.userId}-${item.sessionId}-${item.createdAt}`,
+            `${item.userId}-${item.sessionId}-${item.page}-${item.createdAt}`,
             item,
           ]),
         ).values(),
@@ -1937,59 +520,51 @@ const AnalyticsDashboard = () => {
       setShowSearchResults(true);
       return uniqueResults;
     },
-    [allLogs, userData, refetchAllLogs],
+    [allLogs, userData],
   );
 
-  const getMatchType = (
-    searchTerm,
-    userName,
-    userEmail,
-    firstName,
-    lastName,
-    userId,
-    pageName,
-  ) => {
-    if (userName.toLowerCase().includes(searchTerm)) return "name";
-    if (userEmail.toLowerCase().includes(searchTerm)) return "email";
-    if (firstName?.toLowerCase().includes(searchTerm)) return "first_name";
-    if (lastName?.toLowerCase().includes(searchTerm)) return "last_name";
-    if (userId.toLowerCase().includes(searchTerm)) return "user_id";
-    if (pageName.toLowerCase().includes(searchTerm)) return "page";
+  const getMatchType = (searchTerm, fields) => {
+    if (fields.userName.toLowerCase().includes(searchTerm)) return "name";
+    if (fields.userEmail.toLowerCase().includes(searchTerm)) return "email";
+    if (fields.pageName.toLowerCase().includes(searchTerm)) return "page";
+    if (fields.userId.toLowerCase().includes(searchTerm)) return "user_id";
     return "other";
   };
 
-  // Instant search handler
-  const handleSearchChange = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (e) => {
+      const term = e.target.value;
+      setSearchTerm(term);
 
-    // Clear any existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Perform search with debounce
-    searchTimeoutRef.current = setTimeout(() => {
-      if (term.trim()) {
-        searchUsers(term);
-      } else {
-        setSearchResults([]);
-        setShowSearchResults(false);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-    }, 300);
-  };
+
+      searchTimeoutRef.current = setTimeout(() => {
+        if (term.trim()) {
+          searchUsers(term);
+        } else {
+          setSearchResults([]);
+          setShowSearchResults(false);
+        }
+      }, 300);
+    },
+    [searchUsers],
+  );
 
   const handleViewDetails = (log) => {
     setSelectedLog(log);
     setUserDetailsModalOpen(true);
   };
 
+  const handleShowPageTimeAnalysis = () => {
+    setShowPageTimeModal(true);
+  };
+
   // Refresh all data
   const handleRefreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: ["summary"] });
-    queryClient.invalidateQueries({ queryKey: ["pageAnalytics"] });
-    queryClient.invalidateQueries({ queryKey: ["detailedLogs"] });
-    queryClient.invalidateQueries({ queryKey: ["userData"] });
+    queryClient.invalidateQueries();
     setSearchTerm("");
     setSelectedPage("all");
     setCurrentPage(1);
@@ -1998,7 +573,48 @@ const AnalyticsDashboard = () => {
   };
 
   // StatCard component
-  const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
+  const StatCard = ({ title, value, icon: Icon, color, subtitle, onClick }) => {
+    const formattedValue =
+      typeof value === "number" ? value.toLocaleString() : value || "0";
+
+    return (
+      <div
+        className={`bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200 ${onClick ? "cursor-pointer hover:border-blue-200" : ""}`}
+        onClick={onClick}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
+              {title}
+            </p>
+            <h3 className="text-3xl font-bold mt-2 text-gray-900">
+              {formattedValue}
+            </h3>
+            {subtitle && (
+              <p className="text-gray-400 text-xs mt-2">{subtitle}</p>
+            )}
+          </div>
+          <div
+            className="p-3 rounded-lg"
+            style={{ backgroundColor: `${color}15` }}
+          >
+            <Icon size={24} style={{ color }} strokeWidth={2.5} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // PageTimeStatCard component
+  const PageTimeStatCard = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+    subtitle,
+    trend,
+    trendValue,
+  }) => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -2006,9 +622,21 @@ const AnalyticsDashboard = () => {
             {title}
           </p>
           <h3 className="text-3xl font-bold mt-2 text-gray-900">
-            {value?.toLocaleString() || 0}
+            {typeof value === "number" ? `${value}s` : value}
           </h3>
           {subtitle && <p className="text-gray-400 text-xs mt-2">{subtitle}</p>}
+          {trend && (
+            <div
+              className={`flex items-center gap-1 mt-2 text-xs ${trend === "up" ? "text-green-600" : "text-red-600"}`}
+            >
+              {trend === "up" ? (
+                <TrendingUp size={12} />
+              ) : (
+                <TrendingDown size={12} />
+              )}
+              <span>{trendValue}</span>
+            </div>
+          )}
         </div>
         <div
           className="p-3 rounded-lg"
@@ -2020,131 +648,84 @@ const AnalyticsDashboard = () => {
     </div>
   );
 
-  // SearchStatsCard component
-  const SearchStatsCard = () => (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-            Search Results
-          </p>
-          <h3 className="text-3xl font-bold mt-2 text-gray-900">
-            {searchTerm ? searchResults.length.toLocaleString() : "All"}
-          </h3>
-          <p className="text-gray-400 text-xs mt-2">
-            {searchTerm
-              ? `Found ${searchResults.length} matches in ${totalLogsCount} logs`
-              : `Total logs: ${totalLogsCount}`}
-          </p>
-        </div>
-        <div
-          className="p-3 rounded-lg"
-          style={{ backgroundColor: "#3b82f615" }}
-        >
-          <Search size={24} style={{ color: "#3b82f6" }} strokeWidth={2.5} />
-        </div>
-      </div>
-    </div>
-  );
-
-  // EnhancedPagination component
-  const EnhancedPagination = () => {
+  // Pagination component
+  const Pagination = () => {
     const generatePageNumbers = () => {
       const pages = [];
-      const maxVisiblePages = 7;
+      const maxVisiblePages = 5;
+      const delta = Math.floor(maxVisiblePages / 2);
 
-      if (totalPages <= maxVisiblePages) {
-        for (let i = 1; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        if (currentPage <= 4) {
-          for (let i = 1; i <= 5; i++) {
-            pages.push(i);
-          }
-          pages.push("...");
-          pages.push(totalPages);
-        } else if (currentPage >= totalPages - 3) {
-          pages.push(1);
-          pages.push("...");
-          for (let i = totalPages - 4; i <= totalPages; i++) {
-            pages.push(i);
-          }
-        } else {
-          pages.push(1);
-          pages.push("...");
-          for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-            pages.push(i);
-          }
-          pages.push("...");
-          pages.push(totalPages);
-        }
+      let start = Math.max(1, currentPage - delta);
+      let end = Math.min(totalPages, start + maxVisiblePages - 1);
+
+      if (end - start + 1 < maxVisiblePages) {
+        start = Math.max(1, end - maxVisiblePages + 1);
+      }
+
+      if (start > 1) {
+        pages.push(1);
+        if (start > 2) pages.push("...");
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) pages.push("...");
+        pages.push(totalPages);
       }
 
       return pages;
     };
 
     return (
-      <div className="grid grid-cols-1 xs:grid-cols-3 items-center gap-3 sm:gap-4 px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
-        <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left order-2 xs:order-1">
-          <span className="hidden sm:inline">Showing </span>
-          <span className="font-semibold text-gray-900">
+      <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white border-t border-gray-200 gap-4">
+        <div className="text-sm text-gray-700">
+          Showing{" "}
+          <span className="font-semibold">
             {(currentPage - 1) * PAGE_SIZE + 1}
-          </span>
-          <span className="hidden sm:inline"> to </span>
-          <span className="xs:hidden">-</span>
-          <span className="font-semibold text-gray-900">
-            {Math.min(currentPage * PAGE_SIZE, detailedLogs.length)}
-          </span>
-          {" of "}
-          <span className="font-semibold text-gray-900">
-            {detailedLogs.length}
-          </span>
-          <span className="hidden xs:inline"> entries</span>
-          {selectedPage !== "all" && !showSearchResults && (
-            <span className="ml-2 text-purple-600 text-xs font-medium">
-              (Filtered by: {getPageFriendlyName(selectedPage)})
-            </span>
-          )}
+          </span>{" "}
+          to{" "}
+          <span className="font-semibold">
+            {Math.min(currentPage * PAGE_SIZE, totalLogsCount)}
+          </span>{" "}
+          of <span className="font-semibold">{totalLogsCount}</span> results
         </div>
 
-        <div className="flex items-center justify-center gap-1 xs:gap-1.5 sm:gap-2 order-1 xs:order-2">
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
-            className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-            title="First Page"
+            className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            aria-label="First page"
           >
-            <ChevronsLeft size={14} className="sm:w-4 sm:h-4" />
+            <ChevronsLeft size={16} />
           </button>
-
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-            title="Previous Page"
+            className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            aria-label="Previous page"
           >
-            <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
+            <ChevronLeft size={16} />
           </button>
 
-          <div className="flex items-center gap-0.5 xs:gap-1">
-            {generatePageNumbers().map((page, index) =>
+          <div className="flex items-center space-x-1">
+            {generatePageNumbers().map((page, idx) =>
               page === "..." ? (
-                <span
-                  key={`ellipsis-${index}`}
-                  className="px-1 xs:px-1.5 sm:px-2 py-0.5 text-gray-400 text-xs"
-                >
+                <span key={`ellipsis-${idx}`} className="px-2 py-1">
                   ...
                 </span>
               ) : (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`min-w-[28px] xs:min-w-[32px] sm:min-w-[36px] md:min-w-[40px] h-7 xs:h-8 sm:h-9 md:h-10 flex items-center justify-center rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
                     currentPage === page
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  } active:scale-95`}
+                      ? "bg-blue-600 text-white"
+                      : "border border-gray-300 hover:bg-gray-50"
+                  }`}
                 >
                   {page}
                 </button>
@@ -2155,23 +736,20 @@ const AnalyticsDashboard = () => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-            title="Next Page"
+            className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            aria-label="Next page"
           >
-            <ChevronRight size={14} className="sm:w-4 sm:h-4" />
+            <ChevronRight size={16} />
           </button>
-
           <button
             onClick={() => setCurrentPage(totalPages)}
             disabled={currentPage === totalPages}
-            className="hidden xs:flex p-1.5 sm:p-2 border border-gray-300 rounded-md sm:rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 active:scale-95 transition-all"
-            title="Last Page"
+            className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            aria-label="Last page"
           >
-            <ChevronsRight size={14} className="sm:w-4 sm:h-4" />
+            <ChevronsRight size={16} />
           </button>
         </div>
-
-        <div className="hidden xs:block order-3" />
       </div>
     );
   };
@@ -2187,25 +765,26 @@ const AnalyticsDashboard = () => {
     return userData?.[userId]?.email || null;
   };
 
+  // Highlight search matches
   const highlightMatch = (text, searchTerm) => {
-    if (!searchTerm || !text) return text;
+    if (!searchTerm || !text || typeof text !== "string") return text;
 
     const lowerText = text.toLowerCase();
     const lowerSearch = searchTerm.toLowerCase();
 
     if (lowerText.includes(lowerSearch)) {
-      const index = lowerText.indexOf(lowerSearch);
-      const before = text.substring(0, index);
-      const match = text.substring(index, index + searchTerm.length);
-      const after = text.substring(index + searchTerm.length);
-
+      const parts = text.split(new RegExp(`(${searchTerm})`, "gi"));
       return (
         <span>
-          {before}
-          <span className="bg-yellow-200 font-bold px-0.5 rounded">
-            {match}
-          </span>
-          {after}
+          {parts.map((part, i) =>
+            part.toLowerCase() === lowerSearch ? (
+              <mark key={i} className="bg-yellow-200 px-0.5 rounded">
+                {part}
+              </mark>
+            ) : (
+              part
+            ),
+          )}
         </span>
       );
     }
@@ -2214,760 +793,596 @@ const AnalyticsDashboard = () => {
 
   // Prepare unique pages for filter dropdown
   const uniquePages = useMemo(() => {
-    if (!pageAnalytics) return [];
+    if (!pageAnalytics || !Array.isArray(pageAnalytics)) return [];
 
-    const uniquePagesMap = new Map();
+    const pagesMap = new Map();
     pageAnalytics.forEach((item) => {
-      if (item && item.page) {
+      if (item?.page) {
         const friendlyName = getPageFriendlyName(item.page);
-        uniquePagesMap.set(item.page, friendlyName);
+        if (!pagesMap.has(item.page)) {
+          pagesMap.set(item.page, friendlyName);
+        }
       }
     });
 
-    const seenFriendlyNames = new Set();
-    return Array.from(uniquePagesMap.entries())
-      .map(([page, friendlyName]) => ({
-        page,
-        friendlyName,
-      }))
-      .filter(({ friendlyName }) => {
-        if (seenFriendlyNames.has(friendlyName)) {
-          return false;
-        }
-        seenFriendlyNames.add(friendlyName);
-        return true;
-      })
+    return Array.from(pagesMap.entries())
+      .map(([page, friendlyName]) => ({ page, friendlyName }))
       .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName));
   }, [pageAnalytics]);
 
   // Prepare data for charts
   const userDistributionData = summary
     ? [
-        { name: "Logged In", value: summary.loggedInUsers, color: "#3b82f6" },
-        { name: "Anonymous", value: summary.anonymousUsers, color: "#8b5cf6" },
+        {
+          name: "Logged In",
+          value: summary.loggedInUsers || 0,
+          color: "#3b82f6",
+        },
+        {
+          name: "Anonymous",
+          value: summary.anonymousUsers || 0,
+          color: "#8b5cf6",
+        },
       ]
     : [];
 
-  const pageViewsData = useMemo(() => {
-    if (!pageAnalytics || pageAnalytics.length === 0) return [];
+  // Top Pages Chart Component
+  const TopPagesChart = () => {
+    if (!pageTimeAnalysis || pageTimeAnalysis.allPages.length === 0) {
+      return (
+        <div className="h-64 flex items-center justify-center text-gray-500">
+          No page time data available
+        </div>
+      );
+    }
 
-    const pageMap = new Map();
-    pageAnalytics.forEach((item) => {
-      if (item && item.page) {
-        const pageName = getPageFriendlyName(item.page);
-        const views = item.totalViews || 0;
-        pageMap.set(pageName, (pageMap.get(pageName) || 0) + views);
-      }
-    });
+    const chartData = pageTimeAnalysis.allPages.map((page) => ({
+      name:
+        page.name.length > 15 ? page.name.substring(0, 15) + "..." : page.name,
+      avgTime: page.avgTimeSpent,
+      views: page.totalViews,
+    }));
 
-    return Array.from(pageMap.entries())
-      .map(([name, views]) => ({
-        name,
-        views,
-        shortName: name.length > 25 ? `${name.substring(0, 25)}...` : name,
-      }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 10);
-  }, [pageAnalytics]);
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis
+            dataKey="name"
+            angle={-45}
+            textAnchor="end"
+            height={60}
+            fontSize={12}
+          />
+          <YAxis fontSize={12} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Bar
+            dataKey="avgTime"
+            name="Average Time (s)"
+            fill="#8884d8"
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
 
   // Loading state
-  if (isLoading && !summary) {
+  const isLoading = summaryLoading || pageAnalyticsLoading || logsLoading;
+
+  if (isLoading && !isPlaceholderData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
           <p className="mt-6 text-gray-700 font-semibold text-lg">
-            Loading analytics data...
+            Loading analytics dashboard...
           </p>
         </div>
       </div>
     );
   }
 
-  // Error state
+  // Error state - show first error encountered
+  const error = summaryError || pageAnalyticsError || logsError;
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white border-l-4 border-red-500 rounded-xl shadow-xl p-8 max-w-md w-full">
-          <h3 className="text-red-800 font-bold text-xl mb-3">
-            Error Loading Data
-          </h3>
-          <p className="text-red-600 mb-6">{error.message}</p>
-          <button
-            onClick={handleRefreshAll}
-            className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold flex items-center justify-center gap-2"
-          >
-            <RefreshCw size={18} />
-            Retry
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <ErrorDisplay error={error} onRetry={handleRefreshAll} />
         </div>
       </div>
     );
   }
 
-  const hasActiveFilters = searchTerm || selectedPage !== "all";
   const displayLogs = showSearchResults ? searchResults : detailedLogs;
-  const isSearching = allLogsLoading && searchTerm;
+  const hasActiveFilters = searchTerm || selectedPage !== "all";
+
+  // Page Time Analysis Modal Component
+  const PageTimeAnalysisModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Calculator className="text-blue-600" size={24} />
+              Page Time Analysis
+            </h2>
+            <button
+              onClick={() => setShowPageTimeModal(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              aria-label="Close modal"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {pageTimeAnalysis ? (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-gray-600 text-sm font-medium">
+                    Simple Average
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                    {pageTimeAnalysis.simpleAverage}s
+                  </h3>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Across {pageTimeAnalysis.totalValidPages} pages
+                  </p>
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <p className="text-gray-600 text-sm font-medium">
+                    Weighted Average
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                    {pageTimeAnalysis.weightedAverage}s
+                  </h3>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Based on {pageTimeAnalysis.totalViews.toLocaleString()}{" "}
+                    views
+                  </p>
+                </div>
+
+                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                  <p className="text-gray-600 text-sm font-medium">
+                    Highest Average
+                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mt-1 truncate">
+                    {pageTimeAnalysis.highestPage.name}
+                  </h3>
+                  <p className="text-green-600 text-xl font-bold mt-1">
+                    {pageTimeAnalysis.highestPage.avgTimeSpent}s
+                  </p>
+                </div>
+
+                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                  <p className="text-gray-600 text-sm font-medium">
+                    Lowest Average
+                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mt-1 truncate">
+                    {pageTimeAnalysis.lowestPage.name}
+                  </h3>
+                  <p className="text-red-600 text-xl font-bold mt-1">
+                    {pageTimeAnalysis.lowestPage.avgTimeSpent}s
+                  </p>
+                </div>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Top Pages by Average Time
+                  </h3>
+                  <div className="h-80">
+                    <TopPagesChart />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Performance Metrics
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Simple Average</span>
+                        <span className="font-semibold">
+                          {pageTimeAnalysis.simpleAverage}s
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(100, pageTimeAnalysis.simpleAverage / 10)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Weighted Average</span>
+                        <span className="font-semibold">
+                          {pageTimeAnalysis.weightedAverage}s
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(100, pageTimeAnalysis.weightedAverage / 10)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Table */}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Page Performance Details
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Page
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Avg Time
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Views
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {pageTimeAnalysis.allPages.map((page, index) => {
+                        const isAboveAverage =
+                          page.avgTimeSpent > pageTimeAnalysis.weightedAverage;
+                        return (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {page.name}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate max-w-xs">
+                                  {page.url}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-lg font-bold text-gray-900">
+                                {page.avgTimeSpent}s
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              {page.totalViews.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  isAboveAverage
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {isAboveAverage
+                                  ? "Above Average"
+                                  : "Below Average"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Calculator className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-900 font-semibold text-lg mb-2">
+                No page time data available
+              </p>
+              <p className="text-gray-600">
+                Page analytics data is required for time analysis
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="bg-white shadow-sm p-4 sm:p-6 backdrop-blur-lg bg-opacity-90">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Left side */}
-              <div className="flex items-start gap-3">
-                <div className="flex w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-100 items-center justify-center flex-shrink-0">
-                  <Activity className="text-blue-600" size={20} />
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex w-12 h-12 rounded-xl bg-blue-100 items-center justify-center">
+                  <Activity className="text-blue-600" size={24} />
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
                     Analytics Dashboard
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 break-words">
+                  <p className="text-gray-600 mt-1">
                     Real-time insights into your application usage
                   </p>
                 </div>
               </div>
 
-              {/* Right side actions */}
-              {/* <div className="flex items-center gap-3 justify-end sm:justify-start flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleShowPageTimeAnalysis}
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center gap-2"
+                >
+                  <Calculator size={16} />
+                  Page Analysis
+                </button>
                 <button
                   onClick={handleRefreshAll}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
                 >
                   <RefreshCw size={16} />
                   Refresh
                 </button>
-                {isSearching && (
-                  <div className="flex items-center gap-2 text-blue-600 text-xs sm:text-sm">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
-                    <span>Searching...</span>
-                  </div>
-                )}
-              </div> */}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Summary Stats */}
         {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Total Views"
-              value={summary.totalViews}
+              value={summary.totalViews || 0}
               icon={Eye}
               color="#3b82f6"
               subtitle="All-time page views"
             />
             <StatCard
               title="Avg Time Spent"
-              value={summary.avgTimeSpent}
+              value={summary.avgTimeSpent || 0}
               icon={Clock}
               color="#ef4444"
               subtitle="Seconds per session"
             />
             <StatCard
               title="Logged In Users"
-              value={summary.loggedInUsers}
-              icon={Activity}
+              value={summary.loggedInUsers || 0}
+              icon={Users}
               color="#8b5cf6"
               subtitle="Authenticated sessions"
+            />
+            <StatCard
+              title="Total Sessions"
+              value={summary.totalSessions || summary.totalLogs || 0}
+              icon={Activity}
+              color="#10b981"
+              subtitle="User sessions"
             />
           </div>
         )}
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-              <TrendingUp size={20} className="sm:w-5 sm:h-5" />
-              Activity Trend (Last 7 Days)
-            </h2>
-            <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[
-                    {
-                      day: "Mon",
-                      views: summary?.dailyViews?.[0] || 45,
-                      users: summary?.dailyUsers?.[0] || 32,
-                    },
-                    {
-                      day: "Tue",
-                      views: summary?.dailyViews?.[1] || 78,
-                      users: summary?.dailyUsers?.[1] || 45,
-                    },
-                    {
-                      day: "Wed",
-                      views: summary?.dailyViews?.[2] || 56,
-                      users: summary?.dailyUsers?.[2] || 38,
-                    },
-                    {
-                      day: "Thu",
-                      views: summary?.dailyViews?.[3] || 89,
-                      users: summary?.dailyUsers?.[3] || 52,
-                    },
-                    {
-                      day: "Fri",
-                      views: summary?.dailyViews?.[4] || 67,
-                      users: summary?.dailyUsers?.[4] || 41,
-                    },
-                    {
-                      day: "Sat",
-                      views: summary?.dailyViews?.[5] || 94,
-                      users: summary?.dailyUsers?.[5] || 58,
-                    },
-                    {
-                      day: "Sun",
-                      views: summary?.dailyViews?.[6] || 72,
-                      users: summary?.dailyUsers?.[6] || 46,
-                    },
-                  ]}
-                  margin={{
-                    top: 5,
-                    right: window.innerWidth < 640 ? 10 : 30,
-                    left: window.innerWidth < 640 ? 0 : 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="day"
-                    stroke="#6b7280"
-                    fontSize={window.innerWidth < 640 ? 10 : 12}
-                  />
-                  <YAxis
-                    stroke="#6b7280"
-                    fontSize={window.innerWidth < 640 ? 10 : 12}
-                    width={window.innerWidth < 640 ? 30 : 40}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
-                      padding: window.innerWidth < 640 ? "6px" : "8px",
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={{
-                      fontSize: window.innerWidth < 640 ? "11px" : "12px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="views"
-                    stroke="#3b82f6"
-                    strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
-                    activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
-                    name="Page Views"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="users"
-                    stroke="#8b5cf6"
-                    strokeWidth={window.innerWidth < 640 ? 1.5 : 2}
-                    activeDot={{ r: window.innerWidth < 640 ? 4 : 6 }}
-                    name="Active Users"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {userDistributionData.length > 0 && (
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-                User Distribution
+        {/* PAGE TIME ANALYSIS SECTION */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Timer className="text-blue-600" size={24} />
+                Page Time Analysis
               </h2>
-              <div className="h-[250px] sm:h-[280px] lg:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={userDistributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value, percent }) => {
-                        const isMobile = window.innerWidth < 640;
-                        return isMobile
-                          ? `${(percent * 100).toFixed(0)}%`
-                          : `${name}: ${value} (${(percent * 100).toFixed(0)}%)`;
-                      }}
-                      outerRadius={
-                        window.innerWidth < 640
-                          ? 70
-                          : window.innerWidth < 1024
-                            ? 85
-                            : 95
-                      }
-                      fill="#8884d8"
-                      dataKey="value"
-                      style={{
-                        fontSize: window.innerWidth < 640 ? "10px" : "12px",
-                      }}
-                    >
-                      {userDistributionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        fontSize: window.innerWidth < 640 ? "11px" : "12px",
-                        padding: window.innerWidth < 640 ? "6px" : "8px",
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <p className="text-gray-600 mt-1">
+                Average time users spend on each page
+              </p>
             </div>
-          )}
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 px-4 sm:px-6">
-            {/* Search Input */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Search users by name, email, user ID, or page..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-blue-500 outline-none text-base hover:border-gray-400 transition-colors"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setShowSearchResults(false);
-                      setSearchResults([]);
-                    }}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Page Filter Select */}
-            <div className="sm:w-64">
-              <div className="relative">
-                <Filter
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                  size={18}
-                />
-                <select
-                  value={selectedPage}
-                  onChange={handlePageFilterChange}
-                  className="w-full pl-10 pr-10 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-base cursor-pointer appearance-none hover:border-gray-400 transition-colors"
-                >
-                  <option value="all">All Pages</option>
-                  {uniquePages.map(({ page, friendlyName }) => (
-                    <option key={page} value={page}>
-                      {friendlyName.length > 40
-                        ? `${friendlyName.slice(0, 40)}...`
-                        : friendlyName}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                  size={20}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Search tips */}
-          {searchTerm && (
-            <div className="mt-3 text-xs sm:text-sm text-gray-600 flex flex-wrap items-center gap-1.5 sm:gap-2 px-4 sm:px-6">
-              <span className="font-medium">Searching:</span>
-              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium break-all">
-                "{searchTerm}"
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="text-xs sm:text-sm">
-                Found{" "}
-                <span className="font-bold text-blue-600">
-                  {searchResults.length}
-                </span>{" "}
-                {searchResults.length === 1 ? "match" : "matches"}
-              </span>
-              {searchResults.length > 0 && (
-                <>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="text-green-600 text-xs sm:text-sm">
-                    Showing all results
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Detailed Logs Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-          {/* Header Section */}
-          <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2 flex-wrap">
-                  {showSearchResults
-                    ? "Search Results"
-                    : "Recent Activity Logs"}
-                  {searchTerm && (
-                    <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-blue-100 text-blue-700 rounded-full">
-                      {searchResults.length} matches
-                    </span>
-                  )}
-                  {!showSearchResults && selectedPage !== "all" && (
-                    <span className="inline-flex items-center px-2.5 py-1 text-xs sm:text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
-                      {getPageFriendlyName(selectedPage)}
-                    </span>
-                  )}
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2">
-                  {showSearchResults ? (
-                    <>
-                      Found{" "}
-                      <span className="font-semibold text-gray-900">
-                        {searchResults.length}
-                      </span>{" "}
-                      matches in{" "}
-                      <span className="font-semibold text-gray-900">
-                        {totalLogsCount}
-                      </span>{" "}
-                      total logs
-                    </>
-                  ) : (
-                    <span className="flex flex-wrap items-center gap-1">
-                      <span>Page</span>
-                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
-                        {currentPage}
-                      </span>
-                      <span>of</span>
-                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-semibold text-xs sm:text-sm">
-                        {totalPages}
-                      </span>
-                      <span className="hidden sm:inline">•</span>
-                      <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs sm:text-sm">
-                        {detailedLogs.length}
-                      </span>
-                      <span className="hidden sm:inline">entries</span>
-                      {selectedPage !== "all" && (
-                        <>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-semibold text-xs sm:text-sm">
-                            Filtered by: {getPageFriendlyName(selectedPage)}
-                          </span>
-                        </>
-                      )}
-                    </span>
-                  )}
+            {pageTimeAnalysis && (
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Weighted Average</p>
+                <p className="text-xl font-bold text-green-700">
+                  {pageTimeAnalysis.weightedAverage}s
                 </p>
-              </div>
-
-              {hasActiveFilters && (
-                <div className="flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedPage("all");
-                      setCurrentPage(1);
-                      setShowSearchResults(false);
-                      setSearchResults([]);
-                    }}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium flex items-center justify-center gap-2"
-                  >
-                    <X size={16} />
-                    Clear All Filters
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    User Details
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Page Visited
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Time Spent
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {displayLogs.length > 0 ? (
-                  displayLogs.map((log) => {
-                    if (!log) return null;
-
-                    const logPage = log.page || "";
-                    const logUserId = log.userId || "";
-                    const logTimeSpent = log.timeSpent || 0;
-                    const userName = getUserName(logUserId);
-                    const userEmail = getUserEmail(logUserId);
-                    const pageName = getPageFriendlyName(logPage);
-
-                    return (
-                      <tr
-                        key={log._id || Math.random()}
-                        className="hover:bg-blue-50 transition-all duration-200 group"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
-                                  logUserId
-                                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                                    : "bg-gray-200 text-gray-700"
-                                }`}
-                              >
-                                {highlightMatch(userName, searchTerm)}
-                              </span>
-                              {log.matchType && (
-                                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
-                                  {log.matchType.replace("_", " ")}
-                                </span>
-                              )}
-                            </div>
-                            {userEmail && (
-                              <div className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
-                                <Mail size={12} className="text-gray-400" />
-                                {highlightMatch(userEmail, searchTerm)}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                            {highlightMatch(pageName, searchTerm)}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 truncate max-w-xs">
-                            {highlightMatch(logPage, searchTerm)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
-                            {logTimeSpent}s
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => handleViewDetails(log)}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md text-xs font-medium"
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                          <Search size={32} className="text-gray-400" />
-                        </div>
-                        <p className="text-gray-900 font-semibold text-lg mb-1">
-                          {searchTerm
-                            ? "No matching users found"
-                            : selectedPage !== "all"
-                              ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-                              : "No activity logs found"}
-                        </p>
-                        <p className="text-sm text-gray-500 mb-4">
-                          {searchTerm
-                            ? "Try searching with a different name or term"
-                            : selectedPage !== "all"
-                              ? "Try selecting a different page filter"
-                              : "Try refreshing the page"}
-                        </p>
-                        {(searchTerm || selectedPage !== "all") && (
-                          <button
-                            onClick={() => {
-                              setSearchTerm("");
-                              setSelectedPage("all");
-                              setShowSearchResults(false);
-                              setSearchResults([]);
-                            }}
-                            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
-                          >
-                            Clear All Filters
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile/Tablet Card View */}
-          <div className="lg:hidden">
-            {displayLogs.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {displayLogs.map((log) => {
-                  if (!log) return null;
-
-                  const logPage = log.page || "";
-                  const logUserId = log.userId || "";
-                  const logTimeSpent = log.timeSpent || 0;
-                  const userName = getUserName(logUserId);
-                  const userEmail = getUserEmail(logUserId);
-                  const pageName = getPageFriendlyName(logPage);
-
-                  return (
-                    <div
-                      key={log._id || Math.random()}
-                      className="p-4 sm:p-5 hover:bg-blue-50 transition-all duration-200 active:bg-blue-100"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span
-                              className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${
-                                logUserId
-                                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                                  : "bg-gray-200 text-gray-700"
-                              }`}
-                            >
-                              {highlightMatch(userName, searchTerm)}
-                            </span>
-                            {log.matchType && (
-                              <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-medium">
-                                {log.matchType.replace("_", " ")}
-                              </span>
-                            )}
-                          </div>
-                          {userEmail && (
-                            <div className="text-xs text-gray-600 flex items-center gap-1.5">
-                              <Mail
-                                size={12}
-                                className="text-gray-400 flex-shrink-0"
-                              />
-                              <span className="truncate">
-                                {highlightMatch(userEmail, searchTerm)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <span className="bg-gradient-to-r from-green-100 to-green-50 text-green-800 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ml-2 flex-shrink-0">
-                          {logTimeSpent}s
-                        </span>
-                      </div>
-
-                      <div className="mb-3 bg-gray-50 rounded-lg p-3">
-                        <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">
-                          Page Visited
-                        </div>
-                        <div className="font-semibold text-gray-900 text-sm mb-1">
-                          {highlightMatch(pageName, searchTerm)}
-                        </div>
-                        <div className="text-xs text-gray-600 truncate">
-                          {highlightMatch(logPage, searchTerm)}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleViewDetails(log)}
-                        className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium active:scale-98"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="px-6 py-16 text-center">
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Search size={32} className="text-gray-400" />
-                  </div>
-                  <p className="text-gray-900 font-semibold text-base sm:text-lg mb-1">
-                    {searchTerm
-                      ? "No matching users found"
-                      : selectedPage !== "all"
-                        ? `No logs found for "${getPageFriendlyName(selectedPage)}"`
-                        : "No activity logs found"}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-4 px-4">
-                    {searchTerm
-                      ? "Try searching with a different name or term"
-                      : selectedPage !== "all"
-                        ? "Try selecting a different page filter"
-                        : "Try refreshing the page"}
-                  </p>
-                  {(searchTerm || selectedPage !== "all") && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setSelectedPage("all");
-                        setShowSearchResults(false);
-                        setSearchResults([]);
-                      }}
-                      className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm font-medium"
-                    >
-                      Clear All Filters
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </div>
 
-          {/* Pagination - Only show when not in search mode */}
-          {!showSearchResults && <EnhancedPagination />}
+          {pageTimeAnalysis ? (
+            <>
+              {/* Page Time Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <PageTimeStatCard
+                  title="Simple Average"
+                  value={pageTimeAnalysis.simpleAverage}
+                  icon={Calculator}
+                  color="#3b82f6"
+                  subtitle={`Across ${pageTimeAnalysis.totalValidPages} pages`}
+                />
+                <PageTimeStatCard
+                  title="Weighted Average"
+                  value={pageTimeAnalysis.weightedAverage}
+                  icon={Target}
+                  color="#10b981"
+                  subtitle={`${pageTimeAnalysis.totalViews.toLocaleString()} views`}
+                  trend="up"
+                  trendValue="More accurate"
+                />
+                <PageTimeStatCard
+                  title="Highest Average"
+                  value={pageTimeAnalysis.highestPage.avgTimeSpent}
+                  icon={TrendingUp}
+                  color="#f59e0b"
+                  subtitle={pageTimeAnalysis.highestPage.name}
+                />
+                <PageTimeStatCard
+                  title="Lowest Average"
+                  value={pageTimeAnalysis.lowestPage.avgTimeSpent}
+                  icon={TrendingDown}
+                  color="#ef4444"
+                  subtitle={pageTimeAnalysis.lowestPage.name}
+                />
+              </div>
+
+              {/* Top Pages Chart */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <BarChart3 className="text-blue-600" size={20} />
+                    Top Pages by Average Time
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    Top {pageTimeAnalysis.allPages.length} of{" "}
+                    {pageTimeAnalysis.totalValidPages} pages
+                  </div>
+                </div>
+                <div className="h-80">
+                  <TopPagesChart />
+                </div>
+              </div>
+
+              {/* Top Pages List */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">
+                  Page Performance Ranking
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Page
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Avg Time
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Views
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {pageTimeAnalysis.allPages
+                        .slice(0, 5)
+                        .map((page, index) => {
+                          const Icon = getPageIcon(page.name);
+                          const isAboveAverage =
+                            page.avgTimeSpent >
+                            pageTimeAnalysis.weightedAverage;
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-4">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <Icon className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {page.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500 truncate max-w-xs">
+                                      {page.url}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="text-lg font-bold text-gray-900">
+                                  {page.avgTimeSpent}s
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                {page.totalViews.toLocaleString()}
+                              </td>
+                              <td className="px-4 py-4">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    isAboveAverage
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {isAboveAverage
+                                    ? "Above Average"
+                                    : "Below Average"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                {pageTimeAnalysis.allPages.length > 5 && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={handleShowPageTimeAnalysis}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View all {pageTimeAnalysis.totalValidPages} pages →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
+              <Timer className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-900 font-semibold text-lg mb-2">
+                Page Time Analysis Unavailable
+              </p>
+              <p className="text-gray-600 mb-4">
+                Collecting page analytics data...
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* User Details Modal - Same as before */}
+      {/* User Details Modal */}
       {userDetailsModalOpen && selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900">
                   User Activity Details
                 </h2>
                 <button
                   onClick={() => setUserDetailsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
                 >
                   <X size={24} />
                 </button>
               </div>
 
               <div className="space-y-6">
-                {/* User Information */}
+                {/* User Info */}
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <User size={20} />
@@ -2980,33 +1395,20 @@ const AnalyticsDashboard = () => {
                         {getUserName(selectedLog.userId)}
                       </p>
                     </div>
-                    {selectedLog.userId &&
-                      userData?.[selectedLog.userId]?.email && (
-                        <div>
-                          <p className="text-sm text-gray-600">Email</p>
-                          <p className="font-medium text-gray-900">
-                            {userData[selectedLog.userId].email}
-                          </p>
-                        </div>
-                      )}
+                    {getUserEmail(selectedLog.userId) && (
+                      <div>
+                        <p className="text-sm text-gray-600">Email</p>
+                        <p className="font-medium text-gray-900">
+                          {getUserEmail(selectedLog.userId)}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm text-gray-600">User ID</p>
-                      <p className="font-medium text-gray-900 font-mono text-sm">
+                      <p className="font-medium text-gray-900 font-mono text-sm break-all">
                         {selectedLog.userId || "Anonymous"}
                       </p>
                     </div>
-                    {selectedLog.userId &&
-                      userData?.[selectedLog.userId]?.rawData && (
-                        <div>
-                          <p className="text-sm text-gray-600">
-                            Account Status
-                          </p>
-                          <p className="font-medium text-gray-900">
-                            {userData[selectedLog.userId].rawData.status ||
-                              "Active"}
-                          </p>
-                        </div>
-                      )}
                   </div>
                 </div>
 
@@ -3021,7 +1423,7 @@ const AnalyticsDashboard = () => {
                       <p className="font-medium text-gray-900">
                         {getPageFriendlyName(selectedLog.page)}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1 truncate">
                         {selectedLog.page}
                       </p>
                     </div>
@@ -3035,14 +1437,8 @@ const AnalyticsDashboard = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Session ID</p>
-                      <p className="font-medium text-gray-900 font-mono text-sm">
+                      <p className="font-medium text-gray-900 font-mono text-sm break-all">
                         {selectedLog.sessionId}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">IP Address</p>
-                      <p className="font-medium text-gray-900">
-                        {selectedLog.ip}
                       </p>
                     </div>
                     <div>
@@ -3053,65 +1449,11 @@ const AnalyticsDashboard = () => {
                           : "N/A"}
                       </p>
                     </div>
-                    {selectedLog.matchType && (
-                      <div>
-                        <p className="text-sm text-gray-600">Matched By</p>
-                        <p className="font-medium text-gray-900 capitalize">
-                          {selectedLog.matchType.replace("_", " ")}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
-
-                {/* User Profile Information */}
-                {selectedLog.userId && userData?.[selectedLog.userId] && (
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <User size={20} />
-                      User Profile Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {userData[selectedLog.userId].firstName && (
-                        <div>
-                          <p className="text-sm text-gray-600">First Name</p>
-                          <p className="font-medium text-gray-900">
-                            {userData[selectedLog.userId].firstName}
-                          </p>
-                        </div>
-                      )}
-                      {userData[selectedLog.userId].lastName && (
-                        <div>
-                          <p className="text-sm text-gray-600">Last Name</p>
-                          <p className="font-medium text-gray-900">
-                            {userData[selectedLog.userId].lastName}
-                          </p>
-                        </div>
-                      )}
-                      {userData[selectedLog.userId].email && (
-                        <div>
-                          <p className="text-sm text-gray-600">Email</p>
-                          <p className="font-medium text-gray-900">
-                            {userData[selectedLog.userId].email}
-                          </p>
-                        </div>
-                      )}
-                      {userData[selectedLog.userId].rawData?.createdAt && (
-                        <div>
-                          <p className="text-sm text-gray-600">Member Since</p>
-                          <p className="font-medium text-gray-900">
-                            {new Date(
-                              userData[selectedLog.userId].rawData.createdAt,
-                            ).toLocaleDateString()}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div className="mt-8 flex justify-end gap-3">
+              <div className="mt-8 flex justify-end">
                 <button
                   onClick={() => setUserDetailsModalOpen(false)}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
@@ -3123,6 +1465,9 @@ const AnalyticsDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Page Time Analysis Modal */}
+      {showPageTimeModal && <PageTimeAnalysisModal />}
     </div>
   );
 };

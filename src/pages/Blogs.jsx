@@ -95,7 +95,7 @@ export default function Blogs() {
       result = result.filter(
         (blog) =>
           blog.title?.toLowerCase().includes(searchLower) ||
-          blog.description?.toLowerCase().includes(searchLower)
+          blog.description?.toLowerCase().includes(searchLower),
       );
     }
 

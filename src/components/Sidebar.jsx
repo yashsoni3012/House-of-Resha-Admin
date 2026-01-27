@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/analytics", name: "Analytics", icon: BarChart3 },
 
     /* ✅ ONLY ONE CONTENT ENTRY */
-    { path: "/content", name: "CMS", icon: FileText },
+    // { path: "/content", name: "CMS", icon: FileText },
   ];
 
   const handleNavigation = (path) => {
@@ -173,7 +173,7 @@ const Sidebar = ({ isOpen, toggle }) => {
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-gray-100">
+          {/* <div className="p-4 border-t border-gray-100">
             <button
               onClick={handleLogoutClick}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-md text-white shadow-md text-sm font-semibold"
@@ -181,12 +181,12 @@ const Sidebar = ({ isOpen, toggle }) => {
               <LogOut size={18} />
               Logout
             </button>
-          </div>
+          </div> */}
         </div>
       </aside>
 
       {/* Logout Modal */}
-      {showLogoutModal && (
+      {/* {showLogoutModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border">
             <div className="p-6 border-b">
@@ -220,7 +220,7 @@ const Sidebar = ({ isOpen, toggle }) => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 };
