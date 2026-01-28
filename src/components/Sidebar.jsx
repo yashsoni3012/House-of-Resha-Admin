@@ -34,6 +34,7 @@ const Sidebar = ({ isOpen, toggle }) => {
     { path: "/customers", name: "Customers", icon: Users },
     { path: "/users", name: "Users", icon: Users },
     { path: "/analytics", name: "Analytics", icon: BarChart3 },
+    { path: "/slots", name: "Slots", icon: BarChart3 },
 
     /* ✅ ONLY ONE CONTENT ENTRY */
     // { path: "/content", name: "CMS", icon: FileText },

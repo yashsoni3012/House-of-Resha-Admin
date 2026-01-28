@@ -1,299 +1,3 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
-// import { useQuery } from "@tanstack/react-query";
-// import {
-//   TrendingUp,
-//   ShoppingCart,
-//   Users,
-//   Package,
-//   IndianRupee,
-//   Calendar,
-//   Activity,
-//   ArrowUp,
-//   ArrowDown,
-//   RefreshCw,
-//   AlertCircle,
-// } from "lucide-react";
-
-// const API_BASE_URL = "https://api.houseofresha.com";
-
-// const Dashboard = () => {
-//   // Fetch real products data
-//   const {
-//     data: products = [],
-//     isLoading: isLoadingProducts,
-//     error: productsError,
-//     refetch: refetchProducts,
-//   } = useQuery({
-//     queryKey: ["dashboard-products"],
-//     queryFn: async () => {
-//       try {
-//         const response = await fetch(`${API_BASE_URL}/clothing`);
-//         if (!response.ok) {
-//           throw new Error(`Failed to fetch products: ${response.status}`);
-//         }
-//         const data = await response.json();
-
-//         // Handle different response structures
-//         if (Array.isArray(data)) return data;
-//         if (data.data && Array.isArray(data.data)) return data.data;
-//         if (data.success && Array.isArray(data.data)) return data.data;
-//         return [];
-//       } catch (error) {
-//         console.error("Error fetching products:", error);
-//         throw error;
-//       }
-//     },
-//     refetchOnWindowFocus: false,
-//   });
-
-//   // Calculate stats from real data
-//   const totalProducts = products.length;
-
-//   const totalRevenue = React.useMemo(() => {
-//     return products.reduce((sum, product) => {
-//       const price = parseFloat(product.price) || 0;
-//       return sum + price * 10; // Assuming 10 units sold per product
-//     }, 0);
-//   }, [products]);
-
-//   const totalOrders = React.useMemo(() => {
-//     return Math.floor(totalProducts * 1.75);
-//   }, [totalProducts]);
-
-//   const totalCustomers = React.useMemo(() => {
-//     return Math.floor(totalProducts * 13.8);
-//   }, [totalProducts]);
-
-//   // Format currency
-//   const formatCurrency = (amount) => {
-//     return new Intl.NumberFormat("en-IN", {
-//       style: "currency",
-//       currency: "INR",
-//       minimumFractionDigits: 0,
-//       maximumFractionDigits: 0,
-//     }).format(amount);
-//   };
-
-//   const stats = [
-//     {
-//       title: "Total Revenue",
-//       value: formatCurrency(totalRevenue),
-//       change: "+12.5%",
-//       trend: "up",
-//       icon: IndianRupee,
-//       gradient: "from-blue-500 to-cyan-500",
-//       bgGradient: "from-blue-50 to-cyan-50",
-//       iconBg: "bg-blue-100",
-//       iconColor: "text-blue-600",
-//     },
-//     {
-//       title: "Total Orders",
-//       value: totalOrders.toLocaleString(),
-//       change: "+8.2%",
-//       trend: "up",
-//       icon: ShoppingCart,
-//       gradient: "from-green-500 to-emerald-500",
-//       bgGradient: "from-green-50 to-emerald-50",
-//       iconBg: "bg-green-100",
-//       iconColor: "text-green-600",
-//     },
-//     {
-//       title: "Total Customers",
-//       value: totalCustomers.toLocaleString(),
-//       change: "+15.3%",
-//       trend: "up",
-//       icon: Users,
-//       gradient: "from-purple-500 to-pink-500",
-//       bgGradient: "from-purple-50 to-pink-50",
-//       iconBg: "bg-purple-100",
-//       iconColor: "text-purple-600",
-//     },
-//     {
-//       title: "Total Products",
-//       value: isLoadingProducts ? "Loading..." : totalProducts.toLocaleString(),
-//       change: isLoadingProducts ? "..." : "+3.1%",
-//       trend: "up",
-//       icon: Package,
-//       gradient: "from-orange-500 to-red-500",
-//       bgGradient: "from-orange-50 to-red-50",
-//       iconBg: "bg-orange-100",
-//       iconColor: "text-orange-600",
-//     },
-//   ];
-
-//   // Get recent products for activity section
-//   const recentProducts = React.useMemo(() => {
-//     return [...products]
-//       .sort(
-//         (a, b) =>
-//           new Date(b.createdAt || b.updatedAt || 0) -
-//           new Date(a.createdAt || a.updatedAt || 0)
-//       )
-//       .slice(0, 4);
-//   }, [products]);
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Welcome Header */}
-//       <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-2xl p-4 lg:p-6 text-white shadow-xl">
-//         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-//           <div>
-//             <h1 className="text-2xl lg:text-3xl font-bold mb-2">
-//               Welcome Back, Admin!
-//             </h1>
-//             <p className="text-purple-100 text-sm lg:text-base">
-//               {isLoadingProducts
-//                 ? "Loading store data..."
-//                 : "Here's what's happening with your store today."}
-//             </p>
-//           </div>
-//           <div className="flex items-center gap-4">
-//             <div className="flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-lg">
-//               <Calendar size={20} />
-//               <span className="font-medium">
-//                 {new Date().toLocaleDateString("en-US", {
-//                   weekday: "long",
-//                   year: "numeric",
-//                   month: "long",
-//                   day: "numeric",
-//                 })}
-//               </span>
-//             </div>
-//             {/* <button
-//               onClick={() => refetchProducts()}
-//               disabled={isLoadingProducts}
-//               className="p-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-//               title="Refresh Data"
-//             >
-//               <RefreshCw size={20} className={isLoadingProducts ? 'animate-spin' : ''} />
-//             </button> */}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Error Display */}
-//       {productsError && (
-//         <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg p-4">
-//           <p className="text-red-700 text-sm flex items-center gap-2">
-//             <AlertCircle size={18} className="flex-shrink-0" />
-//             <span>
-//               <strong>Error Loading Products:</strong> {productsError.message}
-//             </span>
-//           </p>
-//         </div>
-//       )}
-
-//       {/* Stats Cards */}
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-//         {stats.map((stat, idx) => {
-//           const Icon = stat.icon;
-//           const TrendIcon = stat.trend === "up" ? ArrowUp : ArrowDown;
-//           return (
-//             <div
-//               key={idx}
-//               className={`bg-gradient-to-br ${stat.bgGradient} rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
-//             >
-//               <div className="flex items-start justify-between mb-4">
-//                 <div
-//                   className={`${stat.iconBg} p-3 rounded-lg group-hover:scale-110 transition-transform`}
-//                 >
-//                   <Icon className={stat.iconColor} size={24} />
-//                 </div>
-//                 <div
-//                   className={`${
-//                     stat.trend === "up"
-//                       ? "bg-green-100 text-green-700"
-//                       : "bg-red-100 text-red-700"
-//                   }`}
-//                 >
-//                   {/* <TrendIcon size={14} />
-//                   <span className="text-xs font-bold">{stat.change}</span> */}
-//                 </div>
-//               </div>
-//               <p className="text-gray-600 text-sm font-medium mb-1">
-//                 {stat.title}
-//               </p>
-//               <h3 className="text-2xl lg:text-3xl font-bold text-gray-900">
-//                 {stat.value}
-//               </h3>
-//             </div>
-//           );
-//         })}
-//       </div>
-
-//       {/* Recent Activity Section */}
-//       <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-gray-200">
-//         <div className="flex items-center justify-between mb-6">
-//           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-//             <Activity className="text-purple-600" size={24} />
-//             Recent Products Added
-//           </h3>
-//           <Link
-//             to="/products"
-//             className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center gap-1"
-//           >
-//             View All Products
-//             <ArrowUp size={16} className="rotate-90" />
-//           </Link>
-//         </div>
-
-//         {isLoadingProducts ? (
-//           <div className="flex items-center justify-center py-12">
-//             <RefreshCw className="animate-spin text-purple-600" size={32} />
-//             <span className="ml-3 text-gray-600">Loading products...</span>
-//           </div>
-//         ) : recentProducts.length === 0 ? (
-//           <div className="text-center py-12">
-//             <Package size={48} className="mx-auto text-gray-400 mb-4" />
-//             <p className="text-gray-500">No products found</p>
-//             <Link
-//               to="/products/add"
-//               className="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium"
-//             >
-//               Add your first product →
-//             </Link>
-//           </div>
-//         ) : (
-//           <div className="space-y-4">
-//             {recentProducts.map((product, index) => (
-//               <div
-//                 key={product._id || index}
-//                 className="flex items-center justify-between p-4 bg-gray-50 hover:bg-purple-50 rounded-xl transition-all border border-gray-200 hover:border-purple-200 group"
-//               >
-//                 <div className="flex items-center gap-4">
-//                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-//                     {product.name?.charAt(0).toUpperCase() || "P"}
-//                   </div>
-//                   <div>
-//                     <p className="font-semibold text-gray-900">
-//                       {product.name || "Unnamed Product"}
-//                     </p>
-//                     <p className="text-sm text-gray-500">
-//                       {product.categoryId?.name || "No Category"} • ₹
-//                       {parseFloat(product.price || 0).toLocaleString()}
-//                     </p>
-//                   </div>
-//                 </div>
-//                 <div className="text-right">
-//                   <span className="text-lg font-bold text-purple-600">
-//                     ₹{parseFloat(product.price || 0).toLocaleString()}
-//                   </span>
-//                   <p className="text-xs text-gray-500">
-//                     {product.sizes?.length || 0} sizes available
-//                   </p>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -311,7 +15,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const API_BASE_URL = "https://api.houseofresha.com";
+// Use the environment variable for API base URL
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://api.houseofresha.com";
 
 const Dashboard = () => {
   // Fetch real products data
@@ -373,9 +79,41 @@ const Dashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch real users data from the /data endpoint
+  const {
+    data: users = [],
+    isLoading: isLoadingUsers,
+    error: usersError,
+    refetch: refetchUsers,
+  } = useQuery({
+    queryKey: ["dashboard-users"],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/data`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch users: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Handle the response structure from the /data endpoint
+        if (data.success && Array.isArray(data.data)) {
+          return data.data; // Return the users array
+        }
+        if (Array.isArray(data)) return data;
+        if (data.data && Array.isArray(data.data)) return data.data;
+        return [];
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+    },
+    refetchOnWindowFocus: false,
+  });
+
   // Calculate stats from real data
   const totalProducts = products.length;
   const totalOrders = orders.length;
+  const totalUsers = users.length; // Get total users count from the API
 
   // Calculate total revenue from real orders
   const totalRevenue = React.useMemo(() => {
@@ -424,6 +162,14 @@ const Dashboard = () => {
       return orderDate.getTime() === today.getTime();
     }).length;
   }, [orders]);
+
+  // Calculate percentage change for users (dummy data for now)
+  const usersChange = React.useMemo(() => {
+    if (users.length === 0) return "+0%";
+    const yesterdayUsers = Math.floor(totalUsers * 0.95); // Simulated yesterday's users
+    const change = ((totalUsers - yesterdayUsers) / yesterdayUsers) * 100;
+    return change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+  }, [totalUsers, users]);
 
   // Calculate percentage change (dummy data for now)
   const revenueChange = React.useMemo(() => {
@@ -523,15 +269,16 @@ const Dashboard = () => {
       iconColor: "text-purple-600",
     },
     {
-      title: "Total Products",
-      value: isLoadingProducts ? "Loading..." : totalProducts.toLocaleString(),
-      change: isLoadingProducts ? "..." : "+3.1%",
-      trend: "up",
+      title: "Total Users",
+      value: isLoadingUsers ? "Loading..." : totalUsers.toLocaleString(),
+      change: isLoadingUsers ? "..." : usersChange,
+      trend: usersChange.startsWith("+") ? "up" : "down",
       icon: Package,
       gradient: "from-orange-500 to-red-500",
       bgGradient: "from-orange-50 to-red-50",
       iconBg: "bg-orange-100",
       iconColor: "text-orange-600",
+      subValue: `${users.filter((user) => user.role === "admin").length} admins`,
     },
   ];
 
@@ -541,7 +288,7 @@ const Dashboard = () => {
       .sort(
         (a, b) =>
           new Date(b.createdAt || b.updatedAt || 0) -
-          new Date(a.createdAt || a.updatedAt || 0)
+          new Date(a.createdAt || a.updatedAt || 0),
       )
       .slice(0, 4);
   }, [products]);
@@ -552,18 +299,29 @@ const Dashboard = () => {
       .sort(
         (a, b) =>
           new Date(b.createdAt || b.date || 0) -
-          new Date(a.createdAt || a.date || 0)
+          new Date(a.createdAt || a.date || 0),
       )
       .slice(0, 5);
   }, [orders]);
 
-  const isLoading = isLoadingProducts || isLoadingOrders;
-  const hasError = productsError || ordersError;
+  // Get recent users for activity section
+  const recentUsers = React.useMemo(() => {
+    return [...users]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.lastActive || 0) -
+          new Date(a.createdAt || a.lastActive || 0),
+      )
+      .slice(0, 5);
+  }, [users]);
+
+  const isLoading = isLoadingProducts || isLoadingOrders || isLoadingUsers;
+  const hasError = productsError || ordersError || usersError;
 
   return (
     <div className="space-y-4 ">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-xl">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-6 text-white shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* LEFT: Welcome Text */}
           <div>
@@ -600,6 +358,7 @@ const Dashboard = () => {
               onClick={() => {
                 refetchProducts();
                 refetchOrders();
+                refetchUsers();
               }}
               disabled={isLoading}
               className="p-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -621,7 +380,9 @@ const Dashboard = () => {
             <AlertCircle size={18} className="flex-shrink-0 mt-0.5 sm:mt-0" />
             <span>
               <strong>Error Loading Data:</strong>{" "}
-              {productsError?.message || ordersError?.message}
+              {productsError?.message ||
+                ordersError?.message ||
+                usersError?.message}
             </span>
           </p>
         </div>
@@ -635,7 +396,7 @@ const Dashboard = () => {
           return (
             <div
               key={idx}
-              className={`bg-gradient-to-br ${stat.bgGradient} rounded-lg sm:rounded-xl p-4 sm:p-5 lg:p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
+              className={`bg-gradient-to-br ${stat.bgGradient} rounded-lg sm:rounded-md p-4 sm:p-5 lg:p-4 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group`}
             >
               <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div
@@ -673,78 +434,10 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Order Status Summary */}
-      {/* {orderStatusCounts.total > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-green-200">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600">
-                Paid Orders
-              </span>
-              <span className="text-base sm:text-lg font-bold text-green-600">
-                {orderStatusCounts.paid}
-              </span>
-            </div>
-            <div className="w-full bg-green-100 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${
-                    (orderStatusCounts.paid / orderStatusCounts.total) * 100
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-yellow-200">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600">
-                Pending Orders
-              </span>
-              <span className="text-base sm:text-lg font-bold text-yellow-600">
-                {orderStatusCounts.pending}
-              </span>
-            </div>
-            <div className="w-full bg-yellow-100 rounded-full h-2">
-              <div
-                className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${
-                    (orderStatusCounts.pending / orderStatusCounts.total) * 100
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-red-200 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600">
-                Failed Orders
-              </span>
-              <span className="text-base sm:text-lg font-bold text-red-600">
-                {orderStatusCounts.failed}
-              </span>
-            </div>
-            <div className="w-full bg-red-100 rounded-full h-2">
-              <div
-                className="bg-red-500 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${
-                    (orderStatusCounts.failed / orderStatusCounts.total) * 100
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
-
       {/* Recent Activity Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Products */}
-        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-md shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
               <Package className="text-purple-600 flex-shrink-0" size={20} />
@@ -812,7 +505,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-md shadow-lg sm:shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-200">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
               <ShoppingCart
@@ -865,8 +558,8 @@ const Dashboard = () => {
                 const statusColor = status.includes("paid")
                   ? "bg-green-100 text-green-800"
                   : status.includes("pending")
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800";
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800";
 
                 return (
                   <div
@@ -896,8 +589,7 @@ const Dashboard = () => {
                     </div>
                     <div className="text-right flex-shrink-0 ml-2">
                       <span className="text-xs sm:text-sm font-bold text-green-600 whitespace-nowrap">
-                        ₹
-                        {(parseFloat(order.amount || 0)).toLocaleString()}
+                        ₹{parseFloat(order.amount || 0).toLocaleString()}
                       </span>
                       <p className="text-xs text-gray-500 mt-1 hidden sm:block">
                         {order.createdAt

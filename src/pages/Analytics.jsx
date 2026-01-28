@@ -904,210 +904,332 @@ const AnalyticsDashboard = () => {
 
   // Page Time Analysis Modal Component
   const PageTimeAnalysisModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Calculator className="text-blue-600" size={24} />
-              Page Time Analysis
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Calculator className="text-blue-600 flex-shrink-0" size={20} />
+              <span className="truncate">Page Time Analysis</span>
             </h2>
             <button
               onClick={() => setShowPageTimeModal(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors p-2 rounded-lg flex-shrink-0"
               aria-label="Close modal"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
+        </div>
 
-          {pageTimeAnalysis ? (
-            <div className="space-y-6">
-              {/* Summary Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-gray-600 text-sm font-medium">
-                    Simple Average
-                  </p>
-                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                    {pageTimeAnalysis.simpleAverage}s
-                  </h3>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Across {pageTimeAnalysis.totalValidPages} pages
-                  </p>
-                </div>
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            {pageTimeAnalysis ? (
+              <div className="space-y-4 sm:space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {/* Simple Average */}
+                  <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
+                    <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                      Simple Average
+                    </p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                      {pageTimeAnalysis.simpleAverage}s
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Across {pageTimeAnalysis.totalValidPages} pages
+                    </p>
+                  </div>
 
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <p className="text-gray-600 text-sm font-medium">
-                    Weighted Average
-                  </p>
-                  <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                    {pageTimeAnalysis.weightedAverage}s
-                  </h3>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Based on {pageTimeAnalysis.totalViews.toLocaleString()}{" "}
-                    views
-                  </p>
-                </div>
+                  {/* Weighted Average */}
+                  <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
+                    <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                      Weighted Average
+                    </p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                      {pageTimeAnalysis.weightedAverage}s
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Based on {pageTimeAnalysis.totalViews.toLocaleString()}{" "}
+                      views
+                    </p>
+                  </div>
 
-                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                  <p className="text-gray-600 text-sm font-medium">
-                    Highest Average
-                  </p>
-                  <h3 className="text-lg font-bold text-gray-900 mt-1 truncate">
-                    {pageTimeAnalysis.highestPage.name}
-                  </h3>
-                  <p className="text-green-600 text-xl font-bold mt-1">
-                    {pageTimeAnalysis.highestPage.avgTimeSpent}s
-                  </p>
-                </div>
+                  {/* Highest Average */}
+                  <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
+                    <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                      Highest Average
+                    </p>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mt-1 truncate">
+                      {pageTimeAnalysis.highestPage.name}
+                    </h3>
+                    <p className="text-green-600 text-lg sm:text-xl font-bold mt-1">
+                      {pageTimeAnalysis.highestPage.avgTimeSpent}s
+                    </p>
+                  </div>
 
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <p className="text-gray-600 text-sm font-medium">
-                    Lowest Average
-                  </p>
-                  <h3 className="text-lg font-bold text-gray-900 mt-1 truncate">
-                    {pageTimeAnalysis.lowestPage.name}
-                  </h3>
-                  <p className="text-red-600 text-xl font-bold mt-1">
-                    {pageTimeAnalysis.lowestPage.avgTimeSpent}s
-                  </p>
-                </div>
-              </div>
-
-              {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Top Pages by Average Time
-                  </h3>
-                  <div className="h-80">
-                    <TopPagesChart />
+                  {/* Lowest Average */}
+                  <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
+                    <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                      Lowest Average
+                    </p>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mt-1 truncate">
+                      {pageTimeAnalysis.lowestPage.name}
+                    </h3>
+                    <p className="text-red-600 text-lg sm:text-xl font-bold mt-1">
+                      {pageTimeAnalysis.lowestPage.avgTimeSpent}s
+                    </p>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Performance Metrics
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Simple Average</span>
-                        <span className="font-semibold">
-                          {pageTimeAnalysis.simpleAverage}s
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(100, pageTimeAnalysis.simpleAverage / 10)}%`,
-                          }}
-                        ></div>
-                      </div>
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  {/* Top Pages Chart */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Top Pages by Average Time
+                    </h3>
+                    <div className="h-56 sm:h-64 lg:h-80">
+                      <TopPagesChart />
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Weighted Average</span>
-                        <span className="font-semibold">
-                          {pageTimeAnalysis.weightedAverage}s
-                        </span>
+                  </div>
+
+                  {/* Performance Metrics */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Performance Metrics
+                    </h3>
+                    <div className="space-y-4 sm:space-y-6">
+                      {/* Simple Average Progress */}
+                      <div>
+                        <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
+                          <span className="text-gray-600 font-medium">
+                            Simple Average
+                          </span>
+                          <span className="font-semibold text-gray-900 text-sm sm:text-base lg:text-lg">
+                            {pageTimeAnalysis.simpleAverage}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 lg:h-3">
+                          <div
+                            className="bg-blue-600 h-2 sm:h-2.5 lg:h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{
+                              width: `${Math.min(100, (pageTimeAnalysis.simpleAverage / 10) * 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between items-center mt-1.5">
+                          <span className="text-xs text-gray-500">
+                            Across {pageTimeAnalysis.totalValidPages} pages
+                          </span>
+                          <span className="text-xs text-blue-600 font-medium">
+                            {Math.min(
+                              100,
+                              Math.round(
+                                (pageTimeAnalysis.simpleAverage / 10) * 100,
+                              ),
+                            )}
+                            %
+                          </span>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(100, pageTimeAnalysis.weightedAverage / 10)}%`,
-                          }}
-                        ></div>
+
+                      {/* Weighted Average Progress */}
+                      <div>
+                        <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
+                          <span className="text-gray-600 font-medium">
+                            Weighted Average
+                          </span>
+                          <span className="font-semibold text-gray-900 text-sm sm:text-base lg:text-lg">
+                            {pageTimeAnalysis.weightedAverage}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 lg:h-3">
+                          <div
+                            className="bg-green-600 h-2 sm:h-2.5 lg:h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{
+                              width: `${Math.min(100, (pageTimeAnalysis.weightedAverage / 10) * 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between items-center mt-1.5">
+                          <span className="text-xs text-gray-500">
+                            {pageTimeAnalysis.totalViews.toLocaleString()} total
+                            views
+                          </span>
+                          <span className="text-xs text-green-600 font-medium">
+                            {Math.min(
+                              100,
+                              Math.round(
+                                (pageTimeAnalysis.weightedAverage / 10) * 100,
+                              ),
+                            )}
+                            %
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info Card */}
+                      <div className="mt-3 sm:mt-4 lg:mt-6 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg border border-blue-100">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                            <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 mb-1">
+                              More Accurate Metric
+                            </p>
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              Weighted average accounts for page popularity,
+                              providing a more accurate representation of user
+                              engagement.
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Detailed Table */}
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Page Performance Details
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Page
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Avg Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Views
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {pageTimeAnalysis.allPages.map((page, index) => {
-                        const isAboveAverage =
-                          page.avgTimeSpent > pageTimeAnalysis.weightedAverage;
-                        return (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {page.name}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate max-w-xs">
-                                  {page.url}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-lg font-bold text-gray-900">
+                {/* Detailed Table */}
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                      Page Performance Details
+                    </h3>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="block sm:hidden divide-y divide-gray-200">
+                    {pageTimeAnalysis.allPages.map((page, index) => {
+                      const isAboveAverage =
+                        page.avgTimeSpent > pageTimeAnalysis.weightedAverage;
+                      return (
+                        <div key={index} className="p-4 hover:bg-gray-50">
+                          <div className="mb-2">
+                            <p className="text-sm font-semibold text-gray-900 mb-1">
+                              {page.name}
+                            </p>
+                            <p className="text-xs text-gray-500 line-clamp-1">
+                              {/* {page.url} */}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-gray-600 mb-0.5">
+                                Avg Time
+                              </p>
+                              <p className="text-lg font-bold text-gray-900">
                                 {page.avgTimeSpent}s
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              {page.totalViews.toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  isAboveAverage
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {isAboveAverage
-                                  ? "Above Average"
-                                  : "Below Average"}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-600 mb-0.5">
+                                Views
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {page.totalViews.toLocaleString()}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                isAboveAverage
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {isAboveAverage ? "Above" : "Below"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Page
+                          </th>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Avg Time
+                          </th>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Views
+                          </th>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {pageTimeAnalysis.allPages.map((page, index) => {
+                          const isAboveAverage =
+                            page.avgTimeSpent >
+                            pageTimeAnalysis.weightedAverage;
+                          return (
+                            <tr
+                              key={index}
+                              className="hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-4 sm:px-6 py-4">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {page.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 truncate max-w-xs lg:max-w-md">
+                                    {/* {page.url} */}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                <span className="text-base sm:text-lg font-bold text-gray-900">
+                                  {page.avgTimeSpent}s
+                                </span>
+                              </td>
+                              <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-900">
+                                  {page.totalViews.toLocaleString()}
+                                </span>
+                              </td>
+                              <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    isAboveAverage
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {isAboveAverage
+                                    ? "Above Average"
+                                    : "Below Average"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Calculator className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-900 font-semibold text-lg mb-2">
-                No page time data available
-              </p>
-              <p className="text-gray-600">
-                Page analytics data is required for time analysis
-              </p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 sm:py-12">
+                <Calculator className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-900 font-semibold text-base sm:text-lg mb-2">
+                  No page time data available
+                </p>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Page analytics data is required for time analysis
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1115,39 +1237,34 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex w-12 h-12 rounded-xl bg-blue-100 items-center justify-center">
-                  <Activity className="text-blue-600" size={24} />
+          <div className="bg-white shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Header Section */}
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="flex w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-100 items-center justify-center flex-shrink-0">
+                  <Activity className="text-blue-600" size={20} />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                     Analytics Dashboard
                   </h1>
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">
                     Real-time insights into your application usage
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* Buttons Section */}
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 lg:flex-shrink-0">
                 <button
                   onClick={handleShowPageTimeAnalysis}
-                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center gap-2"
+                  className="px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center justify-center gap-2 flex-1 xs:flex-initial whitespace-nowrap"
                 >
                   <Calculator size={16} />
-                  Page Analysis
-                </button>
-                <button
-                  onClick={handleRefreshAll}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Refresh
+                  <span>Page Analysis</span>
                 </button>
               </div>
             </div>
@@ -1156,54 +1273,59 @@ const AnalyticsDashboard = () => {
 
         {/* Summary Stats */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              title="Total Views"
-              value={summary.totalViews || 0}
-              icon={Eye}
-              color="#3b82f6"
-              subtitle="All-time page views"
-            />
-            <StatCard
-              title="Avg Time Spent"
-              value={summary.avgTimeSpent || 0}
-              icon={Clock}
-              color="#ef4444"
-              subtitle="Seconds per session"
-            />
-            <StatCard
-              title="Logged In Users"
-              value={summary.loggedInUsers || 0}
-              icon={Users}
-              color="#8b5cf6"
-              subtitle="Authenticated sessions"
-            />
-            <StatCard
-              title="Total Sessions"
-              value={summary.totalSessions || summary.totalLogs || 0}
-              icon={Activity}
-              color="#10b981"
-              subtitle="User sessions"
-            />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Total Views"
+                value={summary.totalViews || 0}
+                icon={Eye}
+                color="#3b82f6"
+                subtitle="All-time page views"
+              />
+              <StatCard
+                title="Avg Time Spent"
+                value={summary.avgTimeSpent || 0}
+                icon={Clock}
+                color="#ef4444"
+                subtitle="Seconds per session"
+              />
+              <StatCard
+                title="Logged In Users"
+                value={summary.loggedInUsers || 0}
+                icon={Users}
+                color="#8b5cf6"
+                subtitle="Authenticated sessions"
+              />
+              <StatCard
+                title="Total Sessions"
+                value={summary.totalSessions || summary.totalLogs || 0}
+                icon={Activity}
+                color="#10b981"
+                subtitle="User sessions"
+              />
+            </div>
           </div>
         )}
 
         {/* PAGE TIME ANALYSIS SECTION */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Timer className="text-blue-600" size={24} />
-                Page Time Analysis
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Timer className="text-blue-600" size={20} />
+                <span>Page Time Analysis</span>
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
                 Average time users spend on each page
               </p>
             </div>
             {pageTimeAnalysis && (
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Weighted Average</p>
-                <p className="text-xl font-bold text-green-700">
+              <div className="sm:text-right bg-green-50 sm:bg-transparent p-3 sm:p-0 rounded-lg">
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Weighted Average
+                </p>
+                <p className="text-lg sm:text-xl font-bold text-green-700">
                   {pageTimeAnalysis.weightedAverage}s
                 </p>
               </div>
@@ -1213,7 +1335,7 @@ const AnalyticsDashboard = () => {
           {pageTimeAnalysis ? (
             <>
               {/* Page Time Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <PageTimeStatCard
                   title="Simple Average"
                   value={pageTimeAnalysis.simpleAverage}
@@ -1247,116 +1369,260 @@ const AnalyticsDashboard = () => {
               </div>
 
               {/* Top Pages Chart */}
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <BarChart3 className="text-blue-600" size={20} />
-                    Top Pages by Average Time
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <BarChart3 className="text-blue-600" size={18} />
+                    <span>Top Pages by Average Time</span>
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs sm:text-sm text-gray-600">
                     Top {pageTimeAnalysis.allPages.length} of{" "}
                     {pageTimeAnalysis.totalValidPages} pages
                   </div>
                 </div>
-                <div className="h-80">
+                <div className="h-64 sm:h-80">
                   <TopPagesChart />
                 </div>
               </div>
 
               {/* Top Pages List */}
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">
-                  Page Performance Ranking
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Page
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Avg Time
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Views
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {pageTimeAnalysis.allPages
-                        .slice(0, 5)
-                        .map((page, index) => {
-                          const Icon = getPageIcon(page.name);
-                          const isAboveAverage =
-                            page.avgTimeSpent >
-                            pageTimeAnalysis.weightedAverage;
-                          return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-4 py-4">
-                                <div className="flex items-center">
-                                  <div className="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                    <Icon className="h-4 w-4 text-blue-600" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {page.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500 truncate max-w-xs">
-                                      {page.url}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="text-lg font-bold text-gray-900">
-                                  {page.avgTimeSpent}s
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                {page.totalViews.toLocaleString()}
-                              </td>
-                              <td className="px-4 py-4">
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    isAboveAverage
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  {isAboveAverage
-                                    ? "Above Average"
-                                    : "Below Average"}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
+                    Page Performance Ranking
+                  </h3>
+                  <div className="text-xs sm:text-sm text-gray-500">
+                    Top {Math.min(5, pageTimeAnalysis.allPages.length)}
+                  </div>
                 </div>
+
+                {/* Mobile Card View */}
+                <div className="block sm:hidden space-y-3">
+                  {pageTimeAnalysis.allPages.slice(0, 5).map((page, index) => {
+                    const Icon = getPageIcon(page.name);
+                    const isAboveAverage =
+                      page.avgTimeSpent > pageTimeAnalysis.weightedAverage;
+
+                    return (
+                      <div
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                      >
+                        {/* Header with Icon and Page Info */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-shrink-0 h-9 w-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 mb-0.5 line-clamp-1">
+                              {page.name}
+                            </div>
+                            <div className="text-xs text-gray-500 line-clamp-1">
+                              {/* {page.url} */}
+                            </div>
+                          </div>
+                          <span
+                            className={`flex-shrink-0 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              isAboveAverage
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {isAboveAverage ? "Above" : "Below"}
+                          </span>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                          <div>
+                            <div className="text-xs text-gray-600 mb-1">
+                              Average Time
+                            </div>
+                            <div className="text-xl font-bold text-gray-900">
+                              {page.avgTimeSpent}s
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-600 mb-1">
+                              Total Views
+                            </div>
+                            <div className="text-base font-semibold text-gray-900">
+                              {page.totalViews.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tablet View (Compact Cards) */}
+                <div className="hidden sm:block md:hidden space-y-2">
+                  {pageTimeAnalysis.allPages.slice(0, 5).map((page, index) => {
+                    const Icon = getPageIcon(page.name);
+                    const isAboveAverage =
+                      page.avgTimeSpent > pageTimeAnalysis.weightedAverage;
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 truncate">
+                            {page.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {/* {page.url} */}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-xs text-gray-600">Time</div>
+                            <div className="text-lg font-bold text-gray-900">
+                              {page.avgTimeSpent}s
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-600">Views</div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {page.totalViews.toLocaleString()}
+                            </div>
+                          </div>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                              isAboveAverage
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {isAboveAverage ? "Above" : "Below"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto -mx-2 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-3 lg:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Page
+                          </th>
+                          <th className="px-3 lg:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Avg Time
+                          </th>
+                          <th className="px-3 lg:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Views
+                          </th>
+                          <th className="px-3 lg:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {pageTimeAnalysis.allPages
+                          .slice(0, 5)
+                          .map((page, index) => {
+                            const Icon = getPageIcon(page.name);
+                            const isAboveAverage =
+                              page.avgTimeSpent >
+                              pageTimeAnalysis.weightedAverage;
+
+                            return (
+                              <tr
+                                key={index}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-3 lg:px-4 py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-shrink-0 h-9 w-9 lg:h-10 lg:w-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                      <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-blue-600" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-semibold text-gray-900 truncate">
+                                        {page.name}
+                                      </div>
+                                      <div className="text-xs text-gray-500 truncate max-w-xs lg:max-w-md">
+                                        {/* {page.url} */}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-3 lg:px-4 py-4 whitespace-nowrap">
+                                  <div className="text-lg lg:text-xl font-bold text-gray-900">
+                                    {page.avgTimeSpent}s
+                                  </div>
+                                </td>
+                                <td className="px-3 lg:px-4 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {page.totalViews.toLocaleString()}
+                                  </div>
+                                </td>
+                                <td className="px-3 lg:px-4 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                      isAboveAverage
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {isAboveAverage
+                                      ? "Above Average"
+                                      : "Below Average"}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* View All Button */}
                 {pageTimeAnalysis.allPages.length > 5 && (
-                  <div className="mt-4 text-center">
+                  <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-center">
                     <button
                       onClick={handleShowPageTimeAnalysis}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors group"
                     >
-                      View all {pageTimeAnalysis.totalValidPages} pages →
+                      <span>
+                        {/* View all {pageTimeAnalysis.totalValidPages} pages */}
+                        View all pages
+                      </span>
+                      <svg
+                        className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
                     </button>
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
-              <Timer className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-900 font-semibold text-lg mb-2">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-6 sm:p-8 border border-gray-100 text-center">
+              <Timer className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-900 font-semibold text-base sm:text-lg mb-2">
                 Page Time Analysis Unavailable
               </p>
-              <p className="text-gray-600 mb-4">
+              <p className="text-sm sm:text-base text-gray-600 mb-4">
                 Collecting page analytics data...
               </p>
             </div>

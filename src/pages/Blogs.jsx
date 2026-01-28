@@ -294,7 +294,7 @@ export default function Blogs() {
 
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
-                  Blog Management
+                  Resha Insight Blogs
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 mt-0.5 truncate">
                   Manage your blog posts and content

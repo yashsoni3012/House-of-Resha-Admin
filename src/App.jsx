@@ -290,6 +290,7 @@ import OurStory from "./components/OurStory";
 import FloatingChatWidget from "./pages/FloatingChatWidget";
 
 import Analytics from "./pages/Analytics";
+import Slots from "./pages/Slots";
 
 /* ✅ React Query Client */
 const queryClient = new QueryClient({
@@ -340,6 +341,7 @@ const App = () => {
               <Route path="customers" element={<Customers />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="slots" element={<Slots />} />
 
               {/* products */}
               <Route path="fashion" element={<Products />} />
