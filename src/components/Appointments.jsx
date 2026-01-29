@@ -20,6 +20,7 @@ import {
   Tag,
   Shield,
 } from "lucide-react";
+import axios from "axios";
 
 // Stats Card Component
 const StatsCard = ({ icon: Icon, label, value, color }) => (
@@ -42,12 +43,12 @@ function Notification({ message, type, onClose }) {
     <div className="fixed top-4 right-4 z-50 animate-slide-in">
       <div
         className={`px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 ${
-          type === 'success'
-            ? 'bg-green-500 text-white'
-            : 'bg-red-500 text-white'
+          type === "success"
+            ? "bg-green-500 text-white"
+            : "bg-red-500 text-white"
         }`}
       >
-        {type === 'success' ? (
+        {type === "success" ? (
           <CheckCircle size={24} />
         ) : (
           <AlertCircle size={24} />
@@ -64,35 +65,79 @@ function Notification({ message, type, onClose }) {
   );
 }
 
-// API Client
+// API Client - UPDATED with Axios
 class AppointmentsAPI {
-  constructor(baseURL = 'https://api.houseofresha.com') {
-    this.baseURL = baseURL;
+  constructor(baseURL = "https://api.houseofresha.com") {
+    this.axios = axios.create({
+      baseURL,
+      timeout: 10000,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
   }
 
   async getAllAppointments() {
-    const response = await fetch(`${this.baseURL}/appointments`);
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+    try {
+      const response = await this.axios.get("/appointments");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch appointments",
+      );
     }
-    return response.json();
   }
 
   async updateAppointmentStatus(id, status) {
-    const response = await fetch(`${this.baseURL}/appointment/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `HTTP Error: ${response.status}`);
+    // Ensure status is valid
+    const validStatuses = ["booked", "cancelled", "completed"];
+    if (!validStatuses.includes(status)) {
+      throw new Error(
+        `Invalid status: ${status}. Must be one of: ${validStatuses.join(", ")}`,
+      );
     }
-    
-    return response.json();
+
+    try {
+      const response = await this.axios.patch(`/appointments/${id}`, {
+        status,
+      });
+      console.log("Update response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+
+      // Enhanced error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to update appointment status";
+
+      throw new Error(
+        `HTTP ${error.response?.status || "Network Error"}: ${errorMessage}`,
+      );
+    }
+  }
+
+  // Test function to debug API
+  async testUpdateAPI(id) {
+    try {
+      const response = await this.axios.patch(`/appointments/${id}`, {
+        status: "cancelled",
+      });
+      console.log("Test API response:", response);
+      return {
+        status: response.status,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Test API error:", error);
+      throw error;
+    }
   }
 }
 
@@ -100,11 +145,18 @@ const api = new AppointmentsAPI();
 
 // Status Change Modal
 function StatusModal({ appointment, isOpen, onClose, onConfirm }) {
-  const statuses = [
-    { value: 'booked', label: 'Booked', color: 'bg-blue-100 text-blue-800' },
-    { value: 'confirmed', label: 'Confirmed', color: 'bg-green-100 text-green-800' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
-    { value: 'completed', label: 'Completed', color: 'bg-purple-100 text-purple-800' },
+  const validStatuses = [
+    { value: "booked", label: "Booked", color: "bg-blue-100 text-blue-800" },
+    {
+      value: "cancelled",
+      label: "Cancelled",
+      color: "bg-red-100 text-red-800",
+    },
+    {
+      value: "completed",
+      label: "Completed",
+      color: "bg-purple-100 text-purple-800",
+    },
   ];
 
   if (!isOpen) return null;
@@ -117,22 +169,27 @@ function StatusModal({ appointment, isOpen, onClose, onConfirm }) {
             <Edit2 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">Update Appointment Status</h3>
+            <h3 className="font-bold text-gray-900">
+              Update Appointment Status
+            </h3>
             <p className="text-sm text-gray-600">
-              Current Status: <span className="font-semibold capitalize">{appointment.status}</span>
+              Current Status:{" "}
+              <span className="font-semibold capitalize">
+                {appointment?.status || "N/A"}
+              </span>
             </p>
           </div>
         </div>
 
         <div className="space-y-2 mb-6">
-          {statuses.map((status) => (
+          {validStatuses.map((status) => (
             <button
               key={status.value}
               onClick={() => onConfirm(status.value)}
-              disabled={appointment.status === status.value}
+              disabled={appointment?.status === status.value}
               className={`w-full py-3 px-4 rounded-lg font-semibold transition ${
-                appointment.status === status.value
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                appointment?.status === status.value
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : `${status.color} hover:opacity-90`
               }`}
             >
@@ -158,12 +215,28 @@ function StatusModal({ appointment, isOpen, onClose, onConfirm }) {
 function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
   if (!isOpen) return null;
 
+  // Get status color based on valid statuses
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "booked":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
           <div className="flex justify-between items-center gap-4">
-            <h2 className="text-xl font-bold text-gray-900">Appointment Details</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Appointment Details
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -183,13 +256,16 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
               </h3>
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Name:</span> {appointment.customerName}
+                  <span className="font-medium">Name:</span>{" "}
+                  {appointment.customerName || "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Email:</span> {appointment.customerEmail}
+                  <span className="font-medium">Email:</span>{" "}
+                  {appointment.customerEmail || "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Phone:</span> {appointment.customerPhone}
+                  <span className="font-medium">Phone:</span>{" "}
+                  {appointment.customerPhone || "N/A"}
                 </p>
               </div>
             </div>
@@ -201,20 +277,19 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
               </h3>
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Date:</span> {appointment.date}
+                  <span className="font-medium">Date:</span>{" "}
+                  {appointment.date || "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Time:</span> {appointment.time}
+                  <span className="font-medium">Time:</span>{" "}
+                  {appointment.time || "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Status:</span> 
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold capitalize ${
-                    appointment.status === 'booked' ? 'bg-blue-100 text-blue-800' :
-                    appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-purple-100 text-purple-800'
-                  }`}>
-                    {appointment.status}
+                  <span className="font-medium">Status:</span>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold capitalize ${getStatusColor(appointment.status)}`}
+                  >
+                    {appointment.status || "N/A"}
                   </span>
                 </p>
               </div>
@@ -232,16 +307,20 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
           {/* Service Details */}
           {appointment.service && (
             <div className="bg-purple-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-700 mb-2">Service Details</h3>
+              <h3 className="font-semibold text-gray-700 mb-2">
+                Service Details
+              </h3>
               <div className="space-y-2">
                 {appointment.service.name && (
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">Service:</span> {appointment.service.name}
+                    <span className="font-medium">Service:</span>{" "}
+                    {appointment.service.name}
                   </p>
                 )}
                 {appointment.service.price && (
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">Price:</span> ₹{appointment.service.price}
+                    <span className="font-medium">Price:</span> ₹
+                    {appointment.service.price}
                   </p>
                 )}
               </div>
@@ -251,10 +330,15 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
           {/* Meta Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
             {appointment.createdAt && (
-              <p>Created: {new Date(appointment.createdAt).toLocaleDateString()}</p>
+              <p>
+                Created: {new Date(appointment.createdAt).toLocaleDateString()}
+              </p>
             )}
             {appointment.updatedAt && (
-              <p>Last Updated: {new Date(appointment.updatedAt).toLocaleDateString()}</p>
+              <p>
+                Last Updated:{" "}
+                {new Date(appointment.updatedAt).toLocaleDateString()}
+              </p>
             )}
           </div>
         </div>
@@ -277,8 +361,10 @@ const Appointments = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const statuses = ["All", "booked", "confirmed", "cancelled", "completed"];
+  // Valid statuses
+  const validStatuses = ["All", "booked", "cancelled", "completed"];
 
   useEffect(() => {
     fetchAppointments();
@@ -288,7 +374,7 @@ const Appointments = () => {
     filterAppointments();
   }, [appointments, searchQuery, selectedStatus]);
 
-  const showNotification = (message, type = 'success') => {
+  const showNotification = (message, type = "success") => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
   };
@@ -298,11 +384,21 @@ const Appointments = () => {
       setLoading(true);
       setError(null);
       const data = await api.getAllAppointments();
-      
+
       // Transform data if needed
-      const appointmentsArray = Array.isArray(data) ? data : data.appointments || [];
-      setAppointments(appointmentsArray);
-      showNotification('Appointments loaded successfully');
+      const appointmentsArray = Array.isArray(data)
+        ? data
+        : data.appointments || [];
+
+      // Filter out appointments with invalid statuses
+      const validAppointments = appointmentsArray.filter(
+        (app) =>
+          validStatuses.includes(app.status?.toLowerCase()) ||
+          validStatuses[0] === "All",
+      );
+
+      setAppointments(validAppointments);
+      showNotification("Appointments loaded successfully");
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setError("Failed to load appointments. Please try again.");
@@ -317,39 +413,109 @@ const Appointments = () => {
 
     // Filter by status
     if (selectedStatus !== "All") {
-      filtered = filtered.filter(app => app.status === selectedStatus);
+      filtered = filtered.filter(
+        (app) => app.status?.toLowerCase() === selectedStatus.toLowerCase(),
+      );
     }
 
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
-        app =>
+        (app) =>
           app.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          app.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          app.customerPhone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          app.date?.toLowerCase().includes(searchQuery.toLowerCase())
+          app.customerEmail
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          app.customerPhone
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          app.date?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
     setFilteredAppointments(filtered);
   };
 
+  // Handle status update
   const handleUpdateStatus = async (newStatus) => {
     if (!selectedAppointment) return;
 
+    setUpdatingStatus(true);
     try {
-      await api.updateAppointmentStatus(selectedAppointment._id || selectedAppointment.id, newStatus);
-      
+      // Get appointment ID (try both _id and id)
+      const appointmentId = selectedAppointment._id || selectedAppointment.id;
+
+      if (!appointmentId) {
+        throw new Error("Appointment ID not found");
+      }
+
+      console.log(`Updating appointment ID: ${appointmentId}`);
+      console.log(`New status: ${newStatus}`);
+
+      // Send PATCH request using Axios
+      const result = await api.updateAppointmentStatus(
+        appointmentId,
+        newStatus,
+      );
+
+      console.log("Update successful, result:", result);
+
       // Update local state
-      setAppointments(prev => prev.map(app => 
-        app._id === selectedAppointment._id ? { ...app, status: newStatus } : app
-      ));
-      
+      setAppointments((prev) =>
+        prev.map((app) => {
+          const appId = app._id || app.id;
+          if (appId === appointmentId) {
+            return {
+              ...app,
+              status: newStatus,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return app;
+        }),
+      );
+
       setShowStatusModal(false);
       setSelectedAppointment(null);
       showNotification(`Appointment status updated to ${newStatus}`);
     } catch (error) {
-      showNotification(error.message, "error");
+      console.error("Error updating appointment status:", error);
+
+      // Show specific error message
+      let errorMessage = error.message;
+
+      showNotification(errorMessage, "error");
+
+      // Refresh appointments to get latest data
+      fetchAppointments();
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  // Test function to debug API
+  const testAPIUpdate = async () => {
+    if (appointments.length > 0) {
+      const firstAppointment = appointments[0];
+      const testId = firstAppointment._id || firstAppointment.id;
+      if (testId) {
+        console.log("Testing API with ID:", testId);
+        try {
+          const result = await api.testUpdateAPI(testId);
+          console.log("Test result:", result);
+          showNotification(
+            `Test API response: ${result.status}`,
+            result.status === 200 ? "success" : "error",
+          );
+        } catch (error) {
+          console.error("Test failed:", error);
+          showNotification(`Test failed: ${error.message}`, "error");
+        }
+      } else {
+        showNotification("No appointment ID found for testing", "error");
+      }
+    } else {
+      showNotification("No appointments available for testing", "error");
     }
   };
 
@@ -364,19 +530,38 @@ const Appointments = () => {
   };
 
   const handleLoadMore = () => {
-    setVisibleCount(prev => prev + 6);
+    setVisibleCount((prev) => prev + 6);
   };
 
   // Calculate stats
   const totalAppointments = appointments.length;
-  const bookedCount = appointments.filter(app => app.status === 'booked').length;
-  const confirmedCount = appointments.filter(app => app.status === 'confirmed').length;
-  const cancelledCount = appointments.filter(app => app.status === 'cancelled').length;
-  const completedCount = appointments.filter(app => app.status === 'completed').length;
+  const bookedCount = appointments.filter(
+    (app) => app.status?.toLowerCase() === "booked",
+  ).length;
+  const cancelledCount = appointments.filter(
+    (app) => app.status?.toLowerCase() === "cancelled",
+  ).length;
+  const completedCount = appointments.filter(
+    (app) => app.status?.toLowerCase() === "completed",
+  ).length;
 
   // Get appointments to display
   const appointmentsToDisplay = filteredAppointments.slice(0, visibleCount);
   const hasMoreAppointments = visibleCount < filteredAppointments.length;
+
+  // Get status color for appointment card
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "booked":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -410,9 +595,18 @@ const Appointments = () => {
 
             {/* Right Section */}
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0 w-full sm:w-auto">
+              {/* Debug button - remove in production */}
+              <button
+                onClick={testAPIUpdate}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base whitespace-nowrap"
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden xs:inline">Test API</span>
+              </button>
+
               <button
                 onClick={fetchAppointments}
-                disabled={loading}
+                disabled={loading || updatingStatus}
                 className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw
@@ -427,7 +621,7 @@ const Appointments = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0">
           <StatsCard
             icon={Calendar}
             label="Total Appointments"
@@ -441,16 +635,16 @@ const Appointments = () => {
             color="bg-green-500"
           />
           <StatsCard
-            icon={AlertCircle}
-            label="Confirmed"
-            value={confirmedCount}
-            color="bg-yellow-500"
-          />
-          <StatsCard
             icon={XCircle}
             label="Cancelled"
             value={cancelledCount}
             color="bg-red-500"
+          />
+          <StatsCard
+            icon={AlertCircle}
+            label="Completed"
+            value={completedCount}
+            color="bg-purple-500"
           />
         </div>
 
@@ -516,7 +710,7 @@ const Appointments = () => {
                   showFilters ? "flex" : "hidden lg:flex"
                 }`}
               >
-                {statuses.map((status) => (
+                {validStatuses.map((status) => (
                   <button
                     key={status}
                     onClick={() => setSelectedStatus(status)}
@@ -539,7 +733,8 @@ const Appointments = () => {
             <span className="font-semibold text-blue-600">
               {appointmentsToDisplay.length}
             </span>{" "}
-            of <span className="font-semibold">{filteredAppointments.length}</span>{" "}
+            of{" "}
+            <span className="font-semibold">{filteredAppointments.length}</span>{" "}
             appointments
             {hasMoreAppointments && (
               <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">
@@ -582,7 +777,7 @@ const Appointments = () => {
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
               {appointmentsToDisplay.map((appointment) => (
                 <div
-                  key={appointment._id || appointment.id}
+                  key={appointment._id}
                   className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
                 >
                   {/* Appointment Header */}
@@ -590,19 +785,21 @@ const Appointments = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-bold text-gray-900 text-base sm:text-lg line-clamp-1">
-                          {appointment.customerName || 'Customer'}
+                          {appointment.customerName || "Customer"}
                         </h3>
-                        <p className="text-sm text-gray-600">{appointment.customerEmail}</p>
+
+                        {/* ✅ EMAIL FROM API */}
+                        <p className="text-sm text-gray-600 break-all">
+                          {appointment.user?.email || "No email available"}
+                        </p>
                       </div>
+
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${
-                          appointment.status === 'booked' ? 'bg-blue-100 text-blue-800' :
-                          appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                          appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}
+                        className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${getStatusColor(
+                          appointment.status,
+                        )}`}
                       >
-                        {appointment.status}
+                        {appointment.status || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -612,22 +809,32 @@ const Appointments = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="w-4 h-4" />
-                        <span>{appointment.date}</span>
+                        <span>{appointment.date || "No date"}</span>
                       </div>
+
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Clock className="w-4 h-4" />
-                        <span>{appointment.time}</span>
+                        <span>
+                          {appointment.startTime && appointment.endTime
+                            ? `${appointment.startTime} - ${appointment.endTime}`
+                            : "No time"}
+                        </span>
                       </div>
+
                       {appointment.customerPhone && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Phone className="w-4 h-4" />
                           <span>{appointment.customerPhone}</span>
                         </div>
                       )}
-                      {appointment.service?.name && (
+
+                      {/* ✅ PRODUCT NAME (instead of service) */}
+                      {appointment.product?.name && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Package className="w-4 h-4" />
-                          <span>{appointment.service.name}</span>
+                          <span className="line-clamp-1">
+                            {appointment.product.name}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -644,12 +851,19 @@ const Appointments = () => {
                         <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span className="hidden xs:inline">Details</span>
                       </button>
+
                       <button
                         onClick={() => handleStatusChangeClick(appointment)}
-                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-xs sm:text-sm"
+                        disabled={updatingStatus}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-xs sm:text-sm disabled:opacity-50"
                         title="Update status"
                       >
-                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        {updatingStatus &&
+                        selectedAppointment?._id === appointment._id ? (
+                          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        ) : (
+                          <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
                         <span className="hidden xs:inline">Status</span>
                       </button>
                     </div>
@@ -666,7 +880,8 @@ const Appointments = () => {
                   className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   <ChevronDown className="w-4 h-4" />
-                  Load More ({filteredAppointments.length - visibleCount} remaining)
+                  Load More ({filteredAppointments.length - visibleCount}{" "}
+                  remaining)
                 </button>
               </div>
             )}
@@ -677,7 +892,8 @@ const Appointments = () => {
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-2">
                   <span className="text-lg">🎉</span>
                   <span className="font-medium">
-                    All {filteredAppointments.length} appointments are displayed!
+                    All {filteredAppointments.length} appointments are
+                    displayed!
                   </span>
                 </div>
               </div>

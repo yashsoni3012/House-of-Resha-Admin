@@ -154,9 +154,8 @@ const SlotPost = () => {
       setError(null);
 
       // Redirect after delay
-      setTimeout(() => {
-        navigate("/slots");
-      }, 1500);
+      // 🚀 Instant redirect
+      navigate("/slots/manage");
     } catch (error) {
       console.error("Error creating slots:", error);
       setError(error.message || "Failed to create slots. Please try again.");
@@ -188,7 +187,7 @@ const SlotPost = () => {
 
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             {/* Left Section */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -196,9 +195,7 @@ const SlotPost = () => {
                 onClick={() => navigate("/slots")}
                 className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Back to slots"
-              >
-                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
+              ></button>
               <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
                 <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
@@ -215,7 +212,7 @@ const SlotPost = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           {/* Form Header */}
           <div className="border-b border-gray-200 p-6">
