@@ -1368,23 +1368,6 @@ const AnalyticsDashboard = () => {
                 />
               </div>
 
-              {/* Top Pages Chart */}
-              <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <BarChart3 className="text-blue-600" size={18} />
-                    <span>Top Pages by Average Time</span>
-                  </h3>
-                  <div className="text-xs sm:text-sm text-gray-600">
-                    Top {pageTimeAnalysis.allPages.length} of{" "}
-                    {pageTimeAnalysis.totalValidPages} pages
-                  </div>
-                </div>
-                <div className="h-64 sm:h-80">
-                  <TopPagesChart />
-                </div>
-              </div>
-
               {/* Top Pages List */}
               <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
