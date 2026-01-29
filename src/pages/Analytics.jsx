@@ -142,6 +142,11 @@ const fetchUserData = async () => {
   return userMap;
 };
 
+// Add this API fetch function for traffic flow
+const fetchTrafficFlow = async () => {
+  return fetchWithRetry("https://api.houseofresha.com/traffic-flow");
+};
+
 // Utility function for page friendly names
 const getPageFriendlyName = (url) => {
   if (!url || typeof url !== "string") {
@@ -278,6 +283,12 @@ const AnalyticsDashboard = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [pageTimeAnalysis, setPageTimeAnalysis] = useState(null);
   const [showPageTimeModal, setShowPageTimeModal] = useState(false);
+
+  // Add these state variables for traffic flow
+  const [trafficData, setTrafficData] = useState(null);
+  const [showTrafficModal, setShowTrafficModal] = useState(false);
+  const [trafficLoading, setTrafficLoading] = useState(false);
+  const [trafficError, setTrafficError] = useState(null);
 
   const searchTimeoutRef = useRef(null);
   const queryClient = useQueryClient();
@@ -560,6 +571,23 @@ const AnalyticsDashboard = () => {
 
   const handleShowPageTimeAnalysis = () => {
     setShowPageTimeModal(true);
+  };
+
+  // Add this function to handle traffic data fetching
+  const handleShowTrafficFlow = async () => {
+    setTrafficLoading(true);
+    setTrafficError(null);
+
+    try {
+      const data = await fetchTrafficFlow();
+      setTrafficData(data.data || data);
+      setShowTrafficModal(true);
+    } catch (error) {
+      setTrafficError(error);
+      console.error("Error fetching traffic data:", error);
+    } finally {
+      setTrafficLoading(false);
+    }
   };
 
   // Refresh all data
@@ -871,36 +899,275 @@ const AnalyticsDashboard = () => {
     );
   };
 
-  // Loading state
-  const isLoading = summaryLoading || pageAnalyticsLoading || logsLoading;
-
-  if (isLoading && !isPlaceholderData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
-          <p className="mt-6 text-gray-700 font-semibold text-lg">
-            Loading analytics dashboard...
+  // Traffic Analysis Modal Component
+  const TrafficAnalysisModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="text-purple-600 flex-shrink-0" size={20} />
+              <span className="truncate">User Traffic Flow Analysis</span>
+            </h2>
+            <button
+              onClick={() => setShowTrafficModal(false)}
+              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors p-2 rounded-lg flex-shrink-0"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Shows user navigation patterns between pages
           </p>
         </div>
-      </div>
-    );
-  }
 
-  // Error state - show first error encountered
-  const error = summaryError || pageAnalyticsError || logsError;
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-        <div className="max-w-7xl mx-auto">
-          <ErrorDisplay error={error} onRetry={handleRefreshAll} />
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            {trafficLoading ? (
+              <LoadingSpinner text="Loading traffic data..." />
+            ) : trafficError ? (
+              <ErrorDisplay
+                error={trafficError}
+                onRetry={handleShowTrafficFlow}
+              />
+            ) : trafficData && trafficData.length > 0 ? (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <p className="text-gray-600 text-sm font-medium">
+                      Total Transitions
+                    </p>
+                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                      {trafficData
+                        .reduce((sum, item) => sum + (item.transitions || 0), 0)
+                        .toLocaleString()}
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Page-to-page navigations
+                    </p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <p className="text-gray-600 text-sm font-medium">
+                      Unique Routes
+                    </p>
+                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                      {trafficData.length}
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Distinct navigation paths
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <p className="text-gray-600 text-sm font-medium">
+                      Avg Transition Time
+                    </p>
+                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                      {(
+                        trafficData.reduce(
+                          (sum, item) => sum + (item.avgTimeSpent || 0),
+                          0,
+                        ) / trafficData.length
+                      ).toFixed(2)}
+                      s
+                    </h3>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Average per route
+                    </p>
+                  </div>
+                </div>
+
+                {/* Traffic Flow Table */}
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Traffic Flow Details
+                    </h3>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="block sm:hidden divide-y divide-gray-200">
+                    {trafficData.map((item, index) => (
+                      <div key={index} className="p-4 hover:bg-gray-50">
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="text-sm font-semibold text-gray-900 mb-1">
+                                {getPageFriendlyName(item.fromPage)} →{" "}
+                                {getPageFriendlyName(item.toPage)}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span className="truncate">
+                                  {item.fromPage}
+                                </span>
+                                <ChevronRight size={12} />
+                                <span className="truncate">{item.toPage}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">
+                                Transitions
+                              </p>
+                              <p className="text-lg font-bold text-purple-700">
+                                {item.transitions}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">
+                                Avg Time
+                              </p>
+                              <p className="text-lg font-bold text-blue-700">
+                                {item.avgTimeSpent}s
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            From Page
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            To Page
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Transitions
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            Avg Time (s)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {trafficData.map((item, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {getPageFriendlyName(item.fromPage)}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate max-w-xs">
+                                  {item.fromPage}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {getPageFriendlyName(item.toPage)}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate max-w-xs">
+                                  {item.toPage}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {item.transitions} transitions
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-lg font-bold text-gray-900">
+                                {item.avgTimeSpent}s
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Traffic Flow Insights */}
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity size={20} className="text-purple-600" />
+                    Traffic Flow Insights
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm font-medium text-gray-900 mb-2">
+                        Most Frequent Navigation
+                      </p>
+                      {(() => {
+                        const maxTransitions = Math.max(
+                          ...trafficData.map((item) => item.transitions),
+                        );
+                        const mostFrequent = trafficData.find(
+                          (item) => item.transitions === maxTransitions,
+                        );
+                        return mostFrequent ? (
+                          <div>
+                            <p className="text-lg font-bold text-purple-700">
+                              {mostFrequent.transitions} times
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {getPageFriendlyName(mostFrequent.fromPage)} →{" "}
+                              {getPageFriendlyName(mostFrequent.toPage)}
+                            </p>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm font-medium text-gray-900 mb-2">
+                        Longest Average Time
+                      </p>
+                      {(() => {
+                        const maxTime = Math.max(
+                          ...trafficData.map((item) => item.avgTimeSpent),
+                        );
+                        const longestTime = trafficData.find(
+                          (item) => item.avgTimeSpent === maxTime,
+                        );
+                        return longestTime ? (
+                          <div>
+                            <p className="text-lg font-bold text-blue-700">
+                              {longestTime.avgTimeSpent}s
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {getPageFriendlyName(longestTime.fromPage)} →{" "}
+                              {getPageFriendlyName(longestTime.toPage)}
+                            </p>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-900 font-semibold text-lg mb-2">
+                  No Traffic Data Available
+                </p>
+                <p className="text-gray-600">
+                  User traffic flow data is not available at the moment
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    );
-  }
-
-  const displayLogs = showSearchResults ? searchResults : detailedLogs;
-  const hasActiveFilters = searchTerm || selectedPage !== "all";
+    </div>
+  );
 
   // Page Time Analysis Modal Component
   const PageTimeAnalysisModal = () => (
@@ -1235,6 +1502,37 @@ const AnalyticsDashboard = () => {
     </div>
   );
 
+  // Loading state
+  const isLoading = summaryLoading || pageAnalyticsLoading || logsLoading;
+
+  if (isLoading && !isPlaceholderData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+          <p className="mt-6 text-gray-700 font-semibold text-lg">
+            Loading analytics dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state - show first error encountered
+  const error = summaryError || pageAnalyticsError || logsError;
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <ErrorDisplay error={error} onRetry={handleRefreshAll} />
+        </div>
+      </div>
+    );
+  }
+
+  const displayLogs = showSearchResults ? searchResults : detailedLogs;
+  const hasActiveFilters = searchTerm || selectedPage !== "all";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto">
@@ -1257,14 +1555,28 @@ const AnalyticsDashboard = () => {
                 </div>
               </div>
 
-              {/* Buttons Section */}
-              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 lg:flex-shrink-0">
+              {/* Buttons Section - Updated with User Traffic button */}
+              <div className="flex flex-row items-center gap-2 sm:gap-3">
+                <button
+                  onClick={handleShowTrafficFlow}
+                  disabled={trafficLoading}
+                  className="flex-1 sm:flex-initial px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {trafficLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <TrendingUp size={16} className="flex-shrink-0" />
+                  )}
+                  <span className="hidden xs:inline">User Traffic</span>
+                  <span className="xs:hidden">Traffic</span>
+                </button>
                 <button
                   onClick={handleShowPageTimeAnalysis}
-                  className="px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center justify-center gap-2 flex-1 xs:flex-initial whitespace-nowrap"
+                  className="flex-1 sm:flex-initial px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
                 >
-                  <Calculator size={16} />
-                  <span>Page Analysis</span>
+                  <Calculator size={16} className="flex-shrink-0" />
+                  <span className="hidden xs:inline">Page Analysis</span>
+                  <span className="xs:hidden">Analysis</span>
                 </button>
               </div>
             </div>
@@ -1577,10 +1889,7 @@ const AnalyticsDashboard = () => {
                       onClick={handleShowPageTimeAnalysis}
                       className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors group"
                     >
-                      <span>
-                        {/* View all {pageTimeAnalysis.totalValidPages} pages */}
-                        View all pages
-                      </span>
+                      <span>View all pages</span>
                       <svg
                         className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                         fill="none"
@@ -1717,6 +2026,9 @@ const AnalyticsDashboard = () => {
 
       {/* Page Time Analysis Modal */}
       {showPageTimeModal && <PageTimeAnalysisModal />}
+
+      {/* Traffic Analysis Modal */}
+      {showTrafficModal && <TrafficAnalysisModal />}
     </div>
   );
 };

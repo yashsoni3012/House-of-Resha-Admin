@@ -2614,7 +2614,6 @@
 // };
 
 // export default Slots;
-
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Clock, Calendar, PlusCircle, ListChecks } from "lucide-react";
@@ -2641,24 +2640,27 @@ const Slots = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Tabs Navigation */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex gap-6 overflow-x-auto">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <nav className="flex gap-3 sm:gap-6 overflow-x-auto scrollbar-hide">
             {navItems.map(({ label, path, icon: Icon }) => (
               <NavLink
                 key={path}
                 to={path}
                 end
                 className={({ isActive }) =>
-                  `flex items-center gap-2 py-4 border-b-2 font-medium transition-colors ${
+                  `flex items-center gap-1.5 sm:gap-2 py-3 sm:py-4 px-2 sm:px-0 border-b-2 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
                     isActive
                       ? "border-purple-600 text-purple-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
                   }`
                 }
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">{label}</span>
+                <span className="xs:hidden sm:hidden">
+                  {label.split(" ")[0]}
+                </span>
               </NavLink>
             ))}
           </nav>
@@ -2666,7 +2668,7 @@ const Slots = () => {
       </div>
 
       {/* Child Pages Render Here */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
         <Outlet />
       </div>
     </div>

@@ -115,8 +115,6 @@ const UserManagement = () => {
   // API fetch function
   const fetchUsers = async (url, isActive = true) => {
     try {
-      console.log(`Fetching from: ${url}`);
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
