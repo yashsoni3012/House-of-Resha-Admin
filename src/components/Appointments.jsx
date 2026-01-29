@@ -398,7 +398,7 @@ const Appointments = () => {
       );
 
       setAppointments(validAppointments);
-      showNotification("Appointments loaded successfully");
+      // showNotification("Appointments loaded successfully");
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setError("Failed to load appointments. Please try again.");

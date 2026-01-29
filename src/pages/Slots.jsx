@@ -2614,6 +2614,7 @@
 // };
 
 // export default Slots;
+
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Clock, Calendar, PlusCircle, ListChecks } from "lucide-react";
@@ -2668,7 +2669,7 @@ const Slots = () => {
       </div>
 
       {/* Child Pages Render Here */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto">
         <Outlet />
       </div>
     </div>

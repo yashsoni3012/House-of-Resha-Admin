@@ -382,7 +382,7 @@ const ManageSlots = () => {
         ...new Set(transformedSlots.map((s) => s.date).filter(Boolean)),
       ];
       setDates(uniqueDates);
-      showNotification("Slots loaded successfully");
+      // showNotification("Slots loaded successfully");
     } catch (error) {
       console.error("Error fetching slots:", error);
       setError("Failed to load slots. Please try again.");
@@ -518,7 +518,7 @@ const ManageSlots = () => {
 
             {/* Right Section */}
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0 w-full sm:w-auto">
-              <button
+              {/* <button
                 onClick={fetchSlots}
                 disabled={loading}
                 className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm sm:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
@@ -527,7 +527,7 @@ const ManageSlots = () => {
                   className={`w-4 h-4 flex-shrink-0 ${loading ? "animate-spin" : ""}`}
                 />
                 <span className="hidden xs:inline">Refresh</span>
-              </button>
+              </button> */}
 
               <button
                 onClick={() => navigate("/slots/create")}
@@ -542,7 +542,7 @@ const ManageSlots = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatsCard
