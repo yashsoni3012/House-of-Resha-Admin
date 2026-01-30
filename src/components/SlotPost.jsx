@@ -196,9 +196,7 @@ const SlotPost = () => {
                 className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Back to slots"
               ></button>
-              <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-              </div>
+              
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Create New Slots

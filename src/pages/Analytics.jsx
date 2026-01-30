@@ -69,26 +69,29 @@ const fetchWithRetry = async (url, options = {}, retries = 3) => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     } catch (error) {
       if (i === retries - 1) throw error;
       await new Promise((resolve) =>
         setTimeout(resolve, 1000 * Math.pow(2, i)),
-      ); // Exponential backoff
+      );
     }
   }
 };
 
 const fetchSummary = async () => {
-  return fetchWithRetry(`${BASE_URL}/summary`);
+  const data = await fetchWithRetry(`${BASE_URL}/summary`);
+  return data.data || data;
 };
 
 const fetchPageAnalytics = async () => {
-  return fetchWithRetry(`${BASE_URL}/`);
+  const data = await fetchWithRetry(`${BASE_URL}/`);
+  return data.data || data;
 };
 
 const fetchPageAnalyticsDetails = async () => {
-  return fetchWithRetry(`${BASE_URL}/pages`);
+  const data = await fetchWithRetry(`${BASE_URL}/pages`);
+  return data.data || data;
 };
 
 const fetchDetailedLogs = async ({ pageNo = 1, selectedPage = "all" }) => {
@@ -142,9 +145,56 @@ const fetchUserData = async () => {
   return userMap;
 };
 
-// Add this API fetch function for traffic flow
+// Traffic flow API functions
 const fetchTrafficFlow = async () => {
-  return fetchWithRetry("https://api.houseofresha.com/traffic-flow");
+  try {
+    const data = await fetchWithRetry(
+      "https://api.houseofresha.com/traffic-flow",
+    );
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data && data.data && Array.isArray(data.data)) {
+      return data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching traffic flow:", error);
+    return [];
+  }
+};
+
+const fetchEntryTraffic = async (page) => {
+  try {
+    const response = await fetchWithRetry(
+      `https://api.houseofresha.com/traffic-flow/entry?page=${encodeURIComponent(page)}`,
+    );
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response && response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching entry traffic:", error);
+    return [];
+  }
+};
+
+const fetchExitTraffic = async (page) => {
+  try {
+    const response = await fetchWithRetry(
+      `https://api.houseofresha.com/traffic-flow/exit?page=${encodeURIComponent(page)}`,
+    );
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response && response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching exit traffic:", error);
+    return [];
+  }
 };
 
 // Utility function for page friendly names
@@ -153,11 +203,10 @@ const getPageFriendlyName = (url) => {
     return "Unknown Page";
   }
 
-  // Remove query parameters and hash
   const cleanUrl = url.split("?")[0].split("#")[0];
 
   const pageNames = {
-    "/": "Home Page",
+    "/": "Login Page",
     "/home": "Home Page",
     "/app/home": "App Home",
     "/app": "App",
@@ -196,7 +245,6 @@ const getPageFriendlyName = (url) => {
   if (cleanUrl.includes("/user/")) return "User Profile";
   if (cleanUrl.includes("/category/")) return "Category Page";
 
-  // Extract last meaningful part of the URL
   const parts = cleanUrl.split("/").filter(Boolean);
   if (parts.length === 0) return "Home Page";
 
@@ -284,16 +332,20 @@ const AnalyticsDashboard = () => {
   const [pageTimeAnalysis, setPageTimeAnalysis] = useState(null);
   const [showPageTimeModal, setShowPageTimeModal] = useState(false);
 
-  // Add these state variables for traffic flow
   const [trafficData, setTrafficData] = useState(null);
   const [showTrafficModal, setShowTrafficModal] = useState(false);
   const [trafficLoading, setTrafficLoading] = useState(false);
   const [trafficError, setTrafficError] = useState(null);
+  const [selectedTrafficPage, setSelectedTrafficPage] = useState(null);
+  const [entryTrafficData, setEntryTrafficData] = useState(null);
+  const [exitTrafficData, setExitTrafficData] = useState(null);
+  const [entryLoading, setEntryLoading] = useState(false);
+  const [exitLoading, setExitLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const searchTimeoutRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // TanStack Query hooks with proper error handling
   const {
     data: summary,
     isLoading: summaryLoading,
@@ -346,7 +398,7 @@ const AnalyticsDashboard = () => {
     queryKey: ["allLogs"],
     queryFn: fetchAllLogs,
     staleTime: 2 * 60 * 1000,
-    enabled: false, // Only fetch when needed
+    enabled: false,
   });
 
   const {
@@ -362,7 +414,6 @@ const AnalyticsDashboard = () => {
     retry: 2,
   });
 
-  // Calculate page time analysis with proper validation
   useEffect(() => {
     if (pageAnalyticsDetails && Array.isArray(pageAnalyticsDetails)) {
       const validPages = pageAnalyticsDetails.filter(
@@ -375,14 +426,12 @@ const AnalyticsDashboard = () => {
       );
 
       if (validPages.length > 0) {
-        // Calculate averages
         const totalTime = validPages.reduce(
           (sum, page) => sum + page.avgTimeSpent,
           0,
         );
         const simpleAverage = totalTime / validPages.length;
 
-        // Calculate weighted average
         const totalWeightedTime = validPages.reduce(
           (sum, page) => sum + page.avgTimeSpent * (page.totalViews || 1),
           0,
@@ -394,7 +443,6 @@ const AnalyticsDashboard = () => {
         const weightedAverage =
           totalViews > 0 ? totalWeightedTime / totalViews : simpleAverage;
 
-        // Find extremes
         let highestPage = validPages[0];
         let lowestPage = validPages[0];
 
@@ -407,7 +455,6 @@ const AnalyticsDashboard = () => {
           }
         });
 
-        // Prepare data for charts
         const allPages = validPages
           .map((page) => ({
             name: getPageFriendlyName(page.page),
@@ -443,12 +490,10 @@ const AnalyticsDashboard = () => {
     }
   }, [pageAnalyticsDetails]);
 
-  // Derived data
   const detailedLogs = logsData?.logs || [];
   const totalPages = logsData?.totalPages || 1;
   const totalLogsCount = logsData?.total || 0;
 
-  // Prefetch next page
   useEffect(() => {
     if (currentPage < totalPages) {
       queryClient.prefetchQuery({
@@ -459,7 +504,15 @@ const AnalyticsDashboard = () => {
     }
   }, [currentPage, totalPages, selectedPage, queryClient]);
 
-  // Handle page filter change
+  useEffect(() => {
+    if (showTrafficModal) {
+      setSelectedTrafficPage(null);
+      setEntryTrafficData(null);
+      setExitTrafficData(null);
+      setActiveTab("overview");
+    }
+  }, [showTrafficModal]);
+
   const handlePageFilterChange = (e) => {
     const pageValue = e.target.value;
     setSelectedPage(pageValue);
@@ -468,7 +521,6 @@ const AnalyticsDashboard = () => {
     setSearchResults([]);
   };
 
-  // Enhanced search function
   const searchUsers = useCallback(
     (term) => {
       if (!term.trim()) {
@@ -490,7 +542,6 @@ const AnalyticsDashboard = () => {
         const pageName = getPageFriendlyName(log.page);
         const userId = log.userId || "";
 
-        // Check for matches in relevant fields
         const searchFields = [
           userName.toLowerCase(),
           userEmail.toLowerCase(),
@@ -517,7 +568,6 @@ const AnalyticsDashboard = () => {
         }
       });
 
-      // Remove duplicates based on unique combination
       const uniqueResults = Array.from(
         new Map(
           results.map((item) => [
@@ -542,7 +592,6 @@ const AnalyticsDashboard = () => {
     return "other";
   };
 
-  // Debounced search handler
   const handleSearchChange = useCallback(
     (e) => {
       const term = e.target.value;
@@ -573,24 +622,52 @@ const AnalyticsDashboard = () => {
     setShowPageTimeModal(true);
   };
 
-  // Add this function to handle traffic data fetching
   const handleShowTrafficFlow = async () => {
     setTrafficLoading(true);
     setTrafficError(null);
 
     try {
       const data = await fetchTrafficFlow();
-      setTrafficData(data.data || data);
+      setTrafficData(data);
       setShowTrafficModal(true);
     } catch (error) {
       setTrafficError(error);
       console.error("Error fetching traffic data:", error);
+      setTrafficData([]);
     } finally {
       setTrafficLoading(false);
     }
   };
 
-  // Refresh all data
+  const handlePageTrafficDetails = async (pageUrl) => {
+    setSelectedTrafficPage(pageUrl);
+    setEntryTrafficData(null);
+    setExitTrafficData(null);
+    setActiveTab("entry");
+
+    setEntryLoading(true);
+    try {
+      const entryData = await fetchEntryTraffic(pageUrl);
+      setEntryTrafficData(entryData);
+    } catch (error) {
+      console.error("Error fetching entry traffic:", error);
+      setEntryTrafficData([]);
+    } finally {
+      setEntryLoading(false);
+    }
+
+    setExitLoading(true);
+    try {
+      const exitData = await fetchExitTraffic(pageUrl);
+      setExitTrafficData(exitData);
+    } catch (error) {
+      console.error("Error fetching exit traffic:", error);
+      setExitTrafficData([]);
+    } finally {
+      setExitLoading(false);
+    }
+  };
+
   const handleRefreshAll = () => {
     queryClient.invalidateQueries();
     setSearchTerm("");
@@ -600,7 +677,6 @@ const AnalyticsDashboard = () => {
     setSearchResults([]);
   };
 
-  // StatCard component
   const StatCard = ({ title, value, icon: Icon, color, subtitle, onClick }) => {
     const formattedValue =
       typeof value === "number" ? value.toLocaleString() : value || "0";
@@ -633,7 +709,6 @@ const AnalyticsDashboard = () => {
     );
   };
 
-  // PageTimeStatCard component
   const PageTimeStatCard = ({
     title,
     value,
@@ -676,7 +751,6 @@ const AnalyticsDashboard = () => {
     </div>
   );
 
-  // Pagination component
   const Pagination = () => {
     const generatePageNumbers = () => {
       const pages = [];
@@ -782,7 +856,6 @@ const AnalyticsDashboard = () => {
     );
   };
 
-  // Helper functions
   const getUserName = (userId) => {
     if (!userId) return "Anonymous User";
     return userData?.[userId]?.name || "Anonymous User";
@@ -793,7 +866,6 @@ const AnalyticsDashboard = () => {
     return userData?.[userId]?.email || null;
   };
 
-  // Highlight search matches
   const highlightMatch = (text, searchTerm) => {
     if (!searchTerm || !text || typeof text !== "string") return text;
 
@@ -819,7 +891,6 @@ const AnalyticsDashboard = () => {
     return text;
   };
 
-  // Prepare unique pages for filter dropdown
   const uniquePages = useMemo(() => {
     if (!pageAnalytics || !Array.isArray(pageAnalytics)) return [];
 
@@ -838,7 +909,6 @@ const AnalyticsDashboard = () => {
       .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName));
   }, [pageAnalytics]);
 
-  // Prepare data for charts
   const userDistributionData = summary
     ? [
         {
@@ -854,7 +924,6 @@ const AnalyticsDashboard = () => {
       ]
     : [];
 
-  // Top Pages Chart Component
   const TopPagesChart = () => {
     if (!pageTimeAnalysis || pageTimeAnalysis.allPages.length === 0) {
       return (
@@ -899,269 +968,730 @@ const AnalyticsDashboard = () => {
     );
   };
 
-  // Traffic Analysis Modal Component
   const TrafficAnalysisModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header - Fixed */}
         <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="text-purple-600 flex-shrink-0" size={20} />
-              <span className="truncate">User Traffic Flow Analysis</span>
-            </h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2 truncate">
+                <TrendingUp
+                  className="text-purple-600 flex-shrink-0"
+                  size={20}
+                />
+                <span className="truncate">
+                  {selectedTrafficPage
+                    ? `Traffic Analysis: ${getPageFriendlyName(selectedTrafficPage)}`
+                    : "User Traffic Flow Analysis"}
+                </span>
+              </h2>
+              <p className="text-sm text-gray-600 mt-2 truncate">
+                {selectedTrafficPage
+                  ? `Analyzing traffic for ${selectedTrafficPage}`
+                  : "Shows user navigation patterns between pages"}
+              </p>
+            </div>
             <button
               onClick={() => setShowTrafficModal(false)}
-              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors p-2 rounded-lg flex-shrink-0"
+              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors p-2 rounded-lg flex-shrink-0 ml-2"
               aria-label="Close modal"
             >
               <X size={20} />
             </button>
           </div>
-          <p className="text-sm text-gray-600 mt-2">
-            Shows user navigation patterns between pages
-          </p>
+
+          {selectedTrafficPage && (
+            <div className="mt-4 flex space-x-1">
+              <button
+                onClick={() => setActiveTab("entry")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "entry" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Entry Traffic
+              </button>
+              <button
+                onClick={() => setActiveTab("exit")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "exit" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Exit Traffic
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTrafficPage(null);
+                  setActiveTab("overview");
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "overview" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Back to Overview
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6">
-            {trafficLoading ? (
-              <LoadingSpinner text="Loading traffic data..." />
-            ) : trafficError ? (
-              <ErrorDisplay
-                error={trafficError}
-                onRetry={handleShowTrafficFlow}
-              />
-            ) : trafficData && trafficData.length > 0 ? (
+            {selectedTrafficPage ? (
               <div className="space-y-6">
-                {/* Summary Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                    <p className="text-gray-600 text-sm font-medium">
-                      Total Transitions
-                    </p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                      {trafficData
-                        .reduce((sum, item) => sum + (item.transitions || 0), 0)
-                        .toLocaleString()}
-                    </h3>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Page-to-page navigations
-                    </p>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <p className="text-gray-600 text-sm font-medium">
-                      Unique Routes
-                    </p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                      {trafficData.length}
-                    </h3>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Distinct navigation paths
-                    </p>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                    <p className="text-gray-600 text-sm font-medium">
-                      Avg Transition Time
-                    </p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                      {(
-                        trafficData.reduce(
-                          (sum, item) => sum + (item.avgTimeSpent || 0),
-                          0,
-                        ) / trafficData.length
-                      ).toFixed(2)}
-                      s
-                    </h3>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Average per route
-                    </p>
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-4 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {getPageFriendlyName(selectedTrafficPage)}
+                      </h3>
+                      <p className="text-sm text-gray-600 truncate max-w-2xl">
+                        {selectedTrafficPage}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Traffic Flow Table */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Traffic Flow Details
-                    </h3>
-                  </div>
+                {activeTab === "entry" && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        How Users Arrive at This Page
+                      </h3>
+                      <div className="text-sm text-gray-500">
+                        Entry Traffic Analysis
+                      </div>
+                    </div>
 
-                  {/* Mobile Card View */}
-                  <div className="block sm:hidden divide-y divide-gray-200">
-                    {trafficData.map((item, index) => (
-                      <div key={index} className="p-4 hover:bg-gray-50">
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-gray-900 mb-1">
-                                {getPageFriendlyName(item.fromPage)} →{" "}
-                                {getPageFriendlyName(item.toPage)}
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span className="truncate">
-                                  {item.fromPage}
-                                </span>
-                                <ChevronRight size={12} />
-                                <span className="truncate">{item.toPage}</span>
-                              </div>
-                            </div>
+                    {entryLoading ? (
+                      <LoadingSpinner text="Loading entry traffic data..." />
+                    ) : entryTrafficData && entryTrafficData.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Total Entry Visits
+                            </p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {entryTrafficData
+                                .reduce(
+                                  (sum, item) => sum + (item.visits || 0),
+                                  0,
+                                )
+                                .toLocaleString()}
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Total arrivals to this page
+                            </p>
+                          </div>
+                          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Direct Entries
+                            </p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {entryTrafficData
+                                .filter((item) => item.previousPage === null)
+                                .reduce(
+                                  (sum, item) => sum + (item.visits || 0),
+                                  0,
+                                )
+                                .toLocaleString()}
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Direct access/refresh
+                            </p>
+                          </div>
+                          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Avg Entry Time
+                            </p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {(() => {
+                                const totalVisits = entryTrafficData.reduce(
+                                  (sum, item) => sum + (item.visits || 0),
+                                  0,
+                                );
+                                const weightedTime = entryTrafficData.reduce(
+                                  (sum, item) =>
+                                    sum +
+                                    (item.avgTimeSpent || 0) *
+                                      (item.visits || 0),
+                                  0,
+                                );
+                                return totalVisits > 0
+                                  ? (weightedTime / totalVisits).toFixed(2)
+                                  : "0.00";
+                              })()}
+                              s
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Average time spent
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                            <h4 className="text-base font-semibold text-gray-900">
+                              Entry Sources
+                            </h4>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Where users came from before this page
+                            </p>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
-                            <div>
-                              <p className="text-xs text-gray-600 mb-1">
-                                Transitions
-                              </p>
-                              <p className="text-lg font-bold text-purple-700">
-                                {item.transitions}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 mb-1">
-                                Avg Time
-                              </p>
-                              <p className="text-lg font-bold text-blue-700">
-                                {item.avgTimeSpent}s
-                              </p>
-                            </div>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Source Page
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Entry Visits
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Avg Time on Source
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Entry Type
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {entryTrafficData
+                                  .sort(
+                                    (a, b) => (b.visits || 0) - (a.visits || 0),
+                                  )
+                                  .map((item, index) => (
+                                    <tr
+                                      key={index}
+                                      className="hover:bg-gray-50"
+                                    >
+                                      <td className="px-6 py-4">
+                                        <div className="min-w-0">
+                                          <p className="text-sm font-medium text-gray-900">
+                                            {item.previousPage === null
+                                              ? "Direct Entry/Refresh"
+                                              : getPageFriendlyName(
+                                                  item.previousPage,
+                                                )}
+                                          </p>
+                                          {item.previousPage && (
+                                            <p className="text-xs text-gray-500 truncate max-w-xs">
+                                              {item.previousPage}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                          {item.visits || 0} visits
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="text-lg font-bold text-gray-900">
+                                          {item.avgTimeSpent || 0}s
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                            item.previousPage === null
+                                              ? "bg-green-100 text-green-800"
+                                              : "bg-purple-100 text-purple-800"
+                                          }`}
+                                        >
+                                          {item.previousPage === null
+                                            ? "Direct"
+                                            : "Internal"}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-12">
+                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-900 font-semibold text-lg mb-2">
+                          No Entry Traffic Data
+                        </p>
+                        <p className="text-gray-600">
+                          No data available for how users arrive at this page
+                        </p>
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  {/* Desktop Table View */}
-                  <div className="hidden sm:block overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            From Page
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            To Page
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            Transitions
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            Avg Time (s)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {trafficData.map((item, index) => (
-                          <tr
-                            key={index}
-                            className="hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {getPageFriendlyName(item.fromPage)}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate max-w-xs">
-                                  {item.fromPage}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {getPageFriendlyName(item.toPage)}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate max-w-xs">
-                                  {item.toPage}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                {item.transitions} transitions
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-lg font-bold text-gray-900">
-                                {item.avgTimeSpent}s
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                {activeTab === "exit" && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Where Users Go From This Page
+                      </h3>
+                      <div className="text-sm text-gray-500">
+                        Exit Traffic Analysis
+                      </div>
+                    </div>
 
-                {/* Traffic Flow Insights */}
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Activity size={20} className="text-purple-600" />
-                    Traffic Flow Insights
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <p className="text-sm font-medium text-gray-900 mb-2">
-                        Most Frequent Navigation
-                      </p>
-                      {(() => {
-                        const maxTransitions = Math.max(
-                          ...trafficData.map((item) => item.transitions),
-                        );
-                        const mostFrequent = trafficData.find(
-                          (item) => item.transitions === maxTransitions,
-                        );
-                        return mostFrequent ? (
-                          <div>
-                            <p className="text-lg font-bold text-purple-700">
-                              {mostFrequent.transitions} times
+                    {exitLoading ? (
+                      <LoadingSpinner text="Loading exit traffic data..." />
+                    ) : exitTrafficData && exitTrafficData.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Total Exit Visits
                             </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {getPageFriendlyName(mostFrequent.fromPage)} →{" "}
-                              {getPageFriendlyName(mostFrequent.toPage)}
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {exitTrafficData
+                                .reduce(
+                                  (sum, item) => sum + (item.visits || 0),
+                                  0,
+                                )
+                                .toLocaleString()}
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Total exits from this page
                             </p>
                           </div>
-                        ) : null;
-                      })()}
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <p className="text-sm font-medium text-gray-900 mb-2">
-                        Longest Average Time
-                      </p>
-                      {(() => {
-                        const maxTime = Math.max(
-                          ...trafficData.map((item) => item.avgTimeSpent),
-                        );
-                        const longestTime = trafficData.find(
-                          (item) => item.avgTimeSpent === maxTime,
-                        );
-                        return longestTime ? (
-                          <div>
-                            <p className="text-lg font-bold text-blue-700">
-                              {longestTime.avgTimeSpent}s
+                          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Most Popular Exit
                             </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {getPageFriendlyName(longestTime.fromPage)} →{" "}
-                              {getPageFriendlyName(longestTime.toPage)}
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {(() => {
+                                const maxVisits = Math.max(
+                                  ...exitTrafficData.map(
+                                    (item) => item.visits || 0,
+                                  ),
+                                );
+                                const popularExit = exitTrafficData.find(
+                                  (item) => item.visits === maxVisits,
+                                );
+                                return popularExit ? popularExit.visits : 0;
+                              })()}
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Highest exit count
                             </p>
                           </div>
-                        ) : null;
-                      })()}
-                    </div>
+                          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                            <p className="text-gray-600 text-sm font-medium">
+                              Avg Exit Time
+                            </p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                              {(() => {
+                                const totalVisits = exitTrafficData.reduce(
+                                  (sum, item) => sum + (item.visits || 0),
+                                  0,
+                                );
+                                const weightedTime = exitTrafficData.reduce(
+                                  (sum, item) =>
+                                    sum +
+                                    (item.avgTimeSpent || 0) *
+                                      (item.visits || 0),
+                                  0,
+                                );
+                                return totalVisits > 0
+                                  ? (weightedTime / totalVisits).toFixed(2)
+                                  : "0.00";
+                              })()}
+                              s
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Average time before exit
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                            <h4 className="text-base font-semibold text-gray-900">
+                              Exit Destinations
+                            </h4>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Where users go after leaving this page
+                            </p>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Destination Page
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Exit Visits
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Avg Time on Page
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                    Exit Rate
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {exitTrafficData
+                                  .sort(
+                                    (a, b) => (b.visits || 0) - (a.visits || 0),
+                                  )
+                                  .map((item, index) => {
+                                    const totalExits = exitTrafficData.reduce(
+                                      (sum, i) => sum + (i.visits || 0),
+                                      0,
+                                    );
+                                    const exitRate =
+                                      totalExits > 0
+                                        ? (
+                                            ((item.visits || 0) / totalExits) *
+                                            100
+                                          ).toFixed(1)
+                                        : 0;
+
+                                    return (
+                                      <tr
+                                        key={index}
+                                        className="hover:bg-gray-50"
+                                      >
+                                        <td className="px-6 py-4">
+                                          <div className="min-w-0">
+                                            <p className="text-sm font-medium text-gray-900">
+                                              {getPageFriendlyName(
+                                                item.nextPage,
+                                              )}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate max-w-xs">
+                                              {item.nextPage}
+                                            </p>
+                                          </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                            {item.visits || 0} exits
+                                          </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                          <span className="text-lg font-bold text-gray-900">
+                                            {item.avgTimeSpent || 0}s
+                                          </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                          <div className="w-24">
+                                            <div className="flex items-center">
+                                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                                <div
+                                                  className="bg-purple-600 h-2 rounded-full"
+                                                  style={{
+                                                    width: `${Math.min(100, exitRate)}%`,
+                                                  }}
+                                                ></div>
+                                              </div>
+                                              <span className="ml-2 text-sm font-medium text-gray-700">
+                                                {exitRate}%
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-900 font-semibold text-lg mb-2">
+                          No Exit Traffic Data
+                        </p>
+                        <p className="text-gray-600">
+                          No data available for where users go from this page
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-900 font-semibold text-lg mb-2">
-                  No Traffic Data Available
-                </p>
-                <p className="text-gray-600">
-                  User traffic flow data is not available at the moment
-                </p>
-              </div>
+              <>
+                {trafficLoading ? (
+                  <LoadingSpinner text="Loading traffic data..." />
+                ) : trafficError ? (
+                  <ErrorDisplay
+                    error={trafficError}
+                    onRetry={handleShowTrafficFlow}
+                  />
+                ) : trafficData && trafficData.length > 0 ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <p className="text-gray-600 text-sm font-medium">
+                          Total Transitions
+                        </p>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                          {trafficData
+                            .reduce(
+                              (sum, item) => sum + (item.transitions || 0),
+                              0,
+                            )
+                            .toLocaleString()}
+                        </h3>
+                        <p className="text-gray-500 text-xs mt-1">
+                          Page-to-page navigations
+                        </p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <p className="text-gray-600 text-sm font-medium">
+                          Unique Routes
+                        </p>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                          {trafficData.length}
+                        </h3>
+                        <p className="text-gray-500 text-xs mt-1">
+                          Distinct navigation paths
+                        </p>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                        <p className="text-gray-600 text-sm font-medium">
+                          Avg Transition Time
+                        </p>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                          {(() => {
+                            const totalTransitions = trafficData.reduce(
+                              (sum, item) => sum + (item.transitions || 0),
+                              0,
+                            );
+                            const weightedTime = trafficData.reduce(
+                              (sum, item) =>
+                                sum +
+                                (item.avgTimeSpent || 0) *
+                                  (item.transitions || 0),
+                              0,
+                            );
+                            return totalTransitions > 0
+                              ? (weightedTime / totalTransitions).toFixed(2)
+                              : "0.00";
+                          })()}
+                          s
+                        </h3>
+                        <p className="text-gray-500 text-xs mt-1">
+                          Weighted average per transition
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Traffic Flow Overview
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Click on any page to see detailed entry/exit analysis
+                        </p>
+                      </div>
+
+                      <div className="block sm:hidden divide-y divide-gray-200">
+                        {trafficData.map((item, index) => (
+                          <div
+                            key={index}
+                            className="p-4 hover:bg-gray-50 cursor-pointer"
+                            onClick={() =>
+                              handlePageTrafficDetails(item.toPage)
+                            }
+                          >
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                                    {getPageFriendlyName(item.fromPage)} →{" "}
+                                    {getPageFriendlyName(item.toPage)}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span className="truncate">
+                                      {item.fromPage}
+                                    </span>
+                                    <ChevronRight size={12} />
+                                    <span className="truncate">
+                                      {item.toPage}
+                                    </span>
+                                  </div>
+                                </div>
+                                <ChevronRight
+                                  size={16}
+                                  className="text-gray-400"
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">
+                                    Transitions
+                                  </p>
+                                  <p className="text-lg font-bold text-purple-700">
+                                    {item.transitions || 0}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">
+                                    Avg Time
+                                  </p>
+                                  <p className="text-lg font-bold text-blue-700">
+                                    {item.avgTimeSpent || 0}s
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="hidden sm:block overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                From Page
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                To Page
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                Transitions
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                Avg Time (s)
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {trafficData.map((item, index) => (
+                              <tr
+                                key={index}
+                                className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                onClick={() =>
+                                  handlePageTrafficDetails(item.toPage)
+                                }
+                              >
+                                <td className="px-6 py-4">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {getPageFriendlyName(item.fromPage)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate max-w-xs">
+                                      {item.fromPage}
+                                    </p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {getPageFriendlyName(item.toPage)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate max-w-xs">
+                                      {item.toPage}
+                                    </p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    {item.transitions || 0} transitions
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="text-lg font-bold text-gray-900">
+                                    {item.avgTimeSpent || 0}s
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="text-purple-600 hover:text-purple-800 font-medium text-sm">
+                                    Analyze →
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Activity size={20} className="text-purple-600" />
+                        Traffic Flow Insights
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <p className="text-sm font-medium text-gray-900 mb-2">
+                            Most Frequent Navigation
+                          </p>
+                          {(() => {
+                            const maxTransitions = Math.max(
+                              ...trafficData.map(
+                                (item) => item.transitions || 0,
+                              ),
+                            );
+                            const mostFrequent = trafficData.find(
+                              (item) => item.transitions === maxTransitions,
+                            );
+                            return mostFrequent ? (
+                              <div>
+                                <p className="text-lg font-bold text-purple-700">
+                                  {mostFrequent.transitions} times
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {getPageFriendlyName(mostFrequent.fromPage)} →{" "}
+                                  {getPageFriendlyName(mostFrequent.toPage)}
+                                </p>
+                              </div>
+                            ) : null;
+                          })()}
+                        </div>
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <p className="text-sm font-medium text-gray-900 mb-2">
+                            Longest Average Time
+                          </p>
+                          {(() => {
+                            const maxTime = Math.max(
+                              ...trafficData.map(
+                                (item) => item.avgTimeSpent || 0,
+                              ),
+                            );
+                            const longestTime = trafficData.find(
+                              (item) => item.avgTimeSpent === maxTime,
+                            );
+                            return longestTime ? (
+                              <div>
+                                <p className="text-lg font-bold text-blue-700">
+                                  {longestTime.avgTimeSpent}s
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {getPageFriendlyName(longestTime.fromPage)} →{" "}
+                                  {getPageFriendlyName(longestTime.toPage)}
+                                </p>
+                              </div>
+                            ) : null;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-900 font-semibold text-lg mb-2">
+                      No Traffic Data Available
+                    </p>
+                    <p className="text-gray-600">
+                      User traffic flow data is not available at the moment
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1169,11 +1699,9 @@ const AnalyticsDashboard = () => {
     </div>
   );
 
-  // Page Time Analysis Modal Component
   const PageTimeAnalysisModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header - Fixed */}
         <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -1190,14 +1718,11 @@ const AnalyticsDashboard = () => {
           </div>
         </div>
 
-        {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6">
             {pageTimeAnalysis ? (
               <div className="space-y-4 sm:space-y-6">
-                {/* Summary Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {/* Simple Average */}
                   <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
                     <p className="text-gray-600 text-xs sm:text-sm font-medium">
                       Simple Average
@@ -1210,7 +1735,6 @@ const AnalyticsDashboard = () => {
                     </p>
                   </div>
 
-                  {/* Weighted Average */}
                   <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
                     <p className="text-gray-600 text-xs sm:text-sm font-medium">
                       Weighted Average
@@ -1224,7 +1748,6 @@ const AnalyticsDashboard = () => {
                     </p>
                   </div>
 
-                  {/* Highest Average */}
                   <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
                     <p className="text-gray-600 text-xs sm:text-sm font-medium">
                       Highest Average
@@ -1237,7 +1760,6 @@ const AnalyticsDashboard = () => {
                     </p>
                   </div>
 
-                  {/* Lowest Average */}
                   <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
                     <p className="text-gray-600 text-xs sm:text-sm font-medium">
                       Lowest Average
@@ -1251,9 +1773,7 @@ const AnalyticsDashboard = () => {
                   </div>
                 </div>
 
-                {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  {/* Top Pages Chart */}
                   <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
                     <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
                       Top Pages by Average Time
@@ -1263,13 +1783,11 @@ const AnalyticsDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Performance Metrics */}
                   <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
                     <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
                       Performance Metrics
                     </h3>
                     <div className="space-y-4 sm:space-y-6">
-                      {/* Simple Average Progress */}
                       <div>
                         <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                           <span className="text-gray-600 font-medium">
@@ -1303,7 +1821,6 @@ const AnalyticsDashboard = () => {
                         </div>
                       </div>
 
-                      {/* Weighted Average Progress */}
                       <div>
                         <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                           <span className="text-gray-600 font-medium">
@@ -1338,7 +1855,6 @@ const AnalyticsDashboard = () => {
                         </div>
                       </div>
 
-                      {/* Info Card */}
                       <div className="mt-3 sm:mt-4 lg:mt-6 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg border border-blue-100">
                         <div className="flex items-start gap-2 sm:gap-3">
                           <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -1360,7 +1876,6 @@ const AnalyticsDashboard = () => {
                   </div>
                 </div>
 
-                {/* Detailed Table */}
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                   <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">
@@ -1368,7 +1883,6 @@ const AnalyticsDashboard = () => {
                     </h3>
                   </div>
 
-                  {/* Mobile Card View */}
                   <div className="block sm:hidden divide-y divide-gray-200">
                     {pageTimeAnalysis.allPages.map((page, index) => {
                       const isAboveAverage =
@@ -1415,7 +1929,6 @@ const AnalyticsDashboard = () => {
                     })}
                   </div>
 
-                  {/* Desktop Table View */}
                   <div className="hidden sm:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-100">
@@ -1502,7 +2015,6 @@ const AnalyticsDashboard = () => {
     </div>
   );
 
-  // Loading state
   const isLoading = summaryLoading || pageAnalyticsLoading || logsLoading;
 
   if (isLoading && !isPlaceholderData) {
@@ -1518,7 +2030,6 @@ const AnalyticsDashboard = () => {
     );
   }
 
-  // Error state - show first error encountered
   const error = summaryError || pageAnalyticsError || logsError;
   if (error) {
     return (
@@ -1536,11 +2047,9 @@ const AnalyticsDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <div className="bg-white shadow-sm p-4 sm:p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Header Section */}
               <div className="flex items-start sm:items-center gap-3">
                 <div className="flex w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-100 items-center justify-center flex-shrink-0">
                   <Activity className="text-blue-600" size={20} />
@@ -1555,7 +2064,6 @@ const AnalyticsDashboard = () => {
                 </div>
               </div>
 
-              {/* Buttons Section - Updated with User Traffic button */}
               <div className="flex flex-row items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleShowTrafficFlow}
@@ -1583,7 +2091,6 @@ const AnalyticsDashboard = () => {
           </div>
         </div>
 
-        {/* Summary Stats */}
         {summary && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1619,9 +2126,7 @@ const AnalyticsDashboard = () => {
           </div>
         )}
 
-        {/* PAGE TIME ANALYSIS SECTION */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-          {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex-1">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -1646,14 +2151,13 @@ const AnalyticsDashboard = () => {
 
           {pageTimeAnalysis ? (
             <>
-              {/* Page Time Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <PageTimeStatCard
                   title="Simple Average"
                   value={pageTimeAnalysis.simpleAverage}
                   icon={Calculator}
                   color="#3b82f6"
-                  subtitle={`Across ${pageTimeAnalysis.totalValidPages} pages`}
+                  // subtitle={`Across ${pageTimeAnalysis.totalValidPages} pages`}
                 />
                 <PageTimeStatCard
                   title="Weighted Average"
@@ -1680,7 +2184,6 @@ const AnalyticsDashboard = () => {
                 />
               </div>
 
-              {/* Top Pages List */}
               <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
@@ -1691,7 +2194,6 @@ const AnalyticsDashboard = () => {
                   </div>
                 </div>
 
-                {/* Mobile Card View */}
                 <div className="block sm:hidden space-y-3">
                   {pageTimeAnalysis.allPages.slice(0, 5).map((page, index) => {
                     const Icon = getPageIcon(page.name);
@@ -1703,7 +2205,6 @@ const AnalyticsDashboard = () => {
                         key={index}
                         className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                       >
-                        {/* Header with Icon and Page Info */}
                         <div className="flex items-start gap-3 mb-3">
                           <div className="flex-shrink-0 h-9 w-9 bg-blue-100 rounded-lg flex items-center justify-center">
                             <Icon className="h-5 w-5 text-blue-600" />
@@ -1727,7 +2228,6 @@ const AnalyticsDashboard = () => {
                           </span>
                         </div>
 
-                        {/* Stats Row */}
                         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
                           <div>
                             <div className="text-xs text-gray-600 mb-1">
@@ -1751,7 +2251,6 @@ const AnalyticsDashboard = () => {
                   })}
                 </div>
 
-                {/* Tablet View (Compact Cards) */}
                 <div className="hidden sm:block md:hidden space-y-2">
                   {pageTimeAnalysis.allPages.slice(0, 5).map((page, index) => {
                     const Icon = getPageIcon(page.name);
@@ -1802,7 +2301,6 @@ const AnalyticsDashboard = () => {
                   })}
                 </div>
 
-                {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto -mx-2 sm:mx-0">
                   <div className="inline-block min-w-full align-middle">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -1882,7 +2380,6 @@ const AnalyticsDashboard = () => {
                   </div>
                 </div>
 
-                {/* View All Button */}
                 {pageTimeAnalysis.allPages.length > 5 && (
                   <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-center">
                     <button
@@ -1922,7 +2419,6 @@ const AnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* User Details Modal */}
       {userDetailsModalOpen && selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -1940,7 +2436,6 @@ const AnalyticsDashboard = () => {
               </div>
 
               <div className="space-y-6">
-                {/* User Info */}
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <User size={20} />
@@ -1970,7 +2465,6 @@ const AnalyticsDashboard = () => {
                   </div>
                 </div>
 
-                {/* Activity Details */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Activity Details
@@ -2024,10 +2518,8 @@ const AnalyticsDashboard = () => {
         </div>
       )}
 
-      {/* Page Time Analysis Modal */}
       {showPageTimeModal && <PageTimeAnalysisModal />}
 
-      {/* Traffic Analysis Modal */}
       {showTrafficModal && <TrafficAnalysisModal />}
     </div>
   );

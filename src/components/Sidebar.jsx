@@ -4,18 +4,16 @@ import logoImg from "../../src/assets/resha-logo.png";
 
 import {
   X,
-  Home,
-  Package,
-  ShoppingCart,
-  Users,
-  LogOut,
-  AlertTriangle,
-  Image,
   BookOpen,
   ChevronRight,
-  FileText,
-  BarChart3,
-  CalendarClock
+  CalendarClock,
+  LayoutDashboard,
+  ShoppingBag,
+  Megaphone,
+  ClipboardList,
+  UserCheck,
+  UserCog,
+  LineChart,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,14 +25,14 @@ const Sidebar = ({ isOpen, toggle }) => {
 
   /* ================= MENU ITEMS ================= */
   const menuItems = [
-    { path: "/dashboard", name: "Dashboard", icon: Home },
-    { path: "/fashion", name: "Products", icon: Package },
-    { path: "/banners", name: "Banner", icon: Image },
+    { path: "/dashboard", name: "Dashboard", icon: LayoutDashboard },
+    { path: "/fashion", name: "Products", icon: ShoppingBag },
+    { path: "/banners", name: "Banner", icon: Megaphone },
     { path: "/blogs", name: "Blogs", icon: BookOpen },
-    { path: "/orders", name: "Orders", icon: ShoppingCart },
-    { path: "/customers", name: "Customers", icon: Users },
-    { path: "/users", name: "Users", icon: Users },
-    { path: "/analytics", name: "Analytics", icon: BarChart3 },
+    { path: "/orders", name: "Orders", icon: ClipboardList },
+    { path: "/customers", name: "Customers", icon: UserCheck },
+    { path: "/users", name: "Users", icon: UserCog },
+    { path: "/analytics", name: "Analytics", icon: LineChart },
     { path: "/slots", name: "Slots", icon: CalendarClock },
 
     /* ✅ ONLY ONE CONTENT ENTRY */

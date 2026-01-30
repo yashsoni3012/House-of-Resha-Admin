@@ -580,9 +580,7 @@ const Appointments = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             {/* Left Section */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-              </div>
+              
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Appointments
