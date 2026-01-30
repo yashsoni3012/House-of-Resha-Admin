@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { io } from "socket.io-client";
 
 const BASE_URL = "https://api.houseofresha.com";
@@ -30,6 +36,31 @@ export default function AdminChatApp() {
   const isInitialLoadRef = useRef(true);
   const inputRef = useRef(null);
 
+  /* -------------------- SORT CONVERSATIONS -------------------- */
+  const sortConversationsByRecent = useCallback((conversationsList) => {
+    return [...conversationsList].sort((a, b) => {
+      // Get timestamp from last message or conversation creation
+      const getTimestamp = (conv) => {
+        if (conv.lastMessage?.createdAt) {
+          return new Date(conv.lastMessage.createdAt).getTime();
+        }
+        if (conv.updatedAt) {
+          return new Date(conv.updatedAt).getTime();
+        }
+        if (conv.createdAt) {
+          return new Date(conv.createdAt).getTime();
+        }
+        return 0;
+      };
+
+      const aTime = getTimestamp(a);
+      const bTime = getTimestamp(b);
+      
+      // Most recent first (descending order)
+      return bTime - aTime;
+    });
+  }, []);
+
   /* -------------------- SOCKET -------------------- */
   const socket = useMemo(() => {
     if (!activeConversation) return null;
@@ -40,7 +71,7 @@ export default function AdminChatApp() {
         role,
         toUser: activeConversation.user._id,
       },
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -55,11 +86,17 @@ export default function AdminChatApp() {
       try {
         const res = await fetch(`${BASE_URL}/conversations`);
         const data = await res.json();
-        
+
         if (data.success) {
-          setConversations(data.conversations);
+          // Sort conversations by most recent
+          const sortedConversations = sortConversationsByRecent(data.conversations);
+          setConversations(sortedConversations);
+          
           // Calculate total unread
-          const unread = data.conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+          const unread = sortedConversations.reduce(
+            (sum, conv) => sum + (conv.unreadCount || 0),
+            0,
+          );
           setTotalUnread(unread);
         }
       } catch (error) {
@@ -71,66 +108,73 @@ export default function AdminChatApp() {
     // Refresh conversations every 30 seconds
     const interval = setInterval(fetchConversations, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sortConversationsByRecent]);
 
   /* -------------------- FETCH HISTORY -------------------- */
-  const loadHistory = useCallback(async (conversationId, before = null) => {
-    if (isLoadingHistory) return;
-    
-    setIsLoadingHistory(true);
-    
-    try {
-      let url = `${BASE_URL}/history?conversationId=${conversationId}`;
-      if (before) url += `&before=${before}`;
+  const loadHistory = useCallback(
+    async (conversationId, before = null) => {
+      if (isLoadingHistory) return;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      setIsLoadingHistory(true);
 
-      if (data.success) {
-        if (before) {
-          const scrollHeight = messagesBoxRef.current?.scrollHeight || 0;
-          setMessages((prev) => [...data.messages, ...prev]);
-          
-          setTimeout(() => {
-            if (messagesBoxRef.current) {
-              const newScrollHeight = messagesBoxRef.current.scrollHeight;
-              messagesBoxRef.current.scrollTop = newScrollHeight - scrollHeight;
-            }
-          }, 0);
-        } else {
-          setMessages(data.messages);
-          isInitialLoadRef.current = true;
+      try {
+        let url = `${BASE_URL}/history?conversationId=${conversationId}`;
+        if (before) url += `&before=${before}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success) {
+          if (before) {
+            const scrollHeight = messagesBoxRef.current?.scrollHeight || 0;
+            setMessages((prev) => [...data.messages, ...prev]);
+
+            setTimeout(() => {
+              if (messagesBoxRef.current) {
+                const newScrollHeight = messagesBoxRef.current.scrollHeight;
+                messagesBoxRef.current.scrollTop =
+                  newScrollHeight - scrollHeight;
+              }
+            }, 0);
+          } else {
+            setMessages(data.messages);
+            isInitialLoadRef.current = true;
+          }
+
+          setNextCursor(data.nextCursor);
+          setHasMore(Boolean(data.nextCursor));
         }
-
-        setNextCursor(data.nextCursor);
-        setHasMore(Boolean(data.nextCursor));
+      } catch (error) {
+        console.error("Error loading history:", error);
+      } finally {
+        setIsLoadingHistory(false);
       }
-    } catch (error) {
-      console.error("Error loading history:", error);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, [isLoadingHistory]);
+    },
+    [isLoadingHistory],
+  );
 
   /* -------------------- SELECT CONVERSATION -------------------- */
   const handleSelectConversation = async (conv) => {
     if (activeConversation?._id === conv._id) return;
-    
+
     // Reset sending state when switching conversations
     setIsSending(false);
-    
+
     setActiveConversation(conv);
     setMessages([]);
     setNextCursor(null);
     setHasMore(true);
     isInitialLoadRef.current = true;
     await loadHistory(conv._id);
-    
+
     // Mark as read
-    setConversations((prev) =>
-      prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c))
-    );
-    setTotalUnread(prev => Math.max(0, prev - (conv.unreadCount || 0)));
+    setConversations((prev) => {
+      const updated = prev.map((c) => 
+        c._id === conv._id ? { ...c, unreadCount: 0 } : c
+      );
+      return sortConversationsByRecent(updated);
+    });
+    setTotalUnread((prev) => Math.max(0, prev - (conv.unreadCount || 0)));
   };
 
   /* -------------------- SOCKET EVENTS -------------------- */
@@ -151,37 +195,51 @@ export default function AdminChatApp() {
 
     socket.on("new-message", (msg) => {
       console.log("New message received:", msg);
-      
+
       setMessages((prev) => {
         // Remove any temporary/optimistic message with same text
-        const filtered = prev.filter(m => 
-          !(m._id.toString().startsWith('temp-') && m.text === msg.text && m.senderRole === msg.senderRole)
+        const filtered = prev.filter(
+          (m) =>
+            !(
+              m._id.toString().startsWith("temp-") &&
+              m.text === msg.text &&
+              m.senderRole === msg.senderRole
+            ),
         );
-        
+
         // Check if real message already exists
-        const exists = filtered.some(m => m._id === msg._id);
+        const exists = filtered.some((m) => m._id === msg._id);
         if (exists) return prev;
-        
+
         return [...filtered, msg];
       });
 
-      setConversations((prev) =>
-        prev.map((c) => {
+      setConversations((prev) => {
+        const updated = prev.map((c) => {
           if (c._id === msg.conversation) {
             const isFromOther = msg.senderRole !== role;
             return {
               ...c,
               lastMessage: msg,
-              unreadCount: isFromOther && activeConversation?._id !== c._id ? (c.unreadCount || 0) + 1 : 0,
+              unreadCount:
+                isFromOther && activeConversation?._id !== c._id
+                  ? (c.unreadCount || 0) + 1
+                  : 0,
             };
           }
           return c;
-        })
-      );
+        });
+        
+        // Sort conversations after update
+        return sortConversationsByRecent(updated);
+      });
 
       // Update total unread
-      if (msg.senderRole !== role && activeConversation?._id !== msg.conversation) {
-        setTotalUnread(prev => prev + 1);
+      if (
+        msg.senderRole !== role &&
+        activeConversation?._id !== msg.conversation
+      ) {
+        setTotalUnread((prev) => prev + 1);
       }
     });
 
@@ -202,7 +260,8 @@ export default function AdminChatApp() {
     });
 
     socket.on("typing", ({ from, isTyping, conversationId }) => {
-      if (!activeConversation || conversationId !== activeConversation._id) return;
+      if (!activeConversation || conversationId !== activeConversation._id)
+        return;
 
       setTypingUsers((prev) => ({
         ...prev,
@@ -226,11 +285,18 @@ export default function AdminChatApp() {
       if (activeConversation && msg.conversation === activeConversation._id) {
         setIsSending(false);
       }
+      
+      // Update conversation with the real message and sort
+      setConversations((prev) => {
+        const updated = prev.map((c) =>
+          c._id === msg.conversation ? { ...c, lastMessage: msg } : c
+        );
+        return sortConversationsByRecent(updated);
+      });
     });
 
     socket.on("error", (error) => {
       console.error("Socket error:", error);
-      // Only update isSending if this error is from the active conversation
       setIsSending(false);
     });
 
@@ -247,14 +313,14 @@ export default function AdminChatApp() {
       socket.off("error");
       socket.disconnect();
     };
-  }, [socket, activeConversation, role]);
+  }, [socket, activeConversation, role, sortConversationsByRecent]);
 
   /* -------------------- INFINITE SCROLL -------------------- */
   const handleScroll = useCallback(() => {
     if (!messagesBoxRef.current) return;
-    
+
     const { scrollTop } = messagesBoxRef.current;
-    
+
     if (scrollTop === 0 && hasMore && nextCursor && !isLoadingHistory) {
       loadHistory(activeConversation._id, nextCursor);
     }
@@ -263,13 +329,13 @@ export default function AdminChatApp() {
   /* -------------------- SEND MESSAGE -------------------- */
   const handleSend = async (e) => {
     e.preventDefault();
-    
+
     if (!msgInput.trim() || !socket || isSending) return;
 
     const messageText = msgInput.trim();
     const tempId = `temp-${Date.now()}`;
-    
-    // Optimistically add message to UI immediately
+
+    // Create the optimistic message with current timestamp
     const optimisticMessage = {
       _id: tempId,
       text: messageText,
@@ -283,6 +349,24 @@ export default function AdminChatApp() {
     setMsgInput("");
     setIsSending(true);
 
+    // IMMEDIATELY update conversation list to show this chat at top
+    setConversations((prev) => {
+      const updated = prev.map((c) => {
+        if (c._id === activeConversation._id) {
+          return {
+            ...c,
+            lastMessage: {
+              text: messageText,
+              createdAt: new Date().toISOString(),
+              senderRole: role,
+            },
+          };
+        }
+        return c;
+      });
+      return sortConversationsByRecent(updated);
+    });
+
     try {
       socket.emit("send-message", {
         text: messageText,
@@ -294,26 +378,29 @@ export default function AdminChatApp() {
         isTyping: false,
       });
 
-      // Update conversation list with last message
-      setConversations((prev) =>
-        prev.map((c) =>
-          c._id === activeConversation._id
-            ? { ...c, lastMessage: { text: messageText } }
-            : c
-        )
-      );
-
       // Focus back on input
       setTimeout(() => {
         inputRef.current?.focus();
       }, 0);
-      
     } catch (error) {
       console.error("Error sending message:", error);
       // Remove optimistic message on error
-      setMessages((prev) => prev.filter(m => m._id !== tempId));
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
       setMsgInput(messageText);
       setIsSending(false);
+      
+      // Revert conversation list on error
+      setConversations((prev) => {
+        const updated = prev.map((c) => {
+          if (c._id === activeConversation._id) {
+            // Remove the optimistic last message
+            const { lastMessage, ...rest } = c;
+            return rest;
+          }
+          return c;
+        });
+        return sortConversationsByRecent(updated);
+      });
     }
   };
 
@@ -327,9 +414,12 @@ export default function AdminChatApp() {
     } else if (!isLoadingHistory && messages.length > 0) {
       const container = messagesBoxRef.current;
       if (container) {
-        const isNearBottom = 
-          container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-        
+        const isNearBottom =
+          container.scrollHeight -
+            container.scrollTop -
+            container.clientHeight <
+          150;
+
         if (isNearBottom) {
           bottomRef.current?.scrollIntoView({ behavior: "smooth" });
         }
@@ -378,15 +468,10 @@ export default function AdminChatApp() {
   }, [msgInput, socket, activeConversation]);
 
   /* -------------------- CLEANUP WHEN SWITCHING CONVERSATIONS -------------------- */
-  // Add a cleanup effect to reset sending state when socket changes
   useEffect(() => {
-    // Reset sending state when socket changes (new conversation selected)
     setIsSending(false);
-    
-    // Also clear any typing indicators for previous conversation
     setTypingUsers({});
     
-    // Clear any typing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
@@ -400,13 +485,13 @@ export default function AdminChatApp() {
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const handleBack = () => {
     setActiveConversation(null);
     setMessages([]);
-    setIsSending(false); // Reset sending state when going back
+    setIsSending(false);
   };
 
   /* -------------------- UI -------------------- */
