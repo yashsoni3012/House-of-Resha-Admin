@@ -36,6 +36,11 @@ export default function AdminChatApp() {
   const isInitialLoadRef = useRef(true);
   const inputRef = useRef(null);
 
+  // Responsive state
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const isMobile = windowWidth <= 768;
+  const isSmallMobile = windowWidth <= 480;
+
   /* -------------------- SORT CONVERSATIONS -------------------- */
   const sortConversationsByRecent = useCallback((conversationsList) => {
     return [...conversationsList].sort((a, b) => {
@@ -55,7 +60,7 @@ export default function AdminChatApp() {
 
       const aTime = getTimestamp(a);
       const bTime = getTimestamp(b);
-      
+
       // Most recent first (descending order)
       return bTime - aTime;
     });
@@ -80,6 +85,16 @@ export default function AdminChatApp() {
     return newSocket;
   }, [activeConversation]);
 
+  /* -------------------- WINDOW RESIZE HANDLER -------------------- */
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   /* -------------------- FETCH CONVERSATIONS -------------------- */
   useEffect(() => {
     const fetchConversations = async () => {
@@ -89,9 +104,11 @@ export default function AdminChatApp() {
 
         if (data.success) {
           // Sort conversations by most recent
-          const sortedConversations = sortConversationsByRecent(data.conversations);
+          const sortedConversations = sortConversationsByRecent(
+            data.conversations,
+          );
           setConversations(sortedConversations);
-          
+
           // Calculate total unread
           const unread = sortedConversations.reduce(
             (sum, conv) => sum + (conv.unreadCount || 0),
@@ -169,8 +186,8 @@ export default function AdminChatApp() {
 
     // Mark as read
     setConversations((prev) => {
-      const updated = prev.map((c) => 
-        c._id === conv._id ? { ...c, unreadCount: 0 } : c
+      const updated = prev.map((c) =>
+        c._id === conv._id ? { ...c, unreadCount: 0 } : c,
       );
       return sortConversationsByRecent(updated);
     });
@@ -229,7 +246,7 @@ export default function AdminChatApp() {
           }
           return c;
         });
-        
+
         // Sort conversations after update
         return sortConversationsByRecent(updated);
       });
@@ -285,11 +302,11 @@ export default function AdminChatApp() {
       if (activeConversation && msg.conversation === activeConversation._id) {
         setIsSending(false);
       }
-      
+
       // Update conversation with the real message and sort
       setConversations((prev) => {
         const updated = prev.map((c) =>
-          c._id === msg.conversation ? { ...c, lastMessage: msg } : c
+          c._id === msg.conversation ? { ...c, lastMessage: msg } : c,
         );
         return sortConversationsByRecent(updated);
       });
@@ -388,7 +405,7 @@ export default function AdminChatApp() {
       setMessages((prev) => prev.filter((m) => m._id !== tempId));
       setMsgInput(messageText);
       setIsSending(false);
-      
+
       // Revert conversation list on error
       setConversations((prev) => {
         const updated = prev.map((c) => {
@@ -471,7 +488,7 @@ export default function AdminChatApp() {
   useEffect(() => {
     setIsSending(false);
     setTypingUsers({});
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
@@ -494,6 +511,27 @@ export default function AdminChatApp() {
     setIsSending(false);
   };
 
+  /* -------------------- RESPONSIVE DIMENSIONS -------------------- */
+  // Calculate responsive dimensions
+  const chatModalWidth = isSmallMobile
+    ? "calc(100vw - 20px)"
+    : isMobile
+      ? "350px"
+      : "400px";
+  const chatModalHeight = isSmallMobile
+    ? "calc(100vh - 40px)"
+    : isMobile
+      ? "500px"
+      : "600px";
+  const chatModalRight = isSmallMobile ? "10px" : "20px";
+  const chatModalBottom = isSmallMobile ? "10px" : "20px";
+
+  const floatingButtonSize = isMobile ? "50px" : "60px";
+  const floatingButtonRight = isMobile ? "15px" : "20px";
+  const floatingButtonBottom = isMobile ? "15px" : "20px";
+
+  const maxMessageWidth = isSmallMobile ? "85%" : "75%";
+
   /* -------------------- UI -------------------- */
   return (
     <>
@@ -503,10 +541,10 @@ export default function AdminChatApp() {
           onClick={() => setIsOpen(true)}
           style={{
             position: "fixed",
-            bottom: 20,
-            right: 20,
-            width: 60,
-            height: 60,
+            bottom: floatingButtonBottom,
+            right: floatingButtonRight,
+            width: floatingButtonSize,
+            height: floatingButtonSize,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             border: "none",
@@ -515,7 +553,7 @@ export default function AdminChatApp() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 24,
+            fontSize: isMobile ? 20 : 24,
             color: "#fff",
             zIndex: 9999,
             transition: "all 0.3s ease",
@@ -539,12 +577,12 @@ export default function AdminChatApp() {
                 background: "#f44336",
                 color: "#fff",
                 borderRadius: "50%",
-                width: 24,
-                height: 24,
+                width: isMobile ? 20 : 24,
+                height: isMobile ? 20 : 24,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 12,
+                fontSize: isMobile ? 10 : 12,
                 fontWeight: "bold",
                 border: "2px solid #fff",
               }}
@@ -560,10 +598,14 @@ export default function AdminChatApp() {
         <div
           style={{
             position: "fixed",
-            bottom: 20,
-            right: 20,
-            width: 400,
-            height: 600,
+            top: isSmallMobile ? "10px" : "auto",
+            bottom: isSmallMobile ? "10px" : chatModalBottom,
+            right: isSmallMobile ? "10px" : chatModalRight,
+            left: isSmallMobile ? "10px" : "auto",
+            width: chatModalWidth,
+            height: chatModalHeight,
+            maxHeight: isSmallMobile ? "none" : chatModalHeight,
+            maxWidth: isSmallMobile ? "none" : chatModalWidth,
             background: "#fff",
             borderRadius: 12,
             boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
@@ -578,13 +620,22 @@ export default function AdminChatApp() {
             style={{
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               color: "#fff",
-              padding: 15,
+              padding: isSmallMobile ? "12px" : "15px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              minHeight: "50px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
               {activeConversation && (
                 <button
                   onClick={handleBack}
@@ -592,19 +643,29 @@ export default function AdminChatApp() {
                     background: "rgba(255,255,255,0.2)",
                     border: "none",
                     color: "#fff",
-                    width: 30,
-                    height: 30,
+                    width: isSmallMobile ? 28 : 30,
+                    height: isSmallMobile ? 28 : 30,
                     borderRadius: "50%",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
                   ←
                 </button>
               )}
-              <h3 style={{ margin: 0, fontSize: 16 }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: isSmallMobile ? 14 : 16,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  flex: 1,
+                }}
+              >
                 {activeConversation
                   ? activeConversation.user.firstName || "User"
                   : "Chats"}
@@ -616,14 +677,16 @@ export default function AdminChatApp() {
                 background: "rgba(255,255,255,0.2)",
                 border: "none",
                 color: "#fff",
-                width: 30,
-                height: 30,
+                width: isSmallMobile ? 28 : 30,
+                height: isSmallMobile ? 28 : 30,
                 borderRadius: "50%",
                 cursor: "pointer",
-                fontSize: 18,
+                fontSize: isSmallMobile ? 16 : 18,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
+                marginLeft: 10,
               }}
             >
               ×
@@ -637,9 +700,10 @@ export default function AdminChatApp() {
               {conversations.length === 0 ? (
                 <div
                   style={{
-                    padding: 40,
+                    padding: isSmallMobile ? 20 : 40,
                     textAlign: "center",
                     color: "#999",
+                    fontSize: isSmallMobile ? 14 : 16,
                   }}
                 >
                   No conversations yet
@@ -650,7 +714,7 @@ export default function AdminChatApp() {
                     key={conv._id}
                     onClick={() => handleSelectConversation(conv)}
                     style={{
-                      padding: 15,
+                      padding: isSmallMobile ? "12px" : "15px",
                       cursor: "pointer",
                       borderBottom: "1px solid #eee",
                       transition: "background 0.2s",
@@ -668,17 +732,26 @@ export default function AdminChatApp() {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        marginBottom: 5,
+                        marginBottom: isSmallMobile ? 3 : 5,
+                        gap: "8px",
                       }}
                     >
-                      <strong style={{ fontSize: 14 }}>
+                      <strong
+                        style={{
+                          fontSize: isSmallMobile ? 13 : 14,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          flex: 1,
+                        }}
+                      >
                         {conv.user.firstName || "User"}
                         {isOnline(conv.user._id) && (
                           <span
                             style={{
                               color: "#4caf50",
                               marginLeft: 5,
-                              fontSize: 12,
+                              fontSize: isSmallMobile ? 10 : 12,
                             }}
                           >
                             ●
@@ -692,11 +765,12 @@ export default function AdminChatApp() {
                             background: "#f44336",
                             color: "#fff",
                             borderRadius: "50%",
-                            padding: "2px 6px",
-                            fontSize: 11,
+                            padding: isSmallMobile ? "1px 4px" : "2px 6px",
+                            fontSize: isSmallMobile ? 10 : 11,
                             fontWeight: "bold",
-                            minWidth: 18,
+                            minWidth: isSmallMobile ? 16 : 18,
                             textAlign: "center",
+                            flexShrink: 0,
                           }}
                         >
                           {conv.unreadCount}
@@ -706,7 +780,7 @@ export default function AdminChatApp() {
 
                     <div
                       style={{
-                        fontSize: 12,
+                        fontSize: isSmallMobile ? 11 : 12,
                         color: "#666",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -725,9 +799,9 @@ export default function AdminChatApp() {
               {activeConversation && isOnline(activeConversation.user._id) && (
                 <div
                   style={{
-                    padding: "5px 15px",
+                    padding: isSmallMobile ? "4px 12px" : "5px 15px",
                     background: "#e8f5e9",
-                    fontSize: 11,
+                    fontSize: isSmallMobile ? 10 : 11,
                     color: "#2e7d32",
                     textAlign: "center",
                   }}
@@ -743,7 +817,7 @@ export default function AdminChatApp() {
                 onScroll={handleScroll}
                 style={{
                   flex: 1,
-                  padding: 15,
+                  padding: isSmallMobile ? "10px" : "15px",
                   overflowY: "auto",
                   background: "#f0f2f5",
                   display: "flex",
@@ -752,7 +826,12 @@ export default function AdminChatApp() {
               >
                 {isLoadingHistory && (
                   <div
-                    style={{ textAlign: "center", padding: 10, color: "#666" }}
+                    style={{
+                      textAlign: "center",
+                      padding: isSmallMobile ? 8 : 10,
+                      color: "#666",
+                      fontSize: isSmallMobile ? 13 : 14,
+                    }}
                   >
                     Loading...
                   </div>
@@ -762,9 +841,10 @@ export default function AdminChatApp() {
                   <div
                     style={{
                       textAlign: "center",
-                      padding: 20,
+                      padding: isSmallMobile ? 15 : 20,
                       color: "#999",
                       margin: "auto",
+                      fontSize: isSmallMobile ? 14 : 16,
                     }}
                   >
                     No messages yet
@@ -787,9 +867,9 @@ export default function AdminChatApp() {
                         <div
                           style={{
                             textAlign: "center",
-                            fontSize: 10,
+                            fontSize: isSmallMobile ? 9 : 10,
                             color: "#999",
-                            margin: "10px 0",
+                            margin: "8px 0",
                           }}
                         >
                           {formatTime(msg.createdAt)}
@@ -799,20 +879,20 @@ export default function AdminChatApp() {
                       <div
                         style={{
                           textAlign: isAdmin ? "right" : "left",
-                          marginBottom: 8,
+                          marginBottom: isSmallMobile ? 6 : 8,
                         }}
                       >
                         <div
                           style={{
                             display: "inline-block",
-                            padding: "8px 12px",
+                            padding: isSmallMobile ? "6px 10px" : "8px 12px",
                             borderRadius: 12,
                             background: isAdmin ? "#667eea" : "#fff",
                             color: isAdmin ? "#fff" : "#000",
-                            maxWidth: "75%",
+                            maxWidth: maxMessageWidth,
                             wordWrap: "break-word",
                             boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                            fontSize: 14,
+                            fontSize: isSmallMobile ? 13 : 14,
                           }}
                         >
                           {msg.text && (
@@ -820,14 +900,22 @@ export default function AdminChatApp() {
                           )}
 
                           {msg.file && (
-                            <div style={{ marginTop: msg.text ? 8 : 0 }}>
+                            <div
+                              style={{
+                                marginTop: msg.text
+                                  ? isSmallMobile
+                                    ? 6
+                                    : 8
+                                  : 0,
+                              }}
+                            >
                               {isImage ? (
                                 <img
                                   src={`${BASE_URL}/${msg.file}`}
                                   alt="attachment"
                                   style={{
                                     maxWidth: "100%",
-                                    maxHeight: 200,
+                                    maxHeight: isSmallMobile ? 150 : 200,
                                     borderRadius: 8,
                                     display: "block",
                                   }}
@@ -845,6 +933,7 @@ export default function AdminChatApp() {
                                   style={{
                                     color: isAdmin ? "#fff" : "#667eea",
                                     textDecoration: "none",
+                                    fontSize: isSmallMobile ? 12 : 13,
                                   }}
                                 >
                                   📎 Download file
@@ -864,11 +953,12 @@ export default function AdminChatApp() {
               <form
                 onSubmit={handleSend}
                 style={{
-                  padding: 10,
+                  padding: isSmallMobile ? 8 : 10,
                   borderTop: "1px solid #ddd",
                   background: "#fff",
                   display: "flex",
-                  gap: 8,
+                  gap: isSmallMobile ? 6 : 8,
+                  alignItems: "center",
                 }}
               >
                 <input
@@ -878,18 +968,19 @@ export default function AdminChatApp() {
                   placeholder="Type a message..."
                   style={{
                     flex: 1,
-                    padding: "8px 12px",
+                    padding: isSmallMobile ? "6px 10px" : "8px 12px",
                     border: "1px solid #ddd",
                     borderRadius: 20,
-                    fontSize: 13,
+                    fontSize: isSmallMobile ? 12 : 13,
                     outline: "none",
+                    minWidth: 0,
                   }}
                 />
                 <button
                   type="submit"
                   disabled={!msgInput.trim() || isSending}
                   style={{
-                    padding: "8px 16px",
+                    padding: isSmallMobile ? "6px 12px" : "8px 16px",
                     background:
                       msgInput.trim() && !isSending ? "#667eea" : "#ccc",
                     color: "#fff",
@@ -897,8 +988,10 @@ export default function AdminChatApp() {
                     borderRadius: 20,
                     cursor:
                       msgInput.trim() && !isSending ? "pointer" : "not-allowed",
-                    fontSize: 13,
+                    fontSize: isSmallMobile ? 12 : 13,
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
                   }}
                 >
                   {isSending ? "..." : "Send"}
