@@ -1033,7 +1033,13 @@ class AppointmentsAPI {
     try {
       // First, get current appointment details to check if it's already completed
       const currentAppointments = await this.getAllAppointments();
-      const currentAppointment = currentAppointments.find(
+      const currentAppointment1 = currentAppointments.appointments;
+      console.log(
+        "Current appointments fetched for status check.",
+        currentAppointments,
+        id,
+      );
+      const currentAppointment = currentAppointment1.find(
         (app) => (app._id || app.id) === id,
       );
 
@@ -1304,12 +1310,12 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
                   >
                     {appointment.status || "N/A"}
                   </span>
-                  {isCompleted && (
+                  {/* {isCompleted && (
                     <Lock
                       className="w-3 h-3 text-gray-500"
                       title="Status locked"
                     />
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>
@@ -1842,12 +1848,12 @@ const Appointments = () => {
                           >
                             {appointment.status || "N/A"}
                           </span>
-                          {isCompleted && (
+                          {/* {isCompleted && (
                             <Lock
                               className="w-3 h-3 text-gray-500"
                               title="Status locked"
                             />
-                          )}
+                          )} */}
                         </div>
                       </div>
                     </div>
@@ -1900,32 +1906,32 @@ const Appointments = () => {
                           <span className="hidden xs:inline">Details</span>
                         </button>
 
-                        <button
-                          onClick={() => handleStatusChangeClick(appointment)}
-                          disabled={isCompleted || updatingStatus}
-                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors font-medium text-xs sm:text-sm ${
-                            isCompleted
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-green-50 text-green-700 hover:bg-green-100"
-                          }`}
-                          title={
-                            isCompleted
-                              ? "Status locked - cannot modify completed appointments"
-                              : "Update status"
-                          }
-                        >
-                          {updatingStatus &&
-                          selectedAppointment?._id === appointment._id ? (
-                            <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                          ) : isCompleted ? (
-                            <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-                          ) : (
-                            <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          )}
-                          <span className="hidden xs:inline">
-                            {isCompleted ? "Locked" : "Status"}
-                          </span>
-                        </button>
+                        {!isCompleted && (
+                          <button
+                            onClick={() => handleStatusChangeClick(appointment)}
+                            disabled={isCompleted || updatingStatus}
+                            className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors font-medium text-xs sm:text-sm ${
+                              isCompleted
+                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : "bg-green-50 text-green-700 hover:bg-green-100"
+                            }`}
+                            title={
+                              isCompleted
+                                ? "Status locked - cannot modify completed appointments"
+                                : "Update status"
+                            }
+                          >
+                            {updatingStatus &&
+                            selectedAppointment?._id === appointment._id ? (
+                              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                            ) : (
+                              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            )}
+                            <span className="hidden xs:inline">
+                              {isCompleted ? "Locked" : "Status"}
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
