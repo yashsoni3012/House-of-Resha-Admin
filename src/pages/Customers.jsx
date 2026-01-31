@@ -333,35 +333,35 @@ const Customers = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Customer Management
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Manage and analyze your customer base
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </button> */}
-            </div>
-          </div>
-        </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
+        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+      </div>
+      <div>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+          Customer Management
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+          Manage and analyze your customer base
+        </p>
+      </div>
+    </div>
+    <div className="flex items-center gap-3 sm:gap-4">
+      {/* <button
+        onClick={handleRefresh}
+        disabled={refreshing}
+        className="flex items-center gap-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 font-medium text-sm sm:text-base"
+      >
+        <RefreshCw
+          className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+        />
+        <span className="hidden sm:inline">Refresh</span>
+      </button> */}
+    </div>
+  </div>
+</div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

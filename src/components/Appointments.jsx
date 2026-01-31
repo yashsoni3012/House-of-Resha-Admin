@@ -580,7 +580,7 @@
 //           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
 //             {/* Left Section */}
 //             <div className="flex items-center gap-3 flex-1 min-w-0">
-              
+
 //               <div className="min-w-0 flex-1">
 //                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
 //                   Appointments
@@ -926,8 +926,6 @@
 
 // export default Appointments;
 
-
-
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -1036,7 +1034,7 @@ class AppointmentsAPI {
       // First, get current appointment details to check if it's already completed
       const currentAppointments = await this.getAllAppointments();
       const currentAppointment = currentAppointments.find(
-        (app) => (app._id || app.id) === id
+        (app) => (app._id || app.id) === id,
       );
 
       // Check if current status is "completed"
@@ -1131,8 +1129,9 @@ function StatusModal({ appointment, isOpen, onClose, onConfirm }) {
                   Status Locked
                 </p>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Once an appointment is marked as completed, its status cannot be changed.
-                  This ensures data integrity and prevents accidental modifications.
+                  Once an appointment is marked as completed, its status cannot
+                  be changed. This ensures data integrity and prevents
+                  accidental modifications.
                 </p>
               </div>
             </div>
@@ -1306,7 +1305,10 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose }) {
                     {appointment.status || "N/A"}
                   </span>
                   {isCompleted && (
-                    <Lock className="w-3 h-3 text-gray-500" title="Status locked" />
+                    <Lock
+                      className="w-3 h-3 text-gray-500"
+                      title="Status locked"
+                    />
                   )}
                 </div>
               </div>
@@ -1459,7 +1461,10 @@ const Appointments = () => {
 
     // Check if appointment is already completed
     if (selectedAppointment?.status?.toLowerCase() === "completed") {
-      showNotification("Cannot update status of a completed appointment", "error");
+      showNotification(
+        "Cannot update status of a completed appointment",
+        "error",
+      );
       setShowStatusModal(false);
       setSelectedAppointment(null);
       return;
@@ -1552,10 +1557,13 @@ const Appointments = () => {
   const handleStatusChangeClick = (appointment) => {
     // Check if appointment is completed before opening modal
     if (appointment?.status?.toLowerCase() === "completed") {
-      showNotification("This appointment is completed and cannot be modified", "error");
+      showNotification(
+        "This appointment is completed and cannot be modified",
+        "error",
+      );
       return;
     }
-    
+
     setSelectedAppointment(appointment);
     setShowStatusModal(true);
   };
@@ -1611,7 +1619,6 @@ const Appointments = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             {/* Left Section */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Appointments
@@ -1805,12 +1812,13 @@ const Appointments = () => {
           <>
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
               {appointmentsToDisplay.map((appointment) => {
-                const isCompleted = appointment.status?.toLowerCase() === "completed";
-                
+                const isCompleted =
+                  appointment.status?.toLowerCase() === "completed";
+
                 return (
                   <div
                     key={appointment._id}
-                    className={`bg-white rounded-lg border ${isCompleted ? 'border-gray-300' : 'border-gray-200'} shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
+                    className={`bg-white rounded-lg border ${isCompleted ? "border-gray-300" : "border-gray-200"} shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
                   >
                     {/* Appointment Header */}
                     <div className="p-4 border-b border-gray-100">
@@ -1835,7 +1843,10 @@ const Appointments = () => {
                             {appointment.status || "N/A"}
                           </span>
                           {isCompleted && (
-                            <Lock className="w-3 h-3 text-gray-500" title="Status locked" />
+                            <Lock
+                              className="w-3 h-3 text-gray-500"
+                              title="Status locked"
+                            />
                           )}
                         </div>
                       </div>
@@ -1894,10 +1905,14 @@ const Appointments = () => {
                           disabled={isCompleted || updatingStatus}
                           className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors font-medium text-xs sm:text-sm ${
                             isCompleted
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-green-50 text-green-700 hover:bg-green-100'
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-green-50 text-green-700 hover:bg-green-100"
                           }`}
-                          title={isCompleted ? "Status locked - cannot modify completed appointments" : "Update status"}
+                          title={
+                            isCompleted
+                              ? "Status locked - cannot modify completed appointments"
+                              : "Update status"
+                          }
                         >
                           {updatingStatus &&
                           selectedAppointment?._id === appointment._id ? (
@@ -1920,14 +1935,19 @@ const Appointments = () => {
 
             {/* Load More Button */}
             {hasMoreAppointments && (
-              <div className="mt-8 text-center">
+              <div className="mt-6 sm:mt-8 text-center px-4">
                 <button
                   onClick={handleLoadMore}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg sm:rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium text-sm sm:text-base active:scale-95"
                 >
-                  <ChevronDown className="w-4 h-4" />
-                  Load More ({filteredAppointments.length - visibleCount}{" "}
-                  remaining)
+                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">
+                    Load More ({filteredAppointments.length - visibleCount}{" "}
+                    remaining)
+                  </span>
+                  <span className="sm:hidden">
+                    Load More ({filteredAppointments.length - visibleCount})
+                  </span>
                 </button>
               </div>
             )}

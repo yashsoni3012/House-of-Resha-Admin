@@ -974,10 +974,10 @@ const AnalyticsDashboard = () => {
         <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2 truncate">
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-1.5 sm:gap-2 truncate">
                 <TrendingUp
-                  className="text-purple-600 flex-shrink-0"
-                  size={20}
+                  className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-purple-600 flex-shrink-0"
+                  size={16}
                 />
                 <span className="truncate">
                   {selectedTrafficPage
@@ -985,7 +985,7 @@ const AnalyticsDashboard = () => {
                     : "User Traffic Flow Analysis"}
                 </span>
               </h2>
-              <p className="text-sm text-gray-600 mt-2 truncate">
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 truncate">
                 {selectedTrafficPage
                   ? `Analyzing traffic for ${selectedTrafficPage}`
                   : "Shows user navigation patterns between pages"}
@@ -1001,16 +1001,16 @@ const AnalyticsDashboard = () => {
           </div>
 
           {selectedTrafficPage && (
-            <div className="mt-4 flex space-x-1">
+            <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
               <button
                 onClick={() => setActiveTab("entry")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "entry" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all ${activeTab === "entry" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
               >
                 Entry Traffic
               </button>
               <button
                 onClick={() => setActiveTab("exit")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "exit" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all ${activeTab === "exit" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
               >
                 Exit Traffic
               </button>
@@ -1019,9 +1019,10 @@ const AnalyticsDashboard = () => {
                   setSelectedTrafficPage(null);
                   setActiveTab("overview");
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === "overview" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all ${activeTab === "overview" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
               >
-                Back to Overview
+                <span className="hidden sm:inline">Back to Overview</span>
+                <span className="sm:hidden">Overview</span>
               </button>
             </div>
           )}
@@ -1046,11 +1047,11 @@ const AnalyticsDashboard = () => {
 
                 {activeTab === "entry" && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                         How Users Arrive at This Page
                       </h3>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         Entry Traffic Analysis
                       </div>
                     </div>
@@ -1059,12 +1060,12 @@ const AnalyticsDashboard = () => {
                       <LoadingSpinner text="Loading entry traffic data..." />
                     ) : entryTrafficData && entryTrafficData.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                            <p className="text-gray-600 text-sm font-medium">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                          <div className="bg-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-200">
+                            <p className="text-gray-600 text-xs sm:text-sm font-medium">
                               Total Entry Visits
                             </p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                               {entryTrafficData
                                 .reduce(
                                   (sum, item) => sum + (item.visits || 0),
@@ -1072,15 +1073,15 @@ const AnalyticsDashboard = () => {
                                 )
                                 .toLocaleString()}
                             </h3>
-                            <p className="text-gray-500 text-xs mt-1">
+                            <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                               Total arrivals to this page
                             </p>
                           </div>
-                          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                            <p className="text-gray-600 text-sm font-medium">
+                          <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-200">
+                            <p className="text-gray-600 text-xs sm:text-sm font-medium">
                               Direct Entries
                             </p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                               {entryTrafficData
                                 .filter((item) => item.previousPage === null)
                                 .reduce(
@@ -1089,15 +1090,15 @@ const AnalyticsDashboard = () => {
                                 )
                                 .toLocaleString()}
                             </h3>
-                            <p className="text-gray-500 text-xs mt-1">
+                            <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                               Direct access/refresh
                             </p>
                           </div>
-                          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                            <p className="text-gray-600 text-sm font-medium">
+                          <div className="bg-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-200">
+                            <p className="text-gray-600 text-xs sm:text-sm font-medium">
                               Avg Entry Time
                             </p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                               {(() => {
                                 const totalVisits = entryTrafficData.reduce(
                                   (sum, item) => sum + (item.visits || 0),
@@ -1116,18 +1117,18 @@ const AnalyticsDashboard = () => {
                               })()}
                               s
                             </h3>
-                            <p className="text-gray-500 text-xs mt-1">
+                            <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                               Average time spent
                             </p>
                           </div>
                         </div>
 
                         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                            <h4 className="text-base font-semibold text-gray-900">
+                          <div className="px-4 sm:px-5 md:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
+                            <h4 className="text-sm sm:text-base font-semibold text-gray-900">
                               Entry Sources
                             </h4>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                               Where users came from before this page
                             </p>
                           </div>
@@ -1482,12 +1483,12 @@ const AnalyticsDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                           Traffic Flow Overview
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           Click on any page to see detailed entry/exit analysis
                         </p>
                       </div>
@@ -1496,31 +1497,34 @@ const AnalyticsDashboard = () => {
                         {trafficData.map((item, index) => (
                           <div
                             key={index}
-                            className="p-4 hover:bg-gray-50 cursor-pointer"
+                            className="p-3 sm:p-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
                             onClick={() =>
                               handlePageTrafficDetails(item.toPage)
                             }
                           >
                             <div className="mb-3">
                               <div className="flex items-center justify-between mb-2">
-                                <div className="flex-1">
-                                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
                                     {getPageFriendlyName(item.fromPage)} →{" "}
                                     {getPageFriendlyName(item.toPage)}
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="truncate">
+                                    <span className="truncate max-w-[120px]">
                                       {item.fromPage}
                                     </span>
-                                    <ChevronRight size={12} />
-                                    <span className="truncate">
+                                    <ChevronRight
+                                      size={12}
+                                      className="flex-shrink-0"
+                                    />
+                                    <span className="truncate max-w-[120px]">
                                       {item.toPage}
                                     </span>
                                   </div>
                                 </div>
                                 <ChevronRight
                                   size={16}
-                                  className="text-gray-400"
+                                  className="text-gray-400 flex-shrink-0 ml-2"
                                 />
                               </div>
 
@@ -1529,7 +1533,7 @@ const AnalyticsDashboard = () => {
                                   <p className="text-xs text-gray-600 mb-1">
                                     Transitions
                                   </p>
-                                  <p className="text-lg font-bold text-purple-700">
+                                  <p className="text-base sm:text-lg font-bold text-purple-700">
                                     {item.transitions || 0}
                                   </p>
                                 </div>
@@ -1537,7 +1541,7 @@ const AnalyticsDashboard = () => {
                                   <p className="text-xs text-gray-600 mb-1">
                                     Avg Time
                                   </p>
-                                  <p className="text-lg font-bold text-blue-700">
+                                  <p className="text-base sm:text-lg font-bold text-blue-700">
                                     {item.avgTimeSpent || 0}s
                                   </p>
                                 </div>
@@ -1551,19 +1555,19 @@ const AnalyticsDashboard = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-100">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 From Page
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 To Page
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Transitions
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Avg Time (s)
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Actions
                               </th>
                             </tr>
@@ -1577,37 +1581,37 @@ const AnalyticsDashboard = () => {
                                   handlePageTrafficDetails(item.toPage)
                                 }
                               >
-                                <td className="px-6 py-4">
+                                <td className="px-4 md:px-6 py-3 md:py-4">
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-900">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
                                       {getPageFriendlyName(item.fromPage)}
                                     </p>
-                                    <p className="text-xs text-gray-500 truncate max-w-xs">
+                                    <p className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-xs">
                                       {item.fromPage}
                                     </p>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-4 md:px-6 py-3 md:py-4">
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-900">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
                                       {getPageFriendlyName(item.toPage)}
                                     </p>
-                                    <p className="text-xs text-gray-500 truncate max-w-xs">
+                                    <p className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-xs">
                                       {item.toPage}
                                     </p>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                     {item.transitions || 0} transitions
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className="text-lg font-bold text-gray-900">
+                                <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                                  <span className="text-base sm:text-lg font-bold text-gray-900">
                                     {item.avgTimeSpent || 0}s
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
                                   <span className="text-purple-600 hover:text-purple-800 font-medium text-sm">
                                     Analyze →
                                   </span>
@@ -1619,14 +1623,17 @@ const AnalyticsDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Activity size={20} className="text-purple-600" />
-                        Traffic Flow Insights
+                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg sm:rounded-xl border border-purple-200 p-4 sm:p-5 md:p-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                        <Activity
+                          size={18}
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0"
+                        />
+                        <span>Traffic Flow Insights</span>
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          <p className="text-sm font-medium text-gray-900 mb-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 mb-2">
                             Most Frequent Navigation
                           </p>
                           {(() => {
@@ -1640,10 +1647,10 @@ const AnalyticsDashboard = () => {
                             );
                             return mostFrequent ? (
                               <div>
-                                <p className="text-lg font-bold text-purple-700">
+                                <p className="text-base sm:text-lg md:text-xl font-bold text-purple-700">
                                   {mostFrequent.transitions} times
                                 </p>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
                                   {getPageFriendlyName(mostFrequent.fromPage)} →{" "}
                                   {getPageFriendlyName(mostFrequent.toPage)}
                                 </p>
@@ -1651,8 +1658,8 @@ const AnalyticsDashboard = () => {
                             ) : null;
                           })()}
                         </div>
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          <p className="text-sm font-medium text-gray-900 mb-2">
+                        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 mb-2">
                             Longest Average Time
                           </p>
                           {(() => {
@@ -1666,10 +1673,10 @@ const AnalyticsDashboard = () => {
                             );
                             return longestTime ? (
                               <div>
-                                <p className="text-lg font-bold text-blue-700">
+                                <p className="text-base sm:text-lg md:text-xl font-bold text-blue-700">
                                   {longestTime.avgTimeSpent}s
                                 </p>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
                                   {getPageFriendlyName(longestTime.fromPage)} →{" "}
                                   {getPageFriendlyName(longestTime.toPage)}
                                 </p>

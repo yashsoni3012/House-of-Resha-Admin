@@ -503,7 +503,6 @@ const ManageSlots = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             {/* Left Section */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                   Manage Slots
@@ -570,24 +569,24 @@ const ManageSlots = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6">
-          <div className="flex flex-col gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Search Input */}
             <div className="w-full">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
-                  placeholder="Search slots by date, time, or product..."
+                  placeholder="Search slots..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                  className="w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
                     aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
@@ -597,50 +596,56 @@ const ManageSlots = () => {
             </div>
 
             {/* Filters Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Date Filters */}
-              <div className="w-full">
-                <div className="hidden lg:flex items-center gap-2 text-sm text-gray-500 font-medium mb-2">
-                  <Filter className="w-4 h-4" />
-                  Filter by Date:
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* Date Filter - Select Dropdown */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 font-semibold mb-2">
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600" />
+                  <span>Filter by Date</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {dates.slice(0, 5).map((date) => (
-                    <button
-                      key={date}
-                      onClick={() => setSelectedDate(date)}
-                      className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
-                        selectedDate === date
-                          ? "bg-purple-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {date}
-                    </button>
-                  ))}
-                  {dates.length > 5 && (
-                    <span className="text-xs text-gray-500 self-center">
-                      +{dates.length - 5} more
-                    </span>
-                  )}
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" />
+                  <select
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full pl-9 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white appearance-none cursor-pointer font-medium"
+                  >
+                    <option value="">All Dates</option>
+                    {dates.map((date) => (
+                      <option key={date} value={date}>
+                        {date}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
               </div>
 
-              {/* Status Filters */}
-              <div className="w-full">
-                <div className="hidden lg:flex items-center gap-2 text-sm text-gray-500 font-medium mb-2">
-                  <Filter className="w-4 h-4" />
-                  Filter by Status:
+              {/* Status Filters - Buttons on Right */}
+              <div className="sm:w-auto">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 font-semibold mb-2">
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600" />
+                  <span>Status</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {statuses.map((status) => (
                     <button
                       key={status}
                       onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${
+                      className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-xs sm:text-sm whitespace-nowrap ${
                         selectedStatus === status
-                          ? "bg-purple-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? " bg-purple-600 hover:bg-purple-700 text-white shadow-md "
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95"
                       }`}
                     >
                       {status}
@@ -649,21 +654,42 @@ const ManageSlots = () => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Results Count */}
-          <div className="mt-4 text-xs sm:text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold text-purple-600">
-              {slotsToDisplay.length}
-            </span>{" "}
-            of <span className="font-semibold">{filteredSlots.length}</span>{" "}
-            slots
-            {hasMoreSlots && (
-              <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">
-                • {filteredSlots.length - visibleCount} more available
-              </span>
-            )}
+            {/* Divider */}
+            <div className="border-t border-gray-200"></div>
+
+            {/* Results Count */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs sm:text-sm text-gray-600">
+              <div className="flex items-center gap-1.5">
+                <span>Showing</span>
+                <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 bg-purple-100 text-purple-700 font-bold rounded-md">
+                  {slotsToDisplay.length}
+                </span>
+                <span>of</span>
+                <span className="font-semibold text-gray-900">
+                  {filteredSlots.length}
+                </span>
+                <span>slots</span>
+              </div>
+              {hasMoreSlots && (
+                <div className="flex items-center gap-1.5 text-purple-600 font-medium">
+                  <svg
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    {filteredSlots.length - visibleCount} more available
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -708,21 +734,21 @@ const ManageSlots = () => {
               {slotsToDisplay.map((slot) => (
                 <div
                   key={slot.id}
-                  className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
+                  className="bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all flex flex-col h-full"
                 >
                   {/* Slot Header */}
-                  <div className="p-4 border-b border-gray-100">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-base sm:text-lg line-clamp-1">
+                  <div className="p-3 sm:p-4 border-b border-gray-100">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg line-clamp-1">
                           {slot.date}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                           {slot.startTime} - {slot.endTime}
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        className={`px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap flex-shrink-0 ${
                           slot.isBooked
                             ? "bg-red-100 text-red-800"
                             : "bg-green-100 text-green-800"
@@ -734,14 +760,14 @@ const ManageSlots = () => {
                   </div>
 
                   {/* Slot Details */}
-                  <div className="p-4 flex-1">
-                    <div className="space-y-3">
+                  <div className="p-3 sm:p-4 flex-1">
+                    <div className="space-y-2 sm:space-y-3">
                       {slot.product && (
                         <div>
-                          <p className="text-xs text-gray-500 font-medium">
+                          <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">
                             Product ID
                           </p>
-                          <p className="text-sm text-gray-800 font-mono truncate">
+                          <p className="text-xs sm:text-sm text-gray-800 font-mono truncate mt-0.5">
                             {slot.product}
                           </p>
                         </div>
@@ -749,10 +775,10 @@ const ManageSlots = () => {
 
                       {slot.bookedBy && (
                         <div>
-                          <p className="text-xs text-gray-500 font-medium">
+                          <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">
                             Booked By
                           </p>
-                          <p className="text-sm text-gray-800 truncate">
+                          <p className="text-xs sm:text-sm text-gray-800 truncate mt-0.5">
                             {typeof slot.bookedBy === "object"
                               ? slot.bookedBy.name ||
                                 slot.bookedBy.email ||
@@ -765,23 +791,23 @@ const ManageSlots = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="p-4 border-t border-gray-100">
+                  <div className="p-3 sm:p-4 border-t border-gray-100">
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(slot)}
-                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-xs sm:text-sm"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-all font-medium text-xs sm:text-sm active:scale-95"
                         title="Edit slot"
                       >
-                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="hidden xs:inline">Edit</span>
+                        <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span>Edit</span>
                       </button>
                       <button
                         onClick={() => handleDeleteClick(slot)}
-                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-xs sm:text-sm"
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all font-medium text-xs sm:text-sm active:scale-95"
                         title="Delete slot"
                       >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="hidden xs:inline">Delete</span>
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -791,17 +817,21 @@ const ManageSlots = () => {
 
             {/* Load More Button */}
             {hasMoreSlots && (
-              <div className="mt-8 text-center">
+              <div className="mt-6 sm:mt-8 text-center px-4">
                 <button
                   onClick={handleLoadMore}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg sm:rounded-xl transition-all duration-200 font-medium text-sm sm:text-base shadow-lg active:scale-95"
                 >
-                  <ChevronDown className="w-4 h-4" />
-                  Load More ({filteredSlots.length - visibleCount} remaining)
+                  <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">
+                    Load More ({filteredSlots.length - visibleCount} remaining)
+                  </span>
+                  <span className="sm:hidden">
+                    Load More ({filteredSlots.length - visibleCount})
+                  </span>
                 </button>
               </div>
             )}
-
             {/* Completion Message */}
             {filteredSlots.length > 0 && !hasMoreSlots && (
               <div className="mt-8 text-center">
